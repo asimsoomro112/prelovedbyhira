@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { db } from '../config/firebase.config';
 import { AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
+import admin from 'firebase-admin';
 
 export const createOrder = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -260,7 +261,7 @@ export const getSellerOrders = async (req: AuthRequest, res: Response, next: Nex
 export const getOrderById = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const orderDoc = await db.collection('orders').doc(id).get();
+    const orderDoc = await db.collection('orders').doc(id as string).get();
     
     if (!orderDoc.exists) {
       throw new AppError('Order not found in vault', 404);
@@ -299,7 +300,7 @@ export const submitPaymentProof = async (req: AuthRequest, res: Response, next: 
     const { id } = req.params;
     const { proofUrl } = req.body;
 
-    const orderRef = db.collection('orders').doc(id);
+    const orderRef = db.collection('orders').doc(id as string);
     const orderDoc = await orderRef.get();
 
     if (!orderDoc.exists) throw new AppError('Order not found', 404);
@@ -344,7 +345,7 @@ import { NotificationService } from '../services/notification.service';
 export const adminConfirmPayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const orderRef = db.collection('orders').doc(id);
+    const orderRef = db.collection('orders').doc(id as string);
     
     let sellerId = "";
     await db.runTransaction(async (transaction) => {
@@ -381,12 +382,11 @@ export const adminConfirmPayment = async (req: Request, res: Response, next: Nex
 
     // Notify Seller
     if (sellerId) {
-      await NotificationService.send({
+      await NotificationService.create({
         userId: sellerId,
         title: "Payment Verified! 💰",
         message: "Admin has verified the payment for your item. It is now officially SOLD. Please ship the product and enter tracking details.",
-        type: "ORDER_UPDATE",
-        link: `/seller/orders`
+        type: "ORDER_UPDATE"
       });
     }
 
