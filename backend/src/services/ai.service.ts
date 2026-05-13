@@ -154,4 +154,62 @@ export class AIService {
     console.error("❌ All Neural Models Failed!");
     return `I apologize, my neural link to the vault is momentarily unstable. (Error: ${lastError?.status || 'Total Outage'}). Please check your API key in the Vault settings.`;
   }
+  /**
+   * Neural Receipt Auditor: Extracts and verifies payment data from bank screenshots.
+   */
+  static async verifyPaymentReceipt(imageUrl: string, orderDetails: any) {
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+    let lastError = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`[Neural Link] Scanning receipt with ${modelName}...`);
+        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+        const imageData = Buffer.from(response.data).toString('base64');
+
+        const model = genAI.getGenerativeModel({ model: modelName });
+        
+        const prompt = `You are the Hira AI Payment Auditor. 
+        Analyze this bank transfer receipt/screenshot and extract key transaction details.
+        
+        Order Reference Data:
+        - Expected Amount: Rs. ${orderDetails.totalPrice}
+        - Expected Recipient: "PrelovedByHira" or "asimsoomro" (platform accounts)
+        
+        Extract:
+        1. Amount (PKR)
+        2. Recipient Account Title
+        3. Transaction ID/Reference
+        4. Date & Time
+        
+        Return ONLY a JSON object:
+        {
+          "amount": number,
+          "recipient": "string",
+          "transactionId": "string",
+          "date": "string",
+          "isMatch": boolean (true if amount matches ${orderDetails.totalPrice} and recipient is correct),
+          "reason": "explanation of verification"
+        }`;
+
+        const result = await model.generateContent([
+          prompt,
+          {
+            inlineData: {
+              data: imageData,
+              mimeType: "image/jpeg"
+            }
+          }
+        ]);
+
+        const text = result.response.text();
+        const cleanJson = text.replace(/```json|```/gi, "").trim();
+        return JSON.parse(cleanJson);
+      } catch (error) {
+        console.warn(`[AI Audit] ${modelName} failed, trying next...`);
+        lastError = error;
+      }
+    }
+    throw lastError;
+  }
 }

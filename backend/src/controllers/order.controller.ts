@@ -292,10 +292,12 @@ export const getOrderById = async (req: AuthRequest, res: Response, next: NextFu
   }
 };
 
+import { AIService } from '../services/ai.service';
+
 export const submitPaymentProof = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { proofUrl } = req.body; // URL from Cloudinary
+    const { proofUrl } = req.body;
 
     const orderRef = db.collection('orders').doc(id);
     const orderDoc = await orderRef.get();
@@ -305,29 +307,32 @@ export const submitPaymentProof = async (req: AuthRequest, res: Response, next: 
 
     if (order.buyerId !== req.user!.id) throw new AppError('Unauthorized', 403);
 
-    // 🤖 AI VERIFICATION LOGIC
-    // We call AI to extract data from the image URL
-    // For now, we simulate AI extraction. In a real app, AIService.extractReceiptData(proofUrl)
-    const aiResults = {
-      amount: order.totalPrice, // Simulated: AI found Rs. 1300
-      recipient: "PrelovedByHira",
-      isMatch: true
-    };
+    // 🤖 ACTUAL AI VERIFICATION
+    let aiResults: any = { isMatch: false, reason: "AI extraction failed" };
+    let aiVerified = false;
 
-    const aiVerified = aiResults.isMatch && aiResults.amount === order.totalPrice;
+    try {
+      aiResults = await AIService.verifyPaymentReceipt(proofUrl, { totalPrice: order.totalPrice });
+      aiVerified = aiResults.isMatch;
+      console.log(`[Hira AI] Neural Audit Complete. Match: ${aiVerified}`);
+    } catch (err) {
+      console.warn("[Hira AI] Neural Audit failed to connect, proceeding to manual queue.");
+    }
 
     await orderRef.update({
       paymentProofUrl: proofUrl,
       status: 'PAYMENT_SUBMITTED',
       aiVerified,
+      aiExtraction: aiResults, // Store what AI found for admin to see
       updatedAt: new Date().toISOString()
     });
 
     res.json({ 
       message: aiVerified 
-        ? 'System has verified your receipt! Admin will now perform the final confirmation.' 
-        : 'Receipt submitted. System could not automatically verify the amount, Admin will review it manually.',
-      aiVerified 
+        ? 'Hira AI has verified your receipt! Admin will perform a final check before releasing the order.' 
+        : 'Receipt submitted. Hira AI could not automatically verify details (Amount/Recipient), so Admin will review it manually shortly.',
+      aiVerified,
+      aiReason: aiResults.reason
     });
   } catch (error) {
     next(error);
