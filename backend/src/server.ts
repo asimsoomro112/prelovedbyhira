@@ -29,6 +29,10 @@ const startServer = async () => {
   }
 };
 
-startServer();
+// Only run listen() in local development. 
+// Vercel exports the app/server directly and handles the execution.
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  startServer();
+}
 
-export default server;
+export default app;

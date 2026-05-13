@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
+import express, { NextFunction } from 'express';
 import * as admin from 'firebase-admin';
 import { db } from '../config/firebase.config';
 import { AppError } from '../middleware/errorHandler';
 import { sendSellerRejectionEmail } from '../services/email.service';
 
-export const listSellers = async (req: Request, res: Response, next: NextFunction) => {
+export const listSellers = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const { status, limit = '20' } = req.query;
     const limitNum = parseInt(limit as string);
@@ -31,7 +31,7 @@ export const listSellers = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const getSellerDetail = async (req: Request, res: Response, next: NextFunction) => {
+export const getSellerDetail = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
     const sellerDoc = await db.collection('sellers').doc(id).get();
@@ -51,7 +51,7 @@ export const getSellerDetail = async (req: Request, res: Response, next: NextFun
   }
 };
 
-export const approveSeller = async (req: Request, res: Response, next: NextFunction) => {
+export const approveSeller = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
     await db.collection('sellers').doc(id).update({
@@ -70,7 +70,7 @@ export const approveSeller = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const rejectSeller = async (req: Request, res: Response, next: NextFunction) => {
+export const rejectSeller = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
     const { reason } = req.body;
@@ -96,7 +96,7 @@ export const rejectSeller = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const listPayouts = async (req: Request, res: Response, next: NextFunction) => {
+export const listPayouts = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const { status } = req.query;
     let query: any = db.collection('payouts');
@@ -115,7 +115,7 @@ export const listPayouts = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
-export const updatePayoutStatus = async (req: Request, res: Response, next: NextFunction) => {
+export const updatePayoutStatus = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
     const { status } = req.body; // PROCESSING, COMPLETED, REJECTED
@@ -152,7 +152,7 @@ export const updatePayoutStatus = async (req: Request, res: Response, next: Next
   }
 };
 
-export const listUsers = async (req: Request, res: Response, next: NextFunction) => {
+export const listUsers = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const { role, search } = req.query;
     let query: any = db.collection('users');
@@ -177,7 +177,7 @@ export const listUsers = async (req: Request, res: Response, next: NextFunction)
   }
 };
 
-export const toggleUserStatus = async (req: Request, res: Response, next: NextFunction) => {
+export const toggleUserStatus = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
     const userRef = db.collection('users').doc(id);
@@ -196,7 +196,7 @@ export const toggleUserStatus = async (req: Request, res: Response, next: NextFu
     next(error);
   }
 };
-export const listProducts = async (req: Request, res: Response, next: NextFunction) => {
+export const listProducts = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const productsSnapshot = await db.collection('products').get();
     const products = await Promise.all(productsSnapshot.docs.map(async (doc) => {
@@ -231,7 +231,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const deleteProduct = async (req: Request, res: Response, next: NextFunction) => {
+export const deleteProduct = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const id = req.params.id as string;
     await db.collection('products').doc(id).delete();
@@ -241,7 +241,7 @@ export const deleteProduct = async (req: Request, res: Response, next: NextFunct
   }
 };
 
-export const listOrders = async (req: Request, res: Response, next: NextFunction) => {
+export const listOrders = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const { status } = req.query;
     let query: any = db.collection('orders');
@@ -294,7 +294,7 @@ export const listOrders = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-export const listDisputes = async (req: Request, res: Response, next: NextFunction) => {
+export const listDisputes = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const snapshot = await db.collection('disputes').orderBy('createdAt', 'desc').get();
     const disputes = await Promise.all(snapshot.docs.map(async (doc: any) => {
@@ -326,7 +326,7 @@ export const listDisputes = async (req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const getSettings = async (_req: Request, res: Response, next: NextFunction) => {
+export const getSettings = async (_req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const settingsDoc = await db.collection('settings').doc('platform').get();
     if (!settingsDoc.exists) {
@@ -350,7 +350,7 @@ export const getSettings = async (_req: Request, res: Response, next: NextFuncti
   }
 };
 
-export const updateSettings = async (req: Request, res: Response, next: NextFunction) => {
+export const updateSettings = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     const { commissionRate, maintenanceMode, sellerAutoVerify, minPayoutAmount, aiChatEnabled, emailNotifications, supportEmail } = req.body;
     
@@ -373,7 +373,7 @@ export const updateSettings = async (req: Request, res: Response, next: NextFunc
   }
 };
 
-export const getDashboardStats = async (_req: Request, res: Response, next: NextFunction) => {
+export const getDashboardStats = async (_req: express.Request, res: express.Response, next: NextFunction) => {
   try {
     // Note: In production, these should be cached or use counter aggregation
     const [userSnap, sellerSnap, productSnap, ordersSnap] = await Promise.all([
