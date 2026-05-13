@@ -201,7 +201,9 @@ export default function SellerPayoutsPage() {
                      </div>
                      <div>
                         <p className="font-bold">Rs. {p.amount.toLocaleString()}</p>
-                        <p className="text-xs text-gray-400 font-medium">{p.method} • {new Date(p.createdAt).toLocaleDateString()}</p>
+                        <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">{p.method}</p>
+                        <p className="text-[10px] text-gold-400/80 font-bold">{p.details}</p>
+                        <p className="text-[9px] text-gray-500">{new Date(p.createdAt).toLocaleDateString()} • {new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                      </div>
                   </div>
                   <span className={`px-4 py-1.5 rounded-pill text-[10px] font-bold uppercase tracking-widest ${p.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
