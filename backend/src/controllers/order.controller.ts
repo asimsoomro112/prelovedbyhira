@@ -339,16 +339,20 @@ export const submitPaymentProof = async (req: AuthRequest, res: Response, next: 
   }
 };
 
+import { NotificationService } from '../services/notification.service';
+
 export const adminConfirmPayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
     const orderRef = db.collection('orders').doc(id);
     
+    let sellerId = "";
     await db.runTransaction(async (transaction) => {
       const orderDoc = await transaction.get(orderRef);
       if (!orderDoc.exists) throw new AppError('Order not found', 404);
       
       const order = orderDoc.data()!;
+      sellerId = order.sellerId;
       const productRef = db.collection('products').doc(order.productId);
 
       transaction.update(orderRef, { 
@@ -375,7 +379,18 @@ export const adminConfirmPayment = async (req: Request, res: Response, next: Nex
       });
     });
 
-    res.json({ message: 'Payment confirmed by Admin. Order is now officially SOLD.' });
+    // Notify Seller
+    if (sellerId) {
+      await NotificationService.send({
+        userId: sellerId,
+        title: "Payment Verified! 💰",
+        message: "Admin has verified the payment for your item. It is now officially SOLD. Please ship the product and enter tracking details.",
+        type: "ORDER_UPDATE",
+        link: `/seller/orders`
+      });
+    }
+
+    res.json({ message: 'Payment confirmed by Admin. Seller notified.' });
   } catch (error) {
     next(error);
   }

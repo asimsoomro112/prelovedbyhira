@@ -15,7 +15,8 @@ import {
   Package,
   X,
   MapPin,
-  Phone
+  Phone,
+  ShieldCheck
 } from "lucide-react";
 import Image from "next/image";
 import api from "@/lib/api";
@@ -146,18 +147,23 @@ export default function SellerOrdersPage() {
                      </div>
                   </div>
 
-                     <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
-                        {order.status === 'PAID' && (
-                          <button 
-                           onClick={() => {
-                             setSelectedOrder(order);
-                             setIsShippingModal(true);
-                           }}
-                           className="w-full sm:w-auto px-8 py-4 bg-gold-400 text-white rounded-pill font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
-                          >
-                             <Truck className="w-4 h-4" /> Mark as Shipped
-                          </button>
-                        )}
+                      <div className="flex flex-col sm:flex-row justify-end items-end gap-3 pt-2">
+                         {order.status === 'PAID' && (
+                           <div className="flex flex-col gap-2 items-end">
+                             <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5 mb-1">
+                               <ShieldCheck className="w-3 h-3" /> Payment Verified
+                             </div>
+                             <button 
+                              onClick={() => {
+                                setSelectedOrder(order);
+                                setIsShippingModal(true);
+                              }}
+                              className="w-full sm:w-auto px-8 py-4 bg-emerald-500 text-white rounded-pill font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                             >
+                                <Truck className="w-4 h-4" /> Ship Item Now
+                             </button>
+                           </div>
+                         )}
                         <button 
                           onClick={() => {
                             setSelectedOrder(order);
