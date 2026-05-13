@@ -174,17 +174,18 @@ export class AIService {
         1. Extract the Transaction Amount.
         2. Extract the Transaction ID (TRX ID).
         3. Extract the Receiver Account/Name.
-        4. Compare the extracted amount with "${orderDetails}".
+        4. Match Amount with: Rs. ${orderDetails}
+        5. Match Receiver with: "Preloved By Hira" or "Meezan Bank" or "asimsoomro"
         
         Return ONLY a JSON object:
         {
           "amount": number,
           "trxId": "string",
           "receiver": "string",
-          "isMatch": true,
+          "isMatch": true, (is amount correct AND receiver matches Preloved platform?)
           "reason": "short explanation of match/mismatch",
           "isLikelyFraud": false,
-          "confidence": 0.9
+          "confidence": 0.95
         }
       `;
 
