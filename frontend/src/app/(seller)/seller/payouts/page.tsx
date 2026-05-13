@@ -206,9 +206,16 @@ export default function SellerPayoutsPage() {
                         <p className="text-[9px] text-gray-500">{new Date(p.createdAt).toLocaleDateString()} • {new Date(p.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</p>
                      </div>
                   </div>
-                  <span className={`px-4 py-1.5 rounded-pill text-[10px] font-bold uppercase tracking-widest ${p.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
-                    {p.status}
-                  </span>
+                   <div className="flex flex-col items-end gap-2">
+                     <span className={`px-4 py-1.5 rounded-pill text-[10px] font-bold uppercase tracking-widest ${p.status === 'COMPLETED' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                       {p.status}
+                     </span>
+                     {p.proofImage && (
+                       <a href={p.proofImage} target="_blank" className="text-[10px] text-gold-400 font-bold flex items-center gap-1 hover:underline">
+                         <ImageIcon className="w-3 h-3" /> View Receipt
+                       </a>
+                     )}
+                   </div>
                </div>
              ))
            )}

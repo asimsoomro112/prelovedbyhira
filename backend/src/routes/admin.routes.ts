@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import * as adminController from '../controllers/admin.controller';
 import { authenticate, authorize } from '../middleware/auth';
+import { upload } from '../middleware/upload';
 
 const router = Router();
 
@@ -15,7 +16,7 @@ router.put('/sellers/:id/approve', adminController.approveSeller);
 router.put('/sellers/:id/reject', adminController.rejectSeller);
 
 router.get('/payouts', adminController.listPayouts);
-router.put('/payouts/:id', adminController.updatePayoutStatus);
+router.put('/payouts/:id', upload.single('proofImage'), adminController.updatePayoutStatus);
 
 router.get('/users', adminController.listUsers);
 router.put('/users/:id/toggle', adminController.toggleUserStatus);

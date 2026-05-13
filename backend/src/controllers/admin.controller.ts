@@ -135,15 +135,22 @@ export const updatePayoutStatus = async (req: express.Request, res: express.Resp
     if (!payoutDoc.exists) throw new AppError('Payout not found', 404);
 
     const payout = payoutDoc.data()!;
+    const proofImageUrl = (req as any).file?.path;
 
     if (status === 'REJECTED') {
-      await db.collection('sellers').doc(payout.sellerId).update({
-        pendingBalance: Number((await db.collection('sellers').doc(payout.sellerId).get()).data()?.pendingBalance || 0) + payout.amount
+      const sellerRef = db.collection('sellers').doc(payout.sellerId);
+      const sellerDoc = await sellerRef.get();
+      const currentBalance = Number(sellerDoc.data()?.pendingBalance || 0);
+      
+      await sellerRef.update({
+        pendingBalance: currentBalance + payout.amount,
+        updatedAt: new Date().toISOString()
       });
     }
 
     await payoutRef.update({ 
       status,
+      proofImage: proofImageUrl || payout.proofImage || null,
       updatedAt: new Date().toISOString(),
       ...(status === 'COMPLETED' && { processedAt: new Date().toISOString() })
     });
