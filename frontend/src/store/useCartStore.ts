@@ -10,6 +10,7 @@ interface CartItem {
     title: string;
     sellingPrice: number;
     images: string[];
+    sellerId: string;
     seller: { user: { name: string } };
   };
 }
