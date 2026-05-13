@@ -248,7 +248,7 @@ export const listOrders = async (req: Request, res: Response, next: NextFunction
     if (status) query = query.where('status', '==', status);
     
     const snapshot = await query.orderBy('createdAt', 'desc').get();
-    const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const ordersData = snapshot.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
     if (ordersData.length === 0) return res.json([]);
 
@@ -265,7 +265,7 @@ export const listOrders = async (req: Request, res: Response, next: NextFunction
     const sellerDocs = allDocs.slice(productRefs.length + buyerRefs.length);
     
     // Batch fetch seller user details
-    const sellerUserRefs = sellerDocs.map(doc => doc.exists ? db.collection('users').doc(doc.id) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    const sellerUserRefs = sellerDocs.map((doc: any) => doc.exists ? db.collection('users').doc(doc.id) : null).filter(Boolean) as admin.firestore.DocumentReference[];
     const sellerUserDocs = sellerUserRefs.length > 0 ? await db.getAll(...sellerUserRefs) : [];
     
     // Create maps for efficient lookup
@@ -387,7 +387,7 @@ export const getDashboardStats = async (_req: Request, res: Response, next: Next
 
     // 🚀 PERF-01 Fix: Use batch reads for associated data
     const recentOrdersSnap = await db.collection('orders').orderBy('createdAt', 'desc').limit(5).get();
-    const ordersData = recentOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const ordersData = recentOrdersSnap.docs.map((doc: any) => ({ id: doc.id, ...doc.data() }));
 
     const productRefs = ordersData.map((o: any) => o.productId ? db.collection('products').doc(o.productId) : null).filter(Boolean) as admin.firestore.DocumentReference[];
     const buyerRefs = ordersData.map((o: any) => o.buyerId ? db.collection('users').doc(o.buyerId) : null).filter(Boolean) as admin.firestore.DocumentReference[];
@@ -401,7 +401,7 @@ export const getDashboardStats = async (_req: Request, res: Response, next: Next
     const sellerDocs = allDocs.slice(productRefs.length + buyerRefs.length);
     
     // Batch fetch seller user details
-    const sellerUserRefs = sellerDocs.map(doc => doc.exists ? db.collection('users').doc(doc.id) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    const sellerUserRefs = sellerDocs.map((doc: any) => doc.exists ? db.collection('users').doc(doc.id) : null).filter(Boolean) as admin.firestore.DocumentReference[];
     const sellerUserDocs = sellerUserRefs.length > 0 ? await db.getAll(...sellerUserRefs) : [];
     
     // Create maps for efficient lookup
@@ -430,7 +430,7 @@ export const getDashboardStats = async (_req: Request, res: Response, next: Next
     });
 
     const topSellersSnap = await db.collection('sellers').orderBy('totalEarnings', 'desc').limit(5).get();
-    const topSellerUserRefs = topSellersSnap.docs.map(doc => db.collection('users').doc(doc.id));
+    const topSellerUserRefs = topSellersSnap.docs.map((doc: any) => db.collection('users').doc(doc.id));
     const topSellerUserDocs = topSellerUserRefs.length > 0 ? await db.getAll(...topSellerUserRefs) : [];
     
     const topSellers = topSellersSnap.docs.map((doc, index) => {
