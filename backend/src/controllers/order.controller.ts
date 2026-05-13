@@ -4,6 +4,7 @@ import { AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import admin from 'firebase-admin';
 import { NotificationService } from '../services/notification.service';
+import { uploadToCloudinary } from '../middleware/upload';
 
 export const createOrder = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -339,7 +340,12 @@ export const submitPaymentProof = async (req: AuthRequest, res: Response, next: 
 export const adminConfirmPayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const proofImageUrl = (req as any).file?.path; // Receipt uploaded by Admin
+    let proofImageUrl = null;
+
+    if (req.file) {
+      const { url } = await uploadToCloudinary(req.file.buffer, 'orders');
+      proofImageUrl = url;
+    }
 
     const orderRef = db.collection('orders').doc(id as string);
     

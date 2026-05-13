@@ -3,6 +3,7 @@ import * as admin from 'firebase-admin';
 import { db } from '../config/firebase.config';
 import { AppError } from '../middleware/errorHandler';
 import { sendSellerRejectionEmail } from '../services/email.service';
+import { uploadToCloudinary } from '../middleware/upload';
 
 export const listSellers = async (req: express.Request, res: express.Response, next: NextFunction) => {
   try {
@@ -135,7 +136,12 @@ export const updatePayoutStatus = async (req: express.Request, res: express.Resp
     if (!payoutDoc.exists) throw new AppError('Payout not found', 404);
 
     const payout = payoutDoc.data()!;
-    const proofImageUrl = (req as any).file?.path;
+    let proofImageUrl = payout.proofImage || null;
+
+    if (req.file) {
+      const { url } = await uploadToCloudinary(req.file.buffer, 'payouts');
+      proofImageUrl = url;
+    }
 
     if (status === 'REJECTED') {
       const sellerRef = db.collection('sellers').doc(payout.sellerId);
