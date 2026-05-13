@@ -99,12 +99,12 @@ export const submitSelfie = async (req: AuthRequest, res: Response, next: NextFu
       transaction.update(sellerRef, updateData);
 
       // Automatically save the payout account so it shows up in the Payouts page
-      // Automatically save the payout account so it shows up in the Payouts page
       if (payoutMethod && payoutDetails) {
         let detailsObj: any = {};
         try {
           detailsObj = typeof payoutDetails === 'string' ? JSON.parse(payoutDetails) : payoutDetails;
         } catch (e) {
+          console.warn("[PAYOUT_SAVE] Failed to parse payoutDetails, using as raw string");
           detailsObj = { accountNumber: payoutDetails };
         }
 
@@ -112,7 +112,7 @@ export const submitSelfie = async (req: AuthRequest, res: Response, next: NextFu
         transaction.set(accountRef, {
           userId: req.user!.id,
           type: payoutMethod, // JAZZCASH, EASYPAISA, BANK_TRANSFER
-          details: detailsObj?.accountNumber || detailsObj?.iban || payoutDetails || "",
+          details: detailsObj?.accountNumber || detailsObj?.iban || (typeof payoutDetails === 'string' ? payoutDetails : ""),
           title: detailsObj?.accountName || req.user?.name || "Preloved Member",
           createdAt: new Date().toISOString()
         });

@@ -25,13 +25,16 @@ export const getPayoutHistory = async (req: AuthRequest, res: Response, next: Ne
   try {
     const sellerId = req.user!.id;
     
-    // In a real app, you'd fetch from a 'transactions' or 'payouts' collection
-    const snapshot = await db.collection('transactions')
-      .where('userId', '==', sellerId)
+    const snapshot = await db.collection('payouts')
+      .where('sellerId', '==', sellerId)
       .get();
 
     const transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    transactions.sort((a: any, b: any) => (b.createdAt || 0).toString().localeCompare((a.createdAt || 0).toString()));
+    transactions.sort((a: any, b: any) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
     res.json(transactions);
   } catch (error) {
