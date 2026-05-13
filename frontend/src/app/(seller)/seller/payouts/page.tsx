@@ -13,7 +13,8 @@ import {
   Banknote,
   Smartphone,
   ShieldCheck,
-  AlertCircle
+  AlertCircle,
+  Image as ImageIcon
 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "sonner";

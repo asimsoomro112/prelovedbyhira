@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { Wallet, CheckCircle, XCircle, Clock, Upload, Camera, X, ImageIcon, Eye } from 'lucide-react';
+import { Wallet, CheckCircle, XCircle, Clock, Upload, Camera, X, Image as ImageIcon, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 import Image from 'next/image';
 
