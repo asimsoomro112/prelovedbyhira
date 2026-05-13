@@ -17,7 +17,8 @@ import {
   Tag,
   AlertCircle,
   FileText,
-  ShieldCheck
+  ShieldCheck,
+  Clock
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -49,7 +50,7 @@ export default function AddProductPage() {
   const [previews, setPreviews] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
-  const [isVerified, setIsVerified] = useState(false);
+  const [vStatus, setVStatus] = useState<string>("NONE");
   const router = useRouter();
   const { user } = useAuthStore();
 
@@ -57,14 +58,9 @@ export default function AddProductPage() {
     const checkVerification = async () => {
       try {
         const { data } = await api.get("/seller/verification/status");
-        if (data.status === "ACTIVE") {
-          setIsVerified(true);
-        } else {
-          setIsVerified(false);
-        }
+        setVStatus(data.status);
       } catch (error: any) {
-        // If there's any error fetching status, we assume they aren't verified
-        setIsVerified(false);
+        setVStatus("NONE");
       } finally {
         setIsVerifying(false);
       }
@@ -85,32 +81,40 @@ export default function AddProductPage() {
     );
   }
 
-  if (!isVerified) {
+  if (vStatus !== "APPROVED" && vStatus !== "ACTIVE") {
+    const isPending = vStatus === 'SELFIE_UPLOADED' || vStatus === 'IDENTITY_VERIFIED' || vStatus === 'PENDING';
+    const isRejected = vStatus === 'REJECTED';
+
     return (
       <div className="max-w-2xl mx-auto py-24 px-6 text-center space-y-8">
-        <div className="w-24 h-24 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto shadow-2xl">
-          <ShieldCheck className="w-12 h-12" />
+        <div className={`w-24 h-24 rounded-full flex items-center justify-center mx-auto shadow-2xl ${isPending ? "bg-gold-400/10 text-gold-400" : "bg-red-500/10 text-red-500"}`}>
+          {isPending ? <Clock className="w-12 h-12" /> : <ShieldCheck className="w-12 h-12" />}
         </div>
         <div className="space-y-4">
-          <h1 className="text-4xl font-display font-bold">Verification <span className="text-gold-400">Required.</span></h1>
+          <h1 className="text-4xl font-display font-bold">
+            Verification <span className={isPending ? "text-gold-400" : "text-red-500"}>{isPending ? "Under Review." : "Required."}</span>
+          </h1>
           <p className="text-gray-500 leading-relaxed">
-            To maintain the exclusivity of PrelovedByHira, all sellers must verify their identity. 
-            Once verified, you can list unlimited luxury items in our vault.
+            {isPending 
+              ? "Hamari team aapke documents review kar rahi hai. Verification complete hone ke baad aap products list kar saken gay." 
+              : "To maintain the exclusivity of PrelovedByHira, all sellers must verify their identity before listing items."}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
           <button 
-            onClick={() => router.push("/seller/verification")}
+            onClick={() => router.push(isPending ? "/seller/dashboard" : "/seller/verification")}
             className="w-full sm:w-auto px-12 py-5 bg-gold-400 text-white rounded-pill font-bold shadow-gold hover:scale-105 transition-all"
           >
-            Verify Identity Now
+            {isPending ? "Back to Dashboard" : isRejected ? "Retry Verification" : "Verify Identity Now"}
           </button>
-          <button 
-            onClick={() => router.push("/seller/dashboard")}
-            className="w-full sm:w-auto px-12 py-5 border-2 border-gold-400/20 text-gray-500 rounded-pill font-bold hover:bg-gold-400/5 transition-all"
-          >
-            Back to Dashboard
-          </button>
+          {!isPending && (
+            <button 
+              onClick={() => router.push("/seller/dashboard")}
+              className="w-full sm:w-auto px-12 py-5 border-2 border-gold-400/20 text-gray-500 rounded-pill font-bold hover:bg-gold-400/5 transition-all"
+            >
+              Back to Dashboard
+            </button>
+          )}
         </div>
       </div>
     );

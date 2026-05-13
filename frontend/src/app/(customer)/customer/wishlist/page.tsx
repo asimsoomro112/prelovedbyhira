@@ -14,14 +14,14 @@ export default function WishlistPage() {
   const { data: wishlist, isLoading } = useQuery({
     queryKey: ["wishlist"],
     queryFn: async () => {
-      const { data } = await api.get("/users/wishlist");
+      const { data } = await api.get("/wishlist");
       return data;
     },
   });
 
   const removeFromWishlist = useMutation({
     mutationFn: async (productId: string) => {
-      return await api.post(`/products/${productId}/wishlist`);
+      return await api.post("/wishlist/toggle", { productId });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["wishlist"] });

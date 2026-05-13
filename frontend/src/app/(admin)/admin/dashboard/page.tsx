@@ -10,7 +10,8 @@ import {
   ArrowUpRight, 
   ChevronRight,
   Clock,
-  FileText
+  FileText,
+  ShieldCheck
 } from "lucide-react";
 import { 
   ResponsiveContainer, 
@@ -45,6 +46,17 @@ export default function AdminDashboard() {
   });
 
   if (isLoading) return <div className="h-screen flex items-center justify-center"><div className="w-12 h-12 border-4 border-gold-400 border-t-transparent rounded-full animate-spin" /></div>;
+
+  if (!dashboardData) return (
+    <div className="h-screen flex flex-col items-center justify-center space-y-4">
+       <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center">
+          <ShieldCheck className="w-8 h-8" />
+       </div>
+       <h2 className="text-2xl font-bold">Connection Restricted</h2>
+       <p className="text-gray-500">Please ensure you are logged in as an ADMIN and your Firestore database is accessible.</p>
+       <button onClick={() => window.location.reload()} className="px-8 py-3 bg-gold-400 text-white rounded-pill font-bold">Retry Connection</button>
+    </div>
+  );
 
   const { stats, recentOrders, topSellers } = dashboardData || {};
 
@@ -135,7 +147,9 @@ export default function AdminDashboard() {
                               <span className="text-sm font-medium">{order.buyer.name}</span>
                            </div>
                          </td>
-                         <td className="px-8 py-6 text-sm font-medium">{order.product.seller.user.name}</td>
+                         <td className="px-8 py-6 text-sm font-medium">
+                           {order.seller?.user?.name || order.product?.seller?.user?.name || 'Verified Merchant'}
+                         </td>
                          <td className="px-8 py-6 text-sm font-bold">Rs. {order.totalPrice.toLocaleString()}</td>
                          <td className="px-8 py-6">
                             <span className={`px-3 py-1 rounded-pill text-[10px] font-bold ${order.status === 'PAID' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>

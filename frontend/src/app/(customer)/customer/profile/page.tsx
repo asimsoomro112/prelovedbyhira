@@ -44,6 +44,7 @@ export default function ProfilePage() {
               <div className="grid sm:grid-cols-2 gap-8">
                  <InfoItem icon={<User />} label="Full Name" value={user.name} />
                  <InfoItem icon={<Mail />} label="Email Address" value={user.email} />
+                 {/* @ts-ignore - phone may not be on the User interface currently */}
                  <InfoItem icon={<Phone />} label="Phone Number" value={user.phone || "+92 XXX XXXXXXX"} />
                  <InfoItem icon={<MapPin />} label="Shipping City" value="Lahore, Pakistan" />
               </div>

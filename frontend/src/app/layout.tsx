@@ -2,9 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter, Playfair_Display, DM_Serif_Display } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
-import DesktopNavbar from "@/components/layout/DesktopNavbar";
-import MobileNavbar from "@/components/layout/MobileNavbar";
-import BottomNavbar from "@/components/layout/BottomNavbar";
+import NavbarWrapper from "@/components/layout/NavbarWrapper";
 import AIConcierge from "@/components/shared/AIConcierge";
 import { Toaster } from "sonner";
 
@@ -66,8 +64,6 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
 };
-
-import NavbarWrapper from "@/components/layout/NavbarWrapper";
 
 export default function RootLayout({
   children,

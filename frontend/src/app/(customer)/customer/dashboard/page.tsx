@@ -54,10 +54,14 @@ export default function CustomerDashboard() {
 
       {/* QUICK STATS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-         <QuickStat label="Active Orders" value={stats?.activeOrdersCount} icon={<Package />} active />
-         <QuickStat label="Total Spent" value={`Rs. ${(stats?.totalSpent / 1000).toFixed(1)}k`} icon={<ShoppingBag />} />
-         <QuickStat label="Style Points" value="1,240" icon={<CheckCircle2 />} />
-         <QuickStat label="Member Since" value={new Date(stats?.memberSince).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })} icon={<Clock />} />
+         <QuickStat label="Active Orders" value={stats?.activeOrdersCount || 0} icon={<Package />} active />
+         <QuickStat 
+            label="Total Spent" 
+            value={stats?.totalSpent < 1000 ? `Rs. ${stats?.totalSpent}` : `Rs. ${(stats?.totalSpent / 1000).toFixed(1)}k`} 
+            icon={<ShoppingBag />} 
+         />
+         <QuickStat label="Style Points" value={stats?.stylePoints || 0} icon={<CheckCircle2 />} />
+         <QuickStat label="Member Since" value={stats?.memberSince ? new Date(stats?.memberSince).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : "N/A"} icon={<Clock />} />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-16">

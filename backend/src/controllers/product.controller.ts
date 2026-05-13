@@ -50,8 +50,8 @@ export const createProduct = async (req: AuthRequest, res: Response, next: NextF
     if (!req.user) throw new AppError('Unauthorized', 401);
 
     const files = req.files as Express.Multer.File[];
-    const uploadPromises = (files || []).map(file => uploadToCloudinary(file.buffer, 'products'));
-    const imageUrls = await Promise.all(uploadPromises);
+    const uploadResults = await Promise.all((files || []).map(file => uploadToCloudinary(file.buffer, 'products')));
+    const imageUrls = uploadResults.map(r => r.url);
 
     const productData = {
       sellerId: req.user.id,
@@ -133,7 +133,7 @@ export const softDeleteProduct = async (req: AuthRequest, res: Response, next: N
 
 export const adminApproveProduct = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await db.collection('products').doc(id).update({ 
       status: 'ACTIVE',
       updatedAt: new Date().toISOString()
@@ -146,7 +146,7 @@ export const adminApproveProduct = async (req: Request, res: Response, next: Nex
 
 export const adminRejectProduct = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await db.collection('products').doc(id).update({ 
       status: 'REJECTED',
       updatedAt: new Date().toISOString()
@@ -161,7 +161,8 @@ export const visualSearch = async (req: Request, res: Response, next: NextFuncti
   try {
     if (!req.file) throw new AppError('Image is required for visual search', 400);
 
-    const imageUrl = await uploadToCloudinary(req.file.buffer, 'search');
+    const uploadRes = await uploadToCloudinary(req.file.buffer, 'search');
+    const imageUrl = uploadRes.url;
     const { suggestedTags, detectedCategory } = await AIService.performVisualSearch(imageUrl);
 
     // Query Firestore for products matching the detected category or tags

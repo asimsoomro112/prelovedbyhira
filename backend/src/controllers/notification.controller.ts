@@ -30,7 +30,7 @@ export const getNotifications = async (req: AuthRequest, res: Response, next: Ne
 
 export const markAsRead = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const id = req.params.id;
+    const id = req.params.id as string;
     await db.collection('notifications').doc(id).update({
       isRead: true,
       updatedAt: new Date().toISOString()

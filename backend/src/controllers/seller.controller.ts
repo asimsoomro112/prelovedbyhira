@@ -15,10 +15,13 @@ export const submitIdentity = async (req: AuthRequest, res: Response, next: Next
     }
 
     // 1. Upload to Cloudinary
-    const [cnicFront, cnicBack] = await Promise.all([
+    const [cnicFrontRes, cnicBackRes] = await Promise.all([
       uploadToCloudinary(files.cnicFront[0].buffer, 'verification'),
       uploadToCloudinary(files.cnicBack[0].buffer, 'verification'),
     ]);
+
+    const cnicFront = cnicFrontRes.url;
+    const cnicBack = cnicBackRes.url;
 
     // 2. Perform AI Neural Scan on the CNIC Front
     console.log(`[AI Verification] Scanning CNIC for user: ${req.user!.email}`);
@@ -28,7 +31,7 @@ export const submitIdentity = async (req: AuthRequest, res: Response, next: Next
 
     // 3. Match Name (Case Insensitive & Loose Match)
     const extractedName = extractedData.fullName?.toLowerCase() || "";
-    const enteredName = fullNameEntered?.toLowerCase() || req.user!.name.toLowerCase();
+    const enteredName = fullNameEntered?.toLowerCase() || req.user?.name?.toLowerCase() || "";
     
     // Simple inclusion check or fuzzy match could be better, but we start with equality/inclusion
     const isMatch = extractedName.includes(enteredName) || enteredName.includes(extractedName);
@@ -38,7 +41,7 @@ export const submitIdentity = async (req: AuthRequest, res: Response, next: Next
         success: false,
         message: "Name mismatch. CNIC name does not match your profile name.",
         extractedName: extractedData.fullName,
-        enteredName: fullNameEntered || req.user!.name
+        enteredName: fullNameEntered || req.user?.name || "Preloved Member"
       });
     }
 
@@ -72,7 +75,8 @@ export const submitSelfie = async (req: AuthRequest, res: Response, next: NextFu
       throw new AppError('Selfie image is required', 400);
     }
 
-    const selfieUrl = await uploadToCloudinary(files.selfie[0].buffer, 'verification');
+    const selfieResult = await uploadToCloudinary(files.selfie[0].buffer, 'verification');
+    const selfieUrl = selfieResult.url;
     const { payoutMethod, payoutDetails } = req.body;
 
     const updateData: any = {
@@ -90,11 +94,34 @@ export const submitSelfie = async (req: AuthRequest, res: Response, next: NextFu
       }
     }
 
-    await db.collection('sellers').doc(req.user!.id).update(updateData);
+    await db.runTransaction(async (transaction) => {
+      const sellerRef = db.collection('sellers').doc(req.user!.id);
+      transaction.update(sellerRef, updateData);
+
+      // Automatically save the payout account so it shows up in the Payouts page
+      // Automatically save the payout account so it shows up in the Payouts page
+      if (payoutMethod && payoutDetails) {
+        let detailsObj: any = {};
+        try {
+          detailsObj = typeof payoutDetails === 'string' ? JSON.parse(payoutDetails) : payoutDetails;
+        } catch (e) {
+          detailsObj = { accountNumber: payoutDetails };
+        }
+
+        const accountRef = db.collection('payout_accounts').doc();
+        transaction.set(accountRef, {
+          userId: req.user!.id,
+          type: payoutMethod, // JAZZCASH, EASYPAISA, BANK_TRANSFER
+          details: detailsObj?.accountNumber || detailsObj?.iban || payoutDetails || "",
+          title: detailsObj?.accountName || req.user?.name || "Preloved Member",
+          createdAt: new Date().toISOString()
+        });
+      }
+    });
 
     res.json({ 
       success: true,
-      message: 'Selfie uploaded. Waiting for admin approval to finalize your seller profile.' 
+      message: 'Selfie uploaded and payout account saved. Waiting for admin approval.' 
     });
   } catch (error) {
     next(error);
@@ -145,7 +172,11 @@ export const getDashboardStats = async (req: AuthRequest, res: Response, next: N
 
     const recentOrders = recentOrdersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     // Manual sort if needed or just return raw
-    recentOrders.sort((a: any, b: any) => (b.createdAt || 0) - (a.createdAt || 0));
+    recentOrders.sort((a: any, b: any) => {
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+      const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      return dateB - dateA;
+    });
 
     res.json({
       stats: {
@@ -185,13 +216,34 @@ export const getSellerProducts = async (req: AuthRequest, res: Response, next: N
 export const getSellerProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const sellerId = req.user!.id;
-    const sellerDoc = await db.collection('sellers').doc(sellerId).get();
-    if (!sellerDoc.exists) throw new AppError('Seller profile not found', 404);
+    let sellerDoc = await db.collection('sellers').doc(sellerId).get();
+    
+    // Auto-create seller profile if it's missing but user is a SELLER
+    if (!sellerDoc.exists) {
+      if (req.user!.role !== 'SELLER' && req.user!.role !== 'ADMIN') {
+        throw new AppError('Only sellers can access the identity vault', 403);
+      }
+
+      const newSeller = {
+        userId: sellerId,
+        isVerified: false,
+        verificationStatus: 'PENDING',
+        rating: 5.0,
+        totalSales: 0,
+        totalEarnings: 0,
+        pendingBalance: 0,
+        createdAt: new Date().toISOString(),
+      };
+      
+      await db.collection('sellers').doc(sellerId).set(newSeller);
+      sellerDoc = await db.collection('sellers').doc(sellerId).get();
+    }
 
     const seller = sellerDoc.data()!;
     res.json({
-      name: req.user!.name,
-      email: req.user!.email,
+      name: req.user?.name || "Preloved Member",
+      email: req.user?.email || "",
+      avatar: req.user?.avatar || seller.avatar || "",
       ...seller
     });
   } catch (error) {
@@ -219,13 +271,15 @@ export const updateSellerProfile = async (req: AuthRequest, res: Response, next:
 
     // Handle Image Uploads
     if (files?.avatar?.[0]) {
-      const avatarUrl = await uploadToCloudinary(files.avatar[0].buffer, 'avatars');
+      const avatarResult = await uploadToCloudinary(files.avatar[0].buffer, 'avatars');
+      const avatarUrl = avatarResult.url;
       updateData.avatar = avatarUrl;
       userUpdateData.avatar = avatarUrl;
     }
 
     if (files?.coverImage?.[0]) {
-      const coverUrl = await uploadToCloudinary(files.coverImage[0].buffer, 'covers');
+      const coverResult = await uploadToCloudinary(files.coverImage[0].buffer, 'covers');
+      const coverUrl = coverResult.url;
       updateData.coverImage = coverUrl;
     }
 

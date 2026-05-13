@@ -8,41 +8,90 @@ import { CreditCard, Truck, ShieldCheck, ShoppingBag, ArrowRight, CheckCircle2, 
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import api from "@/lib/api";
 
 export default function CheckoutPage() {
   const { items, clearCart } = useCartStore();
   const { user } = useAuthStore();
   const router = useRouter();
+  const [shippingDetails, setShippingDetails] = useState({
+    name: user?.name || "",
+    phone: "",
+    address: "",
+    city: ""
+  });
+
+  const [receipt, setReceipt] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
   const [step, setStep] = useState(1);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  const subtotal = items.reduce((acc, item) => acc + ((item.product?.sellingPrice || 0) * item.quantity), 0);
+  const uniqueSellers = Array.from(new Set(items.map(i => i.product?.sellerId).filter(Boolean)));
+  const shippingCost = uniqueSellers.length * 300;
+  const total = subtotal + shippingCost;
 
   const handlePlaceOrder = async () => {
     if (items.length === 0) {
       toast.error("Your cart is empty");
       return;
     }
+    if (!shippingDetails.address || !shippingDetails.phone) {
+      toast.error("Please provide complete shipping details");
+      setStep(1);
+      return;
+    }
 
     setIsProcessing(true);
     try {
-      // 1. Create orders for each item in the cart
-      for (const item of items) {
-        const { data } = await api.post("/orders/create", {
-          productId: item.id,
-          shippingAddress: "User's Verified Address (Testing)"
-        });
+      // 📦 GROUPING: Track which sellers have already been charged shipping
+      const sellersChargedShipping = new Set();
 
-        // 2. Simulate immediate payment success for local testing
-        await api.post("/orders/payment/callback", {
-          orderId: data.order.id,
-          success: true
-        });
+      for (const item of items) {
+        const sellerId = item.product?.sellerId;
+        let itemShipping = 0;
+        
+        if (sellerId && !sellersChargedShipping.has(sellerId)) {
+          itemShipping = 300;
+          sellersChargedShipping.add(sellerId);
+        }
+      // 🚀 Step 1: Create Orders
+      const orderPromises = uniqueSellers.map(async (sellerId) => {
+        const sellerItems = items.filter(i => i.product?.sellerId === sellerId);
+        
+        // Create an order for EACH product (as requested for easier tracking)
+        // or one per seller. Let's do one per product to match the previous split.
+        const productOrders = await Promise.all(sellerItems.map(async (item, index) => {
+          const itemShippingCost = index === 0 ? 300 : 0;
+          return api.post("/orders/create", {
+            productId: item.productId,
+            shippingAddress: shippingDetails,
+            shippingCost: itemShippingCost,
+          });
+        }));
+        return productOrders;
+      });
+
+      const responses = await Promise.all(orderPromises);
+      const allOrders = responses.flat();
+
+      // 🚀 Step 2: Upload Receipt if exists
+      if (receipt) {
+        // Here you would upload to Cloudinary first
+        // For simulation, we'll assume the first order is the primary one or upload proof to all
+        const firstOrderId = allOrders[0].data.order.id;
+        
+        // Mock Cloudinary Upload
+        const proofUrl = "https://res.cloudinary.com/demo/image/upload/v1625123456/receipt.jpg";
+        
+        await api.post(`/orders/${firstOrderId}/submit-proof`, { proofUrl });
       }
 
+      toast.success("Orders placed successfully! Please wait for Admin confirmation.");
       clearCart();
-      toast.success("Order Placed Successfully! ✨ Items are now in your vault.");
-      router.push("/customer/dashboard");
+      router.push("/customer/orders");
     } catch (error: any) {
-      toast.error(error.response?.data?.message || "Checkout failed.");
+      toast.error(error.response?.data?.message || "Failed to place orders");
     } finally {
       setIsProcessing(false);
     }
@@ -76,10 +125,32 @@ export default function CheckoutPage() {
             {step === 1 && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
                 <div className="grid md:grid-cols-2 gap-6">
-                  <InputGroup label="Full Name" placeholder={user.name} />
-                  <InputGroup label="Contact Number" placeholder="+92 XXX XXXXXXX" />
+                  <InputGroup 
+                    label="Full Name" 
+                    placeholder="Enter your name"
+                    value={shippingDetails.name}
+                    onChange={(e: any) => setShippingDetails({ ...shippingDetails, name: e.target.value })}
+                  />
+                  <InputGroup 
+                    label="Contact Number" 
+                    placeholder="+92 XXX XXXXXXX" 
+                    value={shippingDetails.phone}
+                    onChange={(e: any) => setShippingDetails({ ...shippingDetails, phone: e.target.value })}
+                  />
+                  <InputGroup 
+                    label="City" 
+                    placeholder="e.g. Lahore" 
+                    value={shippingDetails.city}
+                    onChange={(e: any) => setShippingDetails({ ...shippingDetails, city: e.target.value })}
+                  />
                   <div className="md:col-span-2">
-                    <InputGroup label="Shipping Address" placeholder="Street, Area, City" isLarge />
+                    <InputGroup 
+                      label="Shipping Address" 
+                      placeholder="Street, Area, Building" 
+                      isLarge 
+                      value={shippingDetails.address}
+                      onChange={(e: any) => setShippingDetails({ ...shippingDetails, address: e.target.value })}
+                    />
                   </div>
                 </div>
                 <button 
@@ -93,24 +164,69 @@ export default function CheckoutPage() {
 
             {step === 2 && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-                <div className="grid md:grid-cols-2 gap-6">
-                  <PaymentCard icon={<CreditCard />} label="Card / Wallet" active />
-                  <PaymentCard icon={<Truck />} label="Cash on Delivery" />
-                </div>
-                <div className="glass-ultra crystal-border rounded-3xl p-8 space-y-6">
-                   <InputGroup label="Card Number" placeholder="XXXX XXXX XXXX XXXX" />
-                   <div className="grid grid-cols-2 gap-6">
-                      <InputGroup label="Expiry" placeholder="MM / YY" />
-                      <InputGroup label="CVV" placeholder="XXX" />
+                <div className="glass-ultra crystal-border rounded-[40px] p-10 space-y-8 bg-gold-400/5">
+                   <div className="space-y-2">
+                      <h3 className="text-2xl font-display font-bold">Bank Transfer Details</h3>
+                      <p className="text-gray-500 text-sm">Please transfer the total amount to the account below.</p>
+                   </div>
+                   
+                   <div className="p-6 bg-white dark:bg-dark-900 rounded-3xl border border-gold-400/20 space-y-4">
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Bank Name</span>
+                         <span className="text-sm font-bold">Meezan Bank</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Account Title</span>
+                         <span className="text-sm font-bold">Preloved By Hira</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Account Number</span>
+                         <span className="text-sm font-bold font-mono">0123-456789-0101</span>
+                      </div>
+                   </div>
+
+                   <div className="space-y-4">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Upload Payment Receipt / Screenshot</label>
+                      <div 
+                        className="relative h-48 border-2 border-dashed border-gold-400/20 rounded-[32px] flex flex-col items-center justify-center gap-4 hover:border-gold-400/50 transition-all cursor-pointer overflow-hidden group"
+                        onClick={() => document.getElementById('receipt-upload')?.click()}
+                      >
+                         {receiptPreview ? (
+                           <Image src={receiptPreview} alt="Receipt" fill className="object-cover opacity-50 group-hover:opacity-70 transition-opacity" />
+                         ) : (
+                           <>
+                             <div className="w-14 h-14 bg-gold-400/10 text-gold-400 rounded-2xl flex items-center justify-center">
+                               <Plus className="w-6 h-6" />
+                             </div>
+                             <p className="text-xs font-bold text-gray-400">Tap to upload receipt</p>
+                           </>
+                         )}
+                         <input 
+                           id="receipt-upload" 
+                           type="file" 
+                           hidden 
+                           onChange={(e) => {
+                             const file = e.target.files?.[0];
+                             if (file) {
+                               setReceipt(file);
+                               setReceiptPreview(URL.createObjectURL(file));
+                             }
+                           }} 
+                         />
+                      </div>
                    </div>
                 </div>
+
                 <div className="flex gap-4">
                   <button onClick={() => setStep(1)} className="h-16 px-8 border-2 border-gold-400/20 text-gray-400 rounded-2xl font-bold">Back</button>
                   <button 
-                    onClick={() => setStep(3)}
+                    onClick={() => {
+                      if (!receipt) return toast.error("Please upload the payment receipt first");
+                      setStep(3);
+                    }}
                     className="flex-1 h-16 bg-gold-400 text-white rounded-2xl font-bold shadow-gold hover:scale-105 transition-all flex items-center justify-center gap-3"
                   >
-                    Review Order <ArrowRight className="w-5 h-5" />
+                    Continue to Review <ArrowRight className="w-5 h-5" />
                   </button>
                 </div>
               </motion.div>
@@ -144,21 +260,21 @@ export default function CheckoutPage() {
         <div className="h-fit sticky top-32">
            <div className="glass-ultra crystal-border rounded-[48px] overflow-hidden shadow-gold-3d">
               <div className="bg-gold-400 p-8 text-white text-center">
-                 <p className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-80 mb-2">Order Summary</p>
-                 <h2 className="text-3xl font-accent font-bold">Rs. {items.reduce((acc, item) => acc + item.price, 0).toLocaleString()}</h2>
+                 <p className="text-[10px] font-bold uppercase tracking-[0.4em] opacity-80 mb-2">Total Payable</p>
+                 <h2 className="text-3xl font-accent font-bold">Rs. {total.toLocaleString()}</h2>
               </div>
               <div className="p-8 space-y-6">
                  <div className="space-y-4">
                     {items.map((item, i) => (
                       <div key={i} className="flex justify-between items-center text-sm font-medium">
-                         <span className="text-gray-500 truncate mr-4">{item.title}</span>
-                         <span className="dark:text-cream-50 font-bold shrink-0">Rs. {item.price.toLocaleString()}</span>
+                         <span className="text-gray-500 truncate mr-4">{item.product?.title || 'Unknown Item'}</span>
+                         <span className="dark:text-cream-50 font-bold shrink-0">Rs. {((item.product?.sellingPrice || 0) * item.quantity).toLocaleString()}</span>
                       </div>
                     ))}
                     <div className="h-px bg-gold-400/10 my-4" />
                     <div className="flex justify-between text-xs font-bold text-emerald-500 uppercase">
-                       <span>Shipping</span>
-                       <span>Free</span>
+                       <span>Shipping Cost</span>
+                       <span>Rs. {shippingCost.toLocaleString()}</span>
                     </div>
                  </div>
                  
@@ -191,14 +307,24 @@ function StepIndicator({ num, label, active }: any) {
   );
 }
 
-function InputGroup({ label, placeholder, isLarge }: any) {
+function InputGroup({ label, placeholder, isLarge, value, onChange }: any) {
   return (
     <div className="space-y-3">
        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">{label}</label>
        {isLarge ? (
-         <textarea placeholder={placeholder} className="w-full h-32 px-6 py-4 glass-crystal crystal-border rounded-2xl outline-none focus:border-gold-400 transition-colors text-sm font-bold resize-none" />
+         <textarea 
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder} 
+          className="w-full h-32 px-6 py-4 glass-crystal crystal-border rounded-2xl outline-none focus:border-gold-400 transition-colors text-sm font-bold resize-none" 
+         />
        ) : (
-         <input placeholder={placeholder} className="w-full h-14 px-6 glass-crystal crystal-border rounded-2xl outline-none focus:border-gold-400 transition-colors text-sm font-bold" />
+         <input 
+          value={value}
+          onChange={onChange}
+          placeholder={placeholder} 
+          className="w-full h-14 px-6 glass-crystal crystal-border rounded-2xl outline-none focus:border-gold-400 transition-colors text-sm font-bold" 
+         />
        )}
     </div>
   );

@@ -6,6 +6,8 @@ export interface AuthRequest extends Request {
     id: string;
     email: string;
     role: string;
+    name?: string;
+    avatar?: string;
   };
 }
 
@@ -44,7 +46,9 @@ export const authenticate = async (
     req.user = { 
       id: decodedToken.uid, 
       email: decodedToken.email!, 
-      role: userData.role 
+      role: userData.role,
+      name: userData.name,
+      avatar: userData.avatar
     };
     next();
   } catch (error: any) {

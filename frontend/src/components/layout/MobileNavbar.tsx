@@ -79,20 +79,24 @@ export default function MobileNavbar() {
               {/* Profile Header */}
               <div className="p-8 bg-gradient-to-br from-gold-400/20 to-transparent border-b border-white/10">
                 <div className="flex items-center justify-between mb-8">
-                   <div className="w-12 h-12 rounded-2xl bg-gold-400 text-white flex items-center justify-center font-bold shadow-gold">
-                      {user ? user.name[0] : <User />}
+                   <div className="w-16 h-16 rounded-2xl bg-gold-400 text-white flex items-center justify-center font-bold shadow-gold overflow-hidden">
+                      {user?.avatar ? (
+                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-2xl uppercase">{user ? user.name[0] : <User />}</span>
+                      )}
                    </div>
                    <button 
                     onClick={() => setIsOpen(false)}
-                    className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors"
+                    className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors border border-white/10"
                   >
-                    <X className="w-5 h-5" />
+                    <X className="w-6 h-6" />
                   </button>
                 </div>
                 {user ? (
                   <div>
-                    <h3 className="text-xl font-display font-bold">{user.name}</h3>
-                    <p className="text-xs text-gold-400 font-bold uppercase tracking-widest mt-1">{user.role} Member</p>
+                    <h3 className="text-2xl font-display font-bold text-dark-900 dark:text-cream-50">{user.name}</h3>
+                    <p className="text-xs text-gold-600 dark:text-gold-400 font-bold uppercase tracking-[0.2em] mt-1">{user.role} MEMBER</p>
                   </div>
                 ) : (
                   <div>

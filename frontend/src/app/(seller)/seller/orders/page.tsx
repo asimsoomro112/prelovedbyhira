@@ -24,6 +24,7 @@ import { toast } from "sonner";
 export default function SellerOrdersPage() {
   const [activeTab, setActiveTab] = useState("ALL");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [isShippingModal, setIsShippingModal] = useState(false);
   const [trackingNumber, setTrackingNumber] = useState("");
   const queryClient = useQueryClient();
 
@@ -43,6 +44,7 @@ export default function SellerOrdersPage() {
       queryClient.invalidateQueries({ queryKey: ["seller-orders"] });
       toast.success("Order marked as shipped!");
       setSelectedOrder(null);
+      setIsShippingModal(false);
       setTrackingNumber("");
     },
     onError: (error: any) => {
@@ -50,7 +52,7 @@ export default function SellerOrdersPage() {
     }
   });
 
-  const tabs = ["ALL", "PAID", "SHIPPED", "DELIVERED", "CONFIRMED", "DISPUTED"];
+  const tabs = ["ALL", "PENDING", "PAID", "SHIPPED", "DELIVERED", "CONFIRMED", "DISPUTED"];
 
   return (
     <div className="p-4 lg:p-8 space-y-8">
@@ -62,12 +64,12 @@ export default function SellerOrdersPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex bg-cream-100 dark:bg-dark-900/50 p-1 rounded-2xl overflow-x-auto scrollbar-none">
+      <div className="flex flex-wrap items-center justify-center gap-2 lg:gap-3 bg-cream-100/50 dark:bg-dark-900/30 p-2 lg:p-1 rounded-3xl lg:rounded-2xl">
         {tabs.map((tab) => (
           <button 
             key={tab}
             onClick={() => setActiveTab(tab)}
-            className={`px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? "bg-white dark:bg-dark-800 text-gold-400 shadow-soft" : "text-gray-400 hover:text-gray-600"}`}
+            className={`px-4 lg:px-6 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${activeTab === tab ? "bg-white dark:bg-dark-800 text-gold-400 shadow-soft" : "text-gray-400 hover:text-gray-600"}`}
           >
             {tab}
           </button>
@@ -75,74 +77,101 @@ export default function SellerOrdersPage() {
       </div>
 
       {/* Orders Grid */}
-      <div className="grid gap-6">
+      <div className="w-full pt-4">
         {isLoading ? (
-          Array(3).fill(0).map((_, i) => <div key={i} className="h-48 bg-white dark:bg-dark-800 rounded-3xl animate-pulse" />)
-        ) : orders?.length === 0 ? (
-          <div className="text-center py-20 bg-white dark:bg-dark-800 rounded-[40px] border border-gold-400/10">
-            <ShoppingBag className="w-12 h-12 text-gold-400/20 mx-auto mb-4" />
-            <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">No orders found in {activeTab}</p>
+          <div className="grid gap-6">
+            {Array(3).fill(0).map((_, i) => <div key={i} className="h-48 bg-white dark:bg-dark-800 rounded-3xl animate-pulse" />)}
+          </div>
+        ) : !orders || orders.length === 0 ? (
+          <div className="w-full text-center py-16 px-4 bg-white dark:bg-dark-800 rounded-[40px] border border-gold-400/10 flex flex-col items-center justify-center">
+            <ShoppingBag className="w-16 h-16 text-gold-400/20 mb-6" />
+            <p className="text-gray-500 font-bold uppercase text-[10px] tracking-[0.2em] text-center max-w-[250px]">No orders found in {activeTab}</p>
           </div>
         ) : (
-          orders?.map((order: any) => (
-            <motion.div 
-              key={order.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white dark:bg-dark-800 rounded-[32px] p-6 shadow-soft border border-gold-400/10 flex flex-col md:flex-row gap-8 relative group"
-            >
-              <div className="relative w-32 h-40 rounded-2xl overflow-hidden border border-gold-400/10 shrink-0">
-                <Image src={order.product.images[0]} alt={order.product.title} fill className="object-cover" />
-              </div>
+          <div className="grid gap-6">
+            {orders.map((order: any) => (
+              <motion.div 
+                key={order.id}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-white dark:bg-dark-800 rounded-[32px] p-5 lg:p-8 shadow-soft border border-gold-400/10 flex flex-col lg:flex-row gap-6 lg:gap-8 relative group transition-all hover:border-gold-400/30"
+              >
+                <div className="relative w-full lg:w-40 h-56 lg:h-52 rounded-2xl overflow-hidden border border-gold-400/10 shrink-0">
+                  <Image 
+                    src={order.product?.images?.[0] || 'https://images.unsplash.com/photo-1549062572-544a64fb0c56?auto=format&fit=crop&q=80&w=1000'} 
+                    alt={order.product?.title || 'Unknown Product'} 
+                    fill 
+                    sizes="(max-width: 1024px) 100vw, 160px"
+                    className="object-cover group-hover:scale-110 transition-transform duration-500" 
+                  />
+                </div>
 
-              <div className="flex-1 space-y-6">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                       <span className={`px-3 py-1 rounded-pill text-[10px] font-bold ${getStatusStyle(order.status)}`}>{order.status}</span>
-                       <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">#{order.id.slice(-8)}</span>
+                <div className="flex-1 space-y-6">
+                  <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                         <span className={`px-3 py-1 rounded-pill text-[10px] font-bold ${getStatusStyle(order.status)}`}>{order.status}</span>
+                         <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">#{order.id.slice(-8)}</span>
+                      </div>
+                      <h3 className="text-xl lg:text-2xl font-display font-bold leading-tight">{order.product?.title || 'Unknown Product'}</h3>
                     </div>
-                    <h3 className="text-xl font-display font-bold">{order.product.title}</h3>
+                    <div className="sm:text-right shrink-0">
+                      <p className="text-2xl font-accent font-bold text-gold-400">Rs. {order.totalPrice.toLocaleString()}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">Buyer: {order.buyer.name}</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-accent font-bold text-gold-400">Rs. {order.totalPrice}</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Buyer: {order.buyer.name}</p>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-cream-50 dark:bg-dark-900/50 rounded-2xl border border-gold-400/5">
+                     <div className="flex items-start gap-3">
+                        <MapPin className="w-5 h-5 text-gold-400 shrink-0 mt-0.5" />
+                        <div className="min-w-0">
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Shipping Address</p>
+                          <p className="text-xs font-medium text-gray-600 dark:text-gray-300 leading-relaxed truncate lg:whitespace-normal">
+                            {typeof order.shippingAddress === 'object' 
+                              ? `${order.shippingAddress.address || ''}, ${order.shippingAddress.city || ''}`
+                              : (order.shippingAddress || 'No address provided')}
+                          </p>
+                        </div>
+                     </div>
+                     <div className="flex items-start gap-3">
+                        <Phone className="w-5 h-5 text-gold-400 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Buyer Contact</p>
+                          <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                            {typeof order.shippingAddress === 'object' 
+                              ? (order.shippingAddress.phone || 'No phone')
+                              : 'Contact in details'}
+                          </p>
+                        </div>
+                     </div>
                   </div>
-                </div>
 
-                <div className="grid md:grid-cols-2 gap-6 p-4 bg-cream-50 dark:bg-dark-900/50 rounded-2xl border border-gold-400/5">
-                   <div className="flex items-start gap-3">
-                      <MapPin className="w-5 h-5 text-gold-400 shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase">Shipping Address</p>
-                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">{order.shippingAddress.address}, {order.shippingAddress.city}</p>
-                      </div>
-                   </div>
-                   <div className="flex items-start gap-3">
-                      <Phone className="w-5 h-5 text-gold-400 shrink-0" />
-                      <div>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase">Buyer Contact</p>
-                        <p className="text-xs font-medium text-gray-600 dark:text-gray-300">{order.shippingAddress.phone}</p>
-                      </div>
-                   </div>
+                     <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+                        {order.status === 'PAID' && (
+                          <button 
+                           onClick={() => {
+                             setSelectedOrder(order);
+                             setIsShippingModal(true);
+                           }}
+                           className="w-full sm:w-auto px-8 py-4 bg-gold-400 text-white rounded-pill font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                          >
+                             <Truck className="w-4 h-4" /> Mark as Shipped
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => {
+                            setSelectedOrder(order);
+                            setIsShippingModal(false);
+                          }}
+                          className="w-full sm:w-auto px-8 py-4 border-2 border-gold-400 text-gold-400 rounded-pill font-bold hover:bg-gold-400/10 transition-all flex items-center justify-center gap-2"
+                        >
+                           <ChevronRight className="w-4 h-4" /> Order Details
+                        </button>
+                     </div>
                 </div>
-
-                <div className="flex justify-end gap-3 pt-2">
-                   {order.status === 'PAID' && (
-                     <button 
-                      onClick={() => setSelectedOrder(order)}
-                      className="px-6 py-3 bg-gold-400 text-white rounded-pill font-bold shadow-gold hover:scale-105 transition-all flex items-center gap-2"
-                     >
-                        <Truck className="w-4 h-4" /> Mark as Shipped
-                     </button>
-                   )}
-                   <button className="px-6 py-3 border-2 border-gold-400 text-gold-400 rounded-pill font-bold hover:bg-gold-400/10 transition-all flex items-center gap-2">
-                      <ChevronRight className="w-4 h-4" /> Order Details
-                   </button>
-                </div>
-              </div>
-            </motion.div>
-          ))
+              </motion.div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -151,31 +180,82 @@ export default function SellerOrdersPage() {
         {selectedOrder && (
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setSelectedOrder(null)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]" />
-            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-dark-900 rounded-[40px] p-10 z-[110] shadow-2xl border border-gold-400/10 space-y-8">
+             <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-white dark:bg-dark-900 rounded-[40px] p-10 z-[110] shadow-2xl border border-gold-400/10 space-y-8 max-h-[90vh] overflow-y-auto scrollbar-none">
                <div className="text-center space-y-4">
                  <div className="w-20 h-20 bg-gold-400/10 text-gold-400 rounded-full flex items-center justify-center mx-auto">
-                   <Truck className="w-10 h-10" />
+                   {isShippingModal ? <Truck className="w-10 h-10" /> : <Package className="w-10 h-10" />}
                  </div>
-                 <h2 className="text-3xl font-display font-bold">Ship Item</h2>
-                 <p className="text-gray-500 text-sm">Enter the tracking number for courier service (TCS, Leopards, etc.) to notify the buyer.</p>
+                 <h2 className="text-3xl font-display font-bold">
+                   {isShippingModal ? 'Ship Item' : 'Order Details'}
+                 </h2>
+                 <p className="text-gray-500 text-sm">
+                   {isShippingModal 
+                     ? 'Enter the tracking number for courier service to notify the buyer.' 
+                     : `Reviewing order details for ${selectedOrder.product?.title}`}
+                 </p>
                </div>
 
-               <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1">Tracking Number / Courier Info</label>
-                    <input 
-                      value={trackingNumber}
-                      onChange={(e) => setTrackingNumber(e.target.value)}
-                      placeholder="e.g. TCS-918239123" 
-                      className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/20 rounded-2xl px-6 py-4 outline-none focus:border-gold-400 transition-all font-bold" 
-                    />
+               <div className="space-y-6">
+                  {/* Always show details in a collapsed or main view */}
+                  <div className="bg-cream-50 dark:bg-dark-800 p-6 rounded-[32px] border border-gold-400/10 space-y-4 text-left">
+                     <div className="flex justify-between items-center pb-4 border-b border-gold-400/5">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Order Amount</span>
+                        <span className="text-xl font-accent font-bold text-gold-400">Rs. {selectedOrder.totalPrice.toLocaleString()}</span>
+                     </div>
+                     <div className="space-y-3">
+                        <div>
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Buyer Details</p>
+                           <p className="text-sm font-bold">{selectedOrder.buyer?.name || 'Preloved Member'}</p>
+                           <p className="text-xs text-gray-500">
+                              {typeof selectedOrder.shippingAddress === 'object' 
+                                ? selectedOrder.shippingAddress.phone 
+                                : 'See Address'}
+                           </p>
+                        </div>
+                        <div>
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Shipping Address</p>
+                           <p className="text-sm leading-relaxed">
+                              {typeof selectedOrder.shippingAddress === 'object' 
+                                ? `${selectedOrder.shippingAddress.address}, ${selectedOrder.shippingAddress.city}`
+                                : selectedOrder.shippingAddress}
+                           </p>
+                        </div>
+                        <div className="pt-2">
+                           <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mb-1">Product ID</p>
+                           <p className="text-[10px] font-mono text-gray-400 truncate">{selectedOrder.productId}</p>
+                        </div>
+                     </div>
                   </div>
+
+                  {isShippingModal && (
+                    <div className="space-y-4 pt-4 border-t border-gold-400/10">
+                      <div className="space-y-2">
+                        <label className="text-xs font-bold text-gray-400 uppercase tracking-widest ml-1 text-left block">Tracking Number / Courier Info</label>
+                        <input 
+                          value={trackingNumber}
+                          onChange={(e) => setTrackingNumber(e.target.value)}
+                          placeholder="e.g. TCS-918239123" 
+                          className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/20 rounded-2xl px-6 py-4 outline-none focus:border-gold-400 transition-all font-bold" 
+                        />
+                      </div>
+                      <button 
+                        onClick={() => shipMutation.mutate({ orderId: selectedOrder.id, tracking: trackingNumber })}
+                        disabled={shipMutation.isPending || !trackingNumber}
+                        className="w-full py-5 bg-gold-400 text-white rounded-pill font-bold shadow-gold hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                      >
+                        {shipMutation.isPending ? "Updating..." : "Confirm Shipping"}
+                      </button>
+                    </div>
+                  )}
+
                   <button 
-                    onClick={() => shipMutation.mutate({ orderId: selectedOrder.id, tracking: trackingNumber })}
-                    disabled={shipMutation.isPending || !trackingNumber}
-                    className="w-full py-5 bg-gold-400 text-white rounded-pill font-bold shadow-gold hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+                    onClick={() => {
+                      setSelectedOrder(null);
+                      setIsShippingModal(false);
+                    }}
+                    className="w-full py-5 border-2 border-gold-400 text-gold-400 rounded-pill font-bold hover:bg-gold-400/5 transition-all"
                   >
-                    {shipMutation.isPending ? "Updating..." : "Confirm Shipping"}
+                    {isShippingModal ? 'Cancel' : 'Close Vault View'}
                   </button>
                </div>
             </motion.div>

@@ -8,7 +8,7 @@ interface CartItem {
   product: {
     id: string;
     title: string;
-    price: number;
+    sellingPrice: number;
     images: string[];
     seller: { user: { name: string } };
   };
@@ -49,13 +49,13 @@ export const useCartStore = create<CartState>((set) => ({
   },
 
   updateItem: async (itemId, quantity) => {
-    await api.put(`/cart/update/${itemId}`, { quantity });
+    await api.put(`/cart/item/${itemId}`, { quantity });
     const { data } = await api.get('/cart');
     set({ items: data.items, total: data.total, itemCount: data.itemCount });
   },
 
   removeItem: async (itemId) => {
-    await api.delete(`/cart/remove/${itemId}`);
+    await api.delete(`/cart/item/${itemId}`);
     const { data } = await api.get('/cart');
     set({ items: data.items, total: data.total, itemCount: data.itemCount });
   },

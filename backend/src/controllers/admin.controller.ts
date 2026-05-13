@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
+import * as admin from 'firebase-admin';
 import { db } from '../config/firebase.config';
 import { AppError } from '../middleware/errorHandler';
 import { sendSellerRejectionEmail } from '../services/email.service';
@@ -178,7 +179,7 @@ export const listUsers = async (req: Request, res: Response, next: NextFunction)
 
 export const toggleUserStatus = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const userRef = db.collection('users').doc(id);
     const userDoc = await userRef.get();
 
@@ -200,12 +201,28 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
     const productsSnapshot = await db.collection('products').get();
     const products = await Promise.all(productsSnapshot.docs.map(async (doc) => {
       const data = doc.data();
-      const sellerDoc = await db.collection('sellers').doc(data.sellerId).get();
-      const userDoc = await db.collection('users').doc(data.sellerId).get();
+      let seller: any = null;
+      
+      if (data.sellerId) {
+        try {
+          const [sellerDoc, userDoc] = await Promise.all([
+            db.collection('sellers').doc(data.sellerId).get(),
+            db.collection('users').doc(data.sellerId).get()
+          ]);
+          seller = { 
+            ...(sellerDoc.exists ? sellerDoc.data() : {}), 
+            user: userDoc.exists ? userDoc.data() : { name: "Former Member" } 
+          };
+        } catch (err) {
+          console.warn(`[Admin Vault] Missing seller link for product ${doc.id}`);
+          seller = { user: { name: "Unknown Seller" } };
+        }
+      }
+
       return { 
         id: doc.id, 
         ...data, 
-        seller: { ...sellerDoc.data(), user: userDoc.data() } 
+        seller 
       };
     }));
     res.json({ products });
@@ -216,7 +233,7 @@ export const listProducts = async (req: Request, res: Response, next: NextFuncti
 
 export const deleteProduct = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     await db.collection('products').doc(id).delete();
     res.json({ message: 'Product removed successfully' });
   } catch (error) {
@@ -231,21 +248,46 @@ export const listOrders = async (req: Request, res: Response, next: NextFunction
     if (status) query = query.where('status', '==', status);
     
     const snapshot = await query.orderBy('createdAt', 'desc').get();
-    const orders = await Promise.all(snapshot.docs.map(async (doc: any) => {
-      const data = doc.data();
-      const [buyerDoc, sellerDoc] = await Promise.all([
-        db.collection('users').doc(data.buyerId).get(),
-        db.collection('sellers').doc(data.sellerId).get()
-      ]);
-      const sellerUserDoc = await db.collection('users').doc(data.sellerId).get();
-      
+    const ordersData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    if (ordersData.length === 0) return res.json([]);
+
+    // 🚀 BATCH FETCHING
+    const productRefs = ordersData.map((o: any) => o.productId ? db.collection('products').doc(o.productId) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    const buyerRefs = ordersData.map((o: any) => o.buyerId ? db.collection('users').doc(o.buyerId) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    const sellerRefs = ordersData.map((o: any) => o.sellerId ? db.collection('sellers').doc(o.sellerId) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    
+    const allRefs = [...productRefs, ...buyerRefs, ...sellerRefs];
+    const allDocs = await db.getAll(...allRefs);
+    
+    const productDocs = allDocs.slice(0, productRefs.length);
+    const buyerDocs = allDocs.slice(productRefs.length, productRefs.length + buyerRefs.length);
+    const sellerDocs = allDocs.slice(productRefs.length + buyerRefs.length);
+    
+    // Batch fetch seller user details
+    const sellerUserRefs = sellerDocs.map(doc => doc.exists ? db.collection('users').doc(doc.id) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    const sellerUserDocs = sellerUserRefs.length > 0 ? await db.getAll(...sellerUserRefs) : [];
+    
+    // Create maps for efficient lookup
+    const productMap = new Map(productDocs.map(d => [d.id, d.exists ? d.data() : null]));
+    const buyerMap = new Map(buyerDocs.map(d => [d.id, d.exists ? d.data() : null]));
+    const sellerMap = new Map(sellerDocs.map(d => [d.id, d.exists ? d.data() : null]));
+    const sellerUserMap = new Map(sellerUserDocs.map(d => [d.id, d.exists ? d.data() : null]));
+
+    const orders = ordersData.map((o: any) => {
+      const pData = productMap.get(o.productId);
+      const bData = buyerMap.get(o.buyerId);
+      const sData = sellerMap.get(o.sellerId);
+      const suData = o.sellerId ? sellerUserMap.get(o.sellerId) : null;
+
       return {
-        id: doc.id,
-        ...data,
-        buyer: buyerDoc.data(),
-        seller: { ...sellerDoc.data(), user: sellerUserDoc.data() }
+        ...o,
+        product: pData || { title: 'Unknown Product' },
+        buyer: bData || { name: 'Unknown Member' },
+        seller: { ...(sData || {}), user: suData || { name: 'Verified Merchant' } }
       };
-    }));
+    });
+
     res.json(orders);
   } catch (error) {
     next(error);
@@ -310,9 +352,19 @@ export const getSettings = async (_req: Request, res: Response, next: NextFuncti
 
 export const updateSettings = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const settings = req.body;
+    const { commissionRate, maintenanceMode, sellerAutoVerify, minPayoutAmount, aiChatEnabled, emailNotifications, supportEmail } = req.body;
+    
+    const updateData: any = {};
+    if (commissionRate !== undefined) updateData.commissionRate = commissionRate;
+    if (maintenanceMode !== undefined) updateData.maintenanceMode = maintenanceMode;
+    if (sellerAutoVerify !== undefined) updateData.sellerAutoVerify = sellerAutoVerify;
+    if (minPayoutAmount !== undefined) updateData.minPayoutAmount = minPayoutAmount;
+    if (aiChatEnabled !== undefined) updateData.aiChatEnabled = aiChatEnabled;
+    if (emailNotifications !== undefined) updateData.emailNotifications = emailNotifications;
+    if (supportEmail !== undefined) updateData.supportEmail = supportEmail;
+
     await db.collection('settings').doc('platform').update({
-      ...settings,
+      ...updateData,
       updatedAt: new Date().toISOString()
     });
     res.json({ message: 'Platform settings updated successfully' });
@@ -333,23 +385,63 @@ export const getDashboardStats = async (_req: Request, res: Response, next: Next
 
     const totalSales = ordersSnap.docs.reduce((acc, doc) => acc + (doc.data().totalPrice || 0), 0);
 
+    // 🚀 PERF-01 Fix: Use batch reads for associated data
     const recentOrdersSnap = await db.collection('orders').orderBy('createdAt', 'desc').limit(5).get();
-    const recentOrders = await Promise.all(recentOrdersSnap.docs.map(async (doc) => {
+    const ordersData = recentOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    const productRefs = ordersData.map((o: any) => o.productId ? db.collection('products').doc(o.productId) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    const buyerRefs = ordersData.map((o: any) => o.buyerId ? db.collection('users').doc(o.buyerId) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    const sellerRefs = ordersData.map((o: any) => o.sellerId ? db.collection('sellers').doc(o.sellerId) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    
+    const allRefs = [...productRefs, ...buyerRefs, ...sellerRefs];
+    const allDocs = allRefs.length > 0 ? await db.getAll(...allRefs) : [];
+    
+    const productDocs = allDocs.slice(0, productRefs.length);
+    const buyerDocs = allDocs.slice(productRefs.length, productRefs.length + buyerRefs.length);
+    const sellerDocs = allDocs.slice(productRefs.length + buyerRefs.length);
+    
+    // Batch fetch seller user details
+    const sellerUserRefs = sellerDocs.map(doc => doc.exists ? db.collection('users').doc(doc.id) : null).filter(Boolean) as admin.firestore.DocumentReference[];
+    const sellerUserDocs = sellerUserRefs.length > 0 ? await db.getAll(...sellerUserRefs) : [];
+    
+    // Create maps for efficient lookup
+    const productMap = new Map(productDocs.map(d => [d.id, d.exists ? d.data() : null]));
+    const buyerMap = new Map(buyerDocs.map(d => [d.id, d.exists ? d.data() : null]));
+    const sellerMap = new Map(sellerDocs.map(d => [d.id, d.exists ? d.data() : null]));
+    const sellerUserMap = new Map(sellerUserDocs.map(d => [d.id, d.exists ? d.data() : null]));
+    
+    const recentOrders = ordersData.map((o: any) => {
+       const pData = productMap.get(o.productId);
+       const bData = buyerMap.get(o.buyerId);
+       const sData = sellerMap.get(o.sellerId);
+       
+       let sellerUser = { name: 'Verified Merchant' };
+       if (o.sellerId && sellerUserMap.has(o.sellerId)) {
+         const uData = sellerUserMap.get(o.sellerId);
+         if (uData) sellerUser = uData as any;
+       }
+
+       return { 
+         ...o, 
+         product: pData || { title: 'Unknown Product' },
+         buyer: { name: bData?.name || 'Unknown Member' },
+         seller: { user: sellerUser }
+       };
+    });
+
+    const topSellersSnap = await db.collection('sellers').orderBy('totalEarnings', 'desc').limit(5).get();
+    const topSellerUserRefs = topSellersSnap.docs.map(doc => db.collection('users').doc(doc.id));
+    const topSellerUserDocs = topSellerUserRefs.length > 0 ? await db.getAll(...topSellerUserRefs) : [];
+    
+    const topSellers = topSellersSnap.docs.map((doc, index) => {
        const data = doc.data();
-       const buyerDoc = await db.collection('users').doc(data.buyerId).get();
+       const userDoc = topSellerUserDocs[index];
        return { 
          id: doc.id, 
          ...data, 
-         buyer: { name: buyerDoc.data()?.name || 'Unknown Member' } 
+         user: userDoc?.exists ? userDoc.data() : { name: 'Verified Merchant', avatar: '' } 
        };
-    }));
-
-    const topSellersSnap = await db.collection('sellers').orderBy('totalEarnings', 'desc').limit(5).get();
-    const topSellers = await Promise.all(topSellersSnap.docs.map(async (doc) => {
-       const data = doc.data();
-       const userDoc = await db.collection('users').doc(doc.id).get();
-       return { id: doc.id, ...data, user: userDoc.data() };
-    }));
+    });
 
     res.json({
       stats: {

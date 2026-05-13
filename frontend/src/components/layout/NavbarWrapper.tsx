@@ -8,11 +8,14 @@ import BottomNavbar from "./BottomNavbar";
 export default function NavbarWrapper({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
   
-  // Hide main nav on dashboard routes
+  // Hide main nav on dashboard routes and product detail pages (CRO: Focus)
   const hideNavRoutes = ['/seller', '/admin'];
-  const shouldHide = hideNavRoutes.some(route => pathname.startsWith(route));
+  const hideBottomNavRoutes = ['/product/'];
+  
+  const shouldHideAll = hideNavRoutes.some(route => pathname.startsWith(route));
+  const shouldHideBottom = hideBottomNavRoutes.some(route => pathname.startsWith(route));
 
-  if (shouldHide) return <>{children}</>;
+  if (shouldHideAll) return <>{children}</>;
 
   return (
     <>
@@ -21,7 +24,7 @@ export default function NavbarWrapper({ children }: { children?: React.ReactNode
       <div className="pt-[80px] lg:pt-[100px] pb-[90px] lg:pb-10">
         {children}
       </div>
-      <BottomNavbar />
+      {!shouldHideBottom && <BottomNavbar />}
     </>
   );
 }

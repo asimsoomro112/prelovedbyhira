@@ -23,7 +23,7 @@ export const upload = multer({
   },
 });
 
-export const uploadToCloudinary = async (buffer: Buffer, folder: string): Promise<string> => {
+export const uploadToCloudinary = async (buffer: Buffer, folder: string): Promise<{ url: string; publicId: string }> => {
   // Optimize with Sharp
   const optimizedBuffer = await sharp(buffer)
     .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
@@ -36,7 +36,10 @@ export const uploadToCloudinary = async (buffer: Buffer, folder: string): Promis
       { folder: `prelovedbyhira/${folder}` },
       (error, result) => {
         if (error) return reject(error);
-        resolve(result!.secure_url);
+        resolve({
+          url: result!.secure_url,
+          publicId: result!.public_id
+        });
       }
     );
     uploadStream.end(optimizedBuffer);

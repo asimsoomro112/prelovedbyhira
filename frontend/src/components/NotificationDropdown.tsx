@@ -14,6 +14,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { useAuthStore } from "@/store/useAuthStore";
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,12 +29,18 @@ export default function NotificationDropdown() {
   }, []);
 
   const fetchNotifications = async () => {
+    const { user, token } = useAuthStore.getState();
+    if (!user || !token) return;
+
     try {
       const { data } = await api.get("/notifications");
       setNotifications(data);
       setUnreadCount(data.filter((n: any) => !n.isRead).length);
-    } catch (error) {
-      console.error("Failed to fetch notifications");
+    } catch (error: any) {
+      // Only log non-auth errors to keep console clean
+      if (error.response?.status !== 401) {
+        console.error("Failed to fetch notifications:", error.message);
+      }
     }
   };
 

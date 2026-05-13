@@ -14,7 +14,9 @@ import {
   X,
   AlertTriangle,
   CheckCircle2,
-  Package
+  Package,
+  Check,
+  Ban
 } from "lucide-react";
 import Image from "next/image";
 import api from "@/lib/api";
@@ -27,12 +29,32 @@ export default function AdminProductsPage() {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const queryClient = useQueryClient();
 
-  const { data: products, isLoading } = useQuery({
+  const { data: productsData, isLoading } = useQuery({
     queryKey: ["admin-products"],
     queryFn: async () => {
-      const { data } = await api.get("/products"); // Admin can reuse public search but we filter or use admin specific if needed
+      const { data } = await api.get("/admin/products");
       return data.products || [];
     },
+  });
+
+  const approveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await api.put(`/products/admin/${id}/approve`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast.success("Product approved for sale! ✨");
+    }
+  });
+
+  const rejectMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await api.put(`/products/admin/${id}/reject`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-products"] });
+      toast.error("Product rejected from vault.");
+    }
   });
 
   const deleteMutation = useMutation({
@@ -43,16 +65,14 @@ export default function AdminProductsPage() {
       queryClient.invalidateQueries({ queryKey: ["admin-products"] });
       toast.success("Product removed from the vault.");
       setSelectedProduct(null);
-    },
-    onError: () => {
-      toast.error("Failed to delete product. Please check server logs.");
     }
   });
 
-  const filteredProducts = products?.filter((p: any) => {
+  const filteredProducts = productsData?.filter((p: any) => {
     const matchesSearch = p.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                          p.brand.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesSearch;
+    const matchesTab = activeTab === "ALL" || p.status === activeTab;
+    return matchesSearch && matchesTab;
   });
 
   return (
@@ -62,6 +82,22 @@ export default function AdminProductsPage() {
           <h1 className="text-3xl font-display font-bold">Product Vault</h1>
           <p className="text-gray-500">Manage and moderate all luxury listings.</p>
         </div>
+      </div>
+
+      <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-none">
+        {["ALL", "PENDING", "ACTIVE", "REJECTED", "SOLD"].map((tab) => (
+          <button
+            key={tab}
+            onClick={() => setActiveTab(tab)}
+            className={`px-6 py-2.5 rounded-full text-[10px] font-bold uppercase tracking-widest transition-all ${
+              activeTab === tab 
+                ? "bg-gold-400 text-white shadow-gold" 
+                : "bg-white dark:bg-dark-900 text-gray-400 border border-gold-400/10 hover:border-gold-400/30"
+            }`}
+          >
+            {tab}
+          </button>
+        ))}
       </div>
 
       <div className="bg-white dark:bg-dark-800 rounded-[40px] shadow-soft border border-gold-400/5 overflow-hidden text-dark-900 dark:text-white">
@@ -114,14 +150,37 @@ export default function AdminProductsPage() {
                       <p className="text-sm font-bold text-emerald-500">Rs. {product.sellingPrice.toLocaleString()}</p>
                    </td>
                    <td className="px-8 py-6">
-                      <span className={`px-3 py-1 rounded-pill text-[10px] font-bold ${product.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold ${
+                        product.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500' : 
+                        product.status === 'PENDING' ? 'bg-amber-500/10 text-amber-500' :
+                        product.status === 'REJECTED' ? 'bg-red-500/10 text-red-500' :
+                        'bg-gray-500/10 text-gray-500'
+                      }`}>
                         {product.status}
                       </span>
                    </td>
                    <td className="px-8 py-6 text-right">
                       <div className="flex items-center justify-end gap-2">
+                        {product.status === 'PENDING' && (
+                          <>
+                            <button 
+                              onClick={() => approveMutation.mutate(product.id)}
+                              className="p-3 bg-emerald-500/10 text-emerald-500 rounded-xl hover:bg-emerald-500 hover:text-white transition-all"
+                              title="Approve"
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button 
+                              onClick={() => rejectMutation.mutate(product.id)}
+                              className="p-3 bg-amber-500/10 text-amber-500 rounded-xl hover:bg-amber-500 hover:text-white transition-all"
+                              title="Reject"
+                            >
+                              <Ban className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
                         <Link 
-                          href={`/products/${product.id}`} 
+                          href={`/product/${product.id}`} 
                           target="_blank"
                           className="p-3 bg-gold-400/10 text-gold-400 rounded-xl hover:bg-gold-400 hover:text-white transition-all"
                         >
@@ -143,7 +202,7 @@ export default function AdminProductsPage() {
           {filteredProducts?.length === 0 && !isLoading && (
             <div className="py-20 text-center space-y-4">
                <Package className="w-12 h-12 text-gray-300 mx-auto" />
-               <p className="text-gray-500 font-bold">No products found matching your search.</p>
+               <p className="text-gray-500 font-bold">No products found in this vault.</p>
             </div>
           )}
         </div>
@@ -163,10 +222,10 @@ export default function AdminProductsPage() {
                   <p className="text-sm text-gray-500">This will permanently remove <span className="font-bold text-dark-900 dark:text-cream-50">{selectedProduct.title}</span> from the marketplace. This action cannot be undone.</p>
                </div>
                <div className="flex gap-3 pt-4">
-                  <button onClick={() => setSelectedProduct(null)} className="flex-1 py-4 bg-gray-100 dark:bg-dark-800 rounded-pill font-bold hover:bg-gray-200 transition-all">Cancel</button>
+                  <button onClick={() => setSelectedProduct(null)} className="flex-1 py-4 bg-gray-100 dark:bg-dark-800 rounded-full font-bold hover:bg-gray-200 transition-all">Cancel</button>
                   <button 
                     onClick={() => deleteMutation.mutate(selectedProduct.id)}
-                    className="flex-1 py-4 bg-red-500 text-white rounded-pill font-bold shadow-lg shadow-red-500/20 hover:scale-105 active:scale-95 transition-all"
+                    className="flex-1 py-4 bg-red-500 text-white rounded-full font-bold shadow-lg shadow-red-500/20 hover:scale-105 active:scale-95 transition-all"
                   >
                     Delete Now
                   </button>

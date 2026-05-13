@@ -1,5 +1,5 @@
 import dotenv from 'dotenv';
-dotenv.config({ path: '../.env' });
+dotenv.config();
 
 export const config = {
   // App
@@ -8,8 +8,8 @@ export const config = {
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   backendUrl: process.env.BACKEND_URL || 'http://localhost:5000',
 
-  // Database
-  databaseUrl: process.env.DATABASE_URL!,
+  // Database (optional — primary DB is Firestore)
+  databaseUrl: process.env.DATABASE_URL || '',
 
   // JWT
   jwt: {

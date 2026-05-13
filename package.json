@@ -2,6 +2,10 @@
   "name": "prelovebyhira",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "frontend",
+    "backend"
+  ],
   "description": "PrelovedByHira — Preloved Fashion Marketplace for Pakistan",
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",

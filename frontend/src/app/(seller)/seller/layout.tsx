@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import SellerBottomNavbar from "@/components/layout/SellerBottomNavbar";
 import { 
   LayoutDashboard, 
   Package, 
@@ -26,6 +27,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import NotificationDropdown from "@/components/NotificationDropdown";
 import ThemeToggle from "@/components/ThemeToggle";
 import Image from "next/image";
+import api from "@/lib/api";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", href: "/seller/dashboard" },
@@ -43,12 +45,30 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   const { user, logout } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string>("PENDING");
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchStatus = async () => {
+      try {
+        const { data } = await api.get("/seller/profile");
+        setVerificationStatus(data.verificationStatus || "PENDING");
+      } catch (error: any) {
+        // Silently handle auth-related errors to keep console clean
+        if (error.response?.status !== 401 && error.response?.status !== 403) {
+          console.error("Failed to fetch seller status");
+        }
+      }
+    };
+    fetchStatus();
+  }, [user]);
 
   const handleLogout = () => {
     logout();
@@ -108,6 +128,35 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                </nav>
 
                <div className="pt-6 border-t border-gold-400/10 mt-6 space-y-3">
+                  {/* MOBILE USER PROFILE SECTION */}
+                  <div className="p-4 rounded-2xl bg-gold-400/5 mb-4">
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-white dark:bg-dark-800 p-1 shadow-sm border border-gold-400/10 overflow-hidden relative">
+                         {user?.avatar ? (
+                           <Image 
+                             src={user.avatar} 
+                             alt={user.name} 
+                             fill 
+                             sizes="48px"
+                             className="object-cover" 
+                           />
+                         ) : (
+                           <div className="w-full h-full bg-gold-400 flex items-center justify-center text-white font-bold">{user?.name?.[0]}</div>
+                         )}
+                      </div>
+                      <div className="min-w-0">
+                         <p className="text-xs font-bold truncate">{user?.name}</p>
+                         <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${
+                           verificationStatus === 'APPROVED' ? 'text-emerald-500' : 
+                           verificationStatus === 'REJECTED' ? 'text-red-500' : 'text-amber-500'
+                         }`}>
+                           {verificationStatus === 'APPROVED' ? 'Verified' : 
+                            verificationStatus === 'REJECTED' ? 'Unverified' : 'Pending'}
+                         </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between px-2 mb-4">
                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Theme Mode</span>
                      <ThemeToggle />
@@ -115,8 +164,11 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                   <Link href="/" className="flex items-center gap-4 p-4 rounded-2xl text-gold-400 font-bold text-sm hover:bg-gold-400/5">
                     <Home className="w-5 h-5" /> Back to Store
                   </Link>
-                  <button onClick={handleLogout} className="w-full flex items-center gap-4 p-4 rounded-2xl text-red-500 font-bold text-sm hover:bg-red-500/5">
-                    <LogOut className="w-5 h-5" /> Sign Out
+                  <button 
+                    onClick={handleLogout} 
+                    className="w-full flex items-center gap-4 p-4 rounded-2xl text-red-500 font-bold text-sm hover:bg-red-500/5 transition-colors border border-red-500/10"
+                  >
+                    <LogOut className="w-5 h-5" /> Secure Sign Out
                   </button>
                </div>
             </motion.aside>
@@ -166,14 +218,27 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
            <div className="flex items-center gap-4">
               <div className="w-12 h-12 rounded-2xl bg-white dark:bg-dark-800 p-1 shadow-sm border border-gold-400/10 overflow-hidden relative">
                  {user?.avatar ? (
-                   <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+                   <Image 
+                     src={user.avatar} 
+                     alt={user.name} 
+                     fill 
+                     sizes="48px"
+                     priority
+                     className="object-cover" 
+                   />
                  ) : (
                    <div className="w-full h-full bg-gold-400 flex items-center justify-center text-white font-bold">{user?.name?.[0]}</div>
                  )}
               </div>
               <div className="min-w-0">
                  <p className="text-xs font-bold truncate">{user?.name}</p>
-                 <p className="text-[10px] text-emerald-500 font-bold uppercase tracking-widest mt-0.5">Verified</p>
+                  <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${
+                    verificationStatus === 'APPROVED' || verificationStatus === 'ACTIVE' ? 'text-emerald-500' : 
+                    verificationStatus === 'REJECTED' ? 'text-red-500' : 'text-amber-500'
+                  }`}>
+                    {verificationStatus === 'APPROVED' || verificationStatus === 'ACTIVE' ? 'Verified' : 
+                     verificationStatus === 'REJECTED' ? 'Unverified' : 'Pending'}
+                  </p>
               </div>
            </div>
            <button 
@@ -205,6 +270,13 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                </div>
             </div>
 
+            {/* Mobile Logo Center */}
+            <div className="lg:hidden absolute left-1/2 -translate-x-1/2">
+               <span className="font-display italic text-xl tracking-tight">
+                  Preloved<span className="font-bold not-italic text-gold-400">Vault</span>
+               </span>
+            </div>
+
             <div className="flex items-center gap-4 lg:gap-6">
                <div className="hidden md:flex items-center bg-white dark:bg-dark-900/50 border border-gold-400/10 rounded-2xl px-4 py-2 w-64 focus-within:border-gold-400 transition-all">
                   <Search className="w-4 h-4 text-gray-400" />
@@ -234,6 +306,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
             </div>
          </footer>
       </main>
+      <SellerBottomNavbar />
     </div>
   );
 }

@@ -19,30 +19,117 @@ export class ProductService {
       size, sortBy, page = 1, limit = 12 
     } = filters;
 
-    let query: admin.firestore.Query = db.collection('products')
-      .where('status', '==', 'ACTIVE');
+    // Normalize category filters to match DB Enums (UPPERCASE)
+    let normalizedCategory: string | string[] | undefined = category;
+    if (category) {
+      if (Array.isArray(category)) {
+        normalizedCategory = (category as string[]).map(c => c.toUpperCase());
+      } else {
+        normalizedCategory = (category as string).toUpperCase();
+      }
+    }
 
-    if (category) query = query.where('category', '==', category);
-    if (condition) query = query.where('condition', '==', condition);
-    if (size) query = query.where('size', '==', size);
-    
-    if (minPrice) query = query.where('sellingPrice', '>=', minPrice);
-    if (maxPrice) query = query.where('sellingPrice', '<=', maxPrice);
+    const buildQuery = (level: 'complex' | 'simple' | 'ultra-safe') => {
+      let q: admin.firestore.Query = db.collection('products')
+        .where('status', '==', 'ACTIVE');
 
-    // Sorting
-    if (sortBy === 'price_asc') query = query.orderBy('sellingPrice', 'asc');
-    else if (sortBy === 'price_desc') query = query.orderBy('sellingPrice', 'desc');
-    else if (sortBy === 'popular') query = query.orderBy('views', 'desc');
-    else query = query.orderBy('createdAt', 'desc');
+      if (level === 'ultra-safe') return q; // Just Active products, no order, no filters
 
-    // Pagination (approximate for Firestore)
-    const snapshot = await query.limit(limit * page).get();
-    const products = snapshot.docs
-      .slice((page - 1) * limit)
-      .map(doc => ({ id: doc.id, ...doc.data() }));
+      if (normalizedCategory) {
+        if (Array.isArray(normalizedCategory)) {
+          q = q.where('category', 'in', normalizedCategory);
+        } else {
+          q = q.where('category', '==', normalizedCategory);
+        }
+      }
 
-    const totalSnapshot = await db.collection('products').where('status', '==', 'ACTIVE').count().get();
-    const total = totalSnapshot.data().count;
+      if (condition) q = q.where('condition', '==', condition);
+      if (size) q = q.where('size', '==', size);
+      
+      if (level === 'simple') return q; // Filters + Active, but no Price Range/Ordering
+
+      const hasPriceRange = (minPrice !== undefined && minPrice > 0) || (maxPrice !== undefined && maxPrice < 1000000);
+      
+      if (hasPriceRange) {
+        if (minPrice && minPrice > 0) q = q.where('sellingPrice', '>=', minPrice);
+        if (maxPrice && maxPrice < 1000000) q = q.where('sellingPrice', '<=', maxPrice);
+        
+        if (sortBy === 'price_desc') q = q.orderBy('sellingPrice', 'desc');
+        else q = q.orderBy('sellingPrice', 'asc');
+      } else {
+        if (sortBy === 'price_asc') q = q.orderBy('sellingPrice', 'asc');
+        else if (sortBy === 'price_desc') q = q.orderBy('sellingPrice', 'desc');
+        else if (sortBy === 'popular') q = q.orderBy('views', 'desc');
+        else q = q.orderBy('createdAt', 'desc');
+      }
+      return q;
+    };
+
+    let products: any[] = [];
+    let total = 0;
+
+    const mapProductsWithSellers = async (docs: admin.firestore.QueryDocumentSnapshot[]) => {
+      return Promise.all(docs.map(async (doc) => {
+        const data = doc.data();
+        let seller: { name: string; avatar?: string } = { name: "Preloved Member" };
+        
+        if (data.sellerId) {
+          try {
+            const userDoc = await db.collection('users').doc(data.sellerId).get();
+            if (userDoc.exists) {
+              const userData = userDoc.data();
+              seller = { 
+                name: userData?.name || "Preloved Member",
+                avatar: userData?.avatar || ""
+              };
+            }
+          } catch (err) {
+            // Silently fail seller fetch
+          }
+        }
+
+        return { 
+          id: doc.id, 
+          ...data,
+          seller,
+          sellingPrice: data.sellingPrice || 0,
+          images: data.images || []
+        };
+      }));
+    };
+
+    try {
+      // 1. Try Full Neural Query (Filters + Price + Sort)
+      const query = buildQuery('complex');
+      const snapshot = await query.limit(limit * page).get();
+      const docs = snapshot.docs.slice((page - 1) * limit);
+      products = await mapProductsWithSellers(docs);
+    } catch (e1) {
+      try {
+        // 2. Fallback: Filtered Query (No Price/Sort)
+        console.warn("[Hira AI] Complex index missing, falling back to simple filtered search.");
+        const query = buildQuery('simple');
+        const snapshot = await query.limit(limit * page).get();
+        const docs = snapshot.docs.slice((page - 1) * limit);
+        products = await mapProductsWithSellers(docs);
+      } catch (e2) {
+        // 3. Ultra-Safe: Just show active items
+        console.error("[Hira AI] Critical Query Failure, using ultra-safe mode.");
+        const query = buildQuery('ultra-safe');
+        const snapshot = await query.limit(limit * page).get();
+        const docs = snapshot.docs.slice((page - 1) * limit);
+        products = await mapProductsWithSellers(docs);
+      }
+    }
+
+    try {
+      // Safe Count
+      let countQuery: admin.firestore.Query = db.collection('products').where('status', '==', 'ACTIVE');
+      const totalSnapshot = await countQuery.count().get();
+      total = totalSnapshot.data().count;
+    } catch (e) {
+      total = products.length;
+    }
 
     return {
       products,
@@ -50,7 +137,7 @@ export class ProductService {
         total,
         page,
         limit,
-        pages: Math.ceil(total / limit),
+        totalPages: Math.ceil(total / limit),
       },
     };
   }

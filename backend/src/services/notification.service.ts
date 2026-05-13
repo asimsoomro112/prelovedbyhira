@@ -1,7 +1,4 @@
-import { prisma } from '../lib/prisma';
-import { NotificationType } from '@prisma/client';
-import { Server } from 'socket.io';
-import { emitToUser } from './socket.service';
+import { db } from '../config/firebase.config';
 
 export class NotificationService {
   static async create({
@@ -9,29 +6,26 @@ export class NotificationService {
     title,
     message,
     type,
-    io,
   }: {
     userId: string;
     title: string;
     message: string;
-    type: NotificationType;
-    io?: Server;
+    type: string;
+    io?: any; // kept for API compat but not used (Firestore listeners replace socket.io)
   }) {
-    // 1. Save to Database
-    const notification = await prisma.notification.create({
-      data: {
-        userId,
-        title,
-        message,
-        type,
-      },
-    });
+    // Save to Firestore
+    const notifRef = db.collection('notifications').doc();
+    const notification = {
+      userId,
+      title,
+      message,
+      type,
+      isRead: false,
+      createdAt: new Date().toISOString(),
+    };
 
-    // 2. Emit via Socket.io
-    if (io) {
-      emitToUser(io, userId, 'notification', notification);
-    }
+    await notifRef.set(notification);
 
-    return notification;
+    return { id: notifRef.id, ...notification };
   }
 }

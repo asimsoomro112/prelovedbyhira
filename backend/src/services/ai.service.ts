@@ -42,6 +42,8 @@ export class AIService {
       const text = result.response.text();
       // Remove potential markdown formatting
       const cleanJson = text.replace(/```json|```/gi, "").trim();
+      if (!cleanJson) throw new Error("AI returned an empty response");
+      
       const extractedData = JSON.parse(cleanJson);
 
       console.log(`[Hira AI] Neural Scan Complete for: ${extractedData.fullName}`);
@@ -83,7 +85,9 @@ export class AIService {
       "gemini-2.5-flash",
       "gemini-3-flash-preview",
       "gemini-2.5-flash-lite",
-      "gemini-2.0-flash"
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro"
     ];
 
     let lastError: any = null;

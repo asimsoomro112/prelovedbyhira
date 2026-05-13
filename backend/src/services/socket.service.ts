@@ -1,14 +1,15 @@
 import { Server } from 'socket.io';
-import jwt from 'jsonwebtoken';
+import { auth } from '../config/firebase.config';
 
 export const setupSocketHandlers = (io: Server) => {
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     const token = socket.handshake.auth.token;
     if (!token) return next(new Error('Authentication error'));
 
     try {
-      const decoded = jwt.verify(token, process.env.JWT_ACCESS_SECRET!) as { id: string };
-      socket.data.userId = decoded.id;
+      // Verify Firebase ID token (matching the REST API auth)
+      const decodedToken = await auth.verifyIdToken(token);
+      socket.data.userId = decodedToken.uid;
       next();
     } catch (err) {
       next(new Error('Authentication error'));

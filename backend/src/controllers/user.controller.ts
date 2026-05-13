@@ -29,7 +29,8 @@ export const updateProfile = async (req: AuthRequest, res: Response, next: NextF
     if (!req.user) throw new AppError('Unauthorized', 401);
 
     const validatedData = updateProfileSchema.parse(req.body);
-    const avatar = req.file ? await uploadToCloudinary(req.file.buffer, 'avatars') : undefined;
+    const avatarResult = req.file ? await uploadToCloudinary(req.file.buffer, 'avatars') : undefined;
+    const avatar = avatarResult?.url;
 
     const updateData = {
       ...validatedData,
@@ -54,22 +55,35 @@ export const getDashboardStats = async (req: AuthRequest, res: Response, next: N
     if (!req.user) throw new AppError('Unauthorized', 401);
     const userId = req.user.id;
 
-    const [activeOrdersSnap, wishlistSnap, ordersSnap] = await Promise.all([
-      db.collection('orders').where('customerId', '==', userId).where('status', 'in', ['PAID', 'SHIPPED', 'PROCESSING']).get(),
-      db.collection('wishlist').doc(userId).get(),
-      db.collection('orders').where('customerId', '==', userId).get()
+    const [activeOrdersSnap, wishlistSnap, ordersSnap, userDoc] = await Promise.all([
+      db.collection('orders').where('buyerId', '==', userId).where('status', 'in', ['PAID', 'SHIPPED', 'PROCESSING']).get(),
+      db.collection('wishlists').where('userId', '==', userId).get(),
+      db.collection('orders').where('buyerId', '==', userId).get(),
+      db.collection('users').doc(userId).get()
     ]);
 
-    const activeOrders = activeOrdersSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    // Fetch product details for active orders
+    const activeOrders = await Promise.all(activeOrdersSnap.docs.map(async (doc) => {
+      const orderData = doc.data();
+      const productDoc = await db.collection('products').doc(orderData.productId).get();
+      return { 
+        id: doc.id, 
+        ...orderData,
+        product: productDoc.exists ? productDoc.data() : { title: "Archived Luxury Item" }
+      };
+    }));
+
     const totalSpent = ordersSnap.docs.reduce((acc, doc) => acc + (doc.data().totalPrice || 0), 0);
-    const wishlistCount = wishlistSnap.exists ? (wishlistSnap.data()?.productIds?.length || 0) : 0;
+    const wishlistCount = wishlistSnap.size;
+    const userData = userDoc.data();
 
     res.json({
       stats: {
         activeOrdersCount: activeOrders.length,
         totalSpent,
         wishlistCount,
-        memberSince: (await db.collection('users').doc(userId).get()).data()?.createdAt
+        stylePoints: Math.floor(totalSpent / 500) + (wishlistCount * 10), // Real dynamic calculation
+        memberSince: userData?.createdAt || new Date().toISOString()
       },
       activeOrders
     });

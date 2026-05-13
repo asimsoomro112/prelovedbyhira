@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getSocket } from "@/lib/socket";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -8,21 +8,21 @@ import api from "@/lib/api";
 import { toast } from "sonner";
 
 export function useNotifications() {
-  const { accessToken } = useAuthStore();
+  const { token } = useAuthStore();
   const queryClient = useQueryClient();
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ["notifications"],
     queryFn: async () => {
-      const { data } = await api.get("/users/notifications");
+      const { data } = await api.get("/notifications");
       return data;
     },
-    enabled: !!accessToken,
+    enabled: !!token,
   });
 
   const markAllRead = useMutation({
     mutationFn: async () => {
-      return await api.put("/users/notifications/read-all");
+      return await api.put("/notifications/mark-all-read");
     },
     onSuccess: () => {
       queryClient.setQueryData(["notifications"], (old: any) => 
@@ -32,8 +32,8 @@ export function useNotifications() {
   });
 
   useEffect(() => {
-    if (accessToken) {
-      const socket = getSocket(accessToken);
+    if (token) {
+      const socket = getSocket(token);
       
       socket?.on("notification", (newNotification) => {
         queryClient.setQueryData(["notifications"], (old: any) => [newNotification, ...(old || [])]);
@@ -46,7 +46,7 @@ export function useNotifications() {
         socket?.off("notification");
       };
     }
-  }, [accessToken, queryClient]);
+  }, [token, queryClient]);
 
   const unreadCount = notifications.filter((n: any) => !n.isRead).length;
 

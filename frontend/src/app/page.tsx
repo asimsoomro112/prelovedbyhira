@@ -1,5 +1,6 @@
 "use client";
 import Link from 'next/link';
+import Image from 'next/image';
 import { 
   ArrowRight, 
   ShieldCheck, 
@@ -35,9 +36,22 @@ const categories = [
   { name: "Bags & Accessories", slug: 'BAGS', icon: <ShoppingBag className="w-8 h-8" />, count: 430 },
 ];
 
+import { useAuthStore } from '@/store/useAuthStore';
+import { CustomerHome, SellerHome } from '@/components/home/PersonalizedHome';
+
 export default function HomePage() {
+  const { user } = useAuthStore();
+
   return (
     <div className="min-h-screen selection:bg-gold-400 selection:text-white">
+      {/* 🔮 CONDITIONAL ROLE-BASED VIEWPORT */}
+      {user?.role === 'SELLER' ? (
+        <SellerHome user={user} />
+      ) : user?.role === 'CUSTOMER' ? (
+        <CustomerHome user={user} />
+      ) : (
+        <>
+          {/* 🚀 ORIGINAL 2026 LANDING PAGE CONTENT */}
       {/* 🚀 2026 HERO SECTION */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
         {/* Animated Background Mesh */}
@@ -90,10 +104,11 @@ export default function HomePage() {
           >
             <div className="relative z-10 w-full aspect-[4/5] glass-ultra crystal-border rounded-[80px] p-4 shadow-gold-3d preserve-3d">
                <div className="relative w-full h-full rounded-[60px] overflow-hidden group">
-                  <img 
+                  <Image 
                     src="https://images.unsplash.com/photo-1549062572-544a64fb0c56?auto=format&fit=crop&q=80&w=1000" 
                     alt="Hero Visual" 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-[3s]"
+                    fill
+                    className="object-cover group-hover:scale-110 transition-transform duration-[3s]"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-transparent to-transparent opacity-60" />
                   
@@ -133,8 +148,8 @@ export default function HomePage() {
                <span key={brand} className="text-2xl font-display font-bold text-dark-900/10 dark:text-cream-50/10 italic tracking-widest">{brand}</span>
             ))}
             {/* Duplicate for infinite loop */}
-            {['LOUIS VUITTON', 'GUCCI', 'CHANEL', 'PRADA', 'HERMÈS', 'DIOR', 'ZARA LUXE', 'SANA SAFINAZ', 'ELAN'].map((brand) => (
-               <span key={brand} className="text-2xl font-display font-bold text-dark-900/10 dark:text-cream-50/10 italic tracking-widest">{brand}</span>
+            {['LOUIS VUITTON', 'GUCCI', 'CHANEL', 'PRADA', 'HERMÈS', 'DIOR', 'ZARA LUXE', 'SANA SAFINAZ', 'ELAN'].map((brand, idx) => (
+               <span key={`${brand}-dup-${idx}`} className="text-2xl font-display font-bold text-dark-900/10 dark:text-cream-50/10 italic tracking-widest">{brand}</span>
             ))}
          </div>
       </section>
@@ -391,6 +406,8 @@ export default function HomePage() {
            </div>
         </div>
       </section>
+        </>
+      )}
     </div>
   );
 }

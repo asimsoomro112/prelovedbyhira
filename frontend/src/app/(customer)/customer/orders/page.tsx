@@ -85,7 +85,12 @@ export default function MyOrdersPage() {
               className="bg-white dark:bg-dark-900 rounded-[32px] p-6 lg:p-8 shadow-soft border border-gold-400/10 hover:border-gold-400/30 transition-all flex flex-col lg:flex-row gap-8 group"
             >
               <div className="relative w-full lg:w-40 aspect-[3/4] rounded-2xl overflow-hidden border border-gold-400/10 shrink-0">
-                <Image src={order.product.images[0]} alt={order.product.title} fill className="object-cover" />
+                <Image 
+                  src={order.product?.images?.[0] || 'https://images.unsplash.com/photo-1549062572-544a64fb0c56?auto=format&fit=crop&q=80&w=1000'} 
+                  alt={order.product?.title || 'Unknown Item'} 
+                  fill 
+                  className="object-cover" 
+                />
               </div>
 
               <div className="flex-1 space-y-6">
@@ -95,8 +100,8 @@ export default function MyOrdersPage() {
                        <span className={`px-3 py-1 rounded-pill text-[10px] font-bold ${getStatusStyle(order.status)}`}>{order.status}</span>
                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">#{order.id.slice(-8)}</span>
                     </div>
-                    <h3 className="text-2xl font-display font-bold text-dark-900 dark:text-cream-50">{order.product.title}</h3>
-                    <p className="text-sm text-gold-400 font-bold uppercase tracking-widest">{order.product.brand}</p>
+                    <h3 className="text-2xl font-display font-bold text-dark-900 dark:text-cream-50">{order.product?.title || 'Unknown Product'}</h3>
+                    <p className="text-sm text-gold-400 font-bold uppercase tracking-widest">{order.product?.brand || 'Premium'}</p>
                   </div>
                   <div className="text-left md:text-right">
                     <p className="text-3xl font-accent font-bold text-gold-400">Rs. {order.totalPrice.toLocaleString()}</p>
@@ -106,10 +111,10 @@ export default function MyOrdersPage() {
 
                 <div className="flex items-center gap-4 p-4 bg-cream-50 dark:bg-dark-800 rounded-2xl border border-gold-400/5">
                    <div className="w-10 h-10 rounded-full bg-gold-400/10 text-gold-400 flex items-center justify-center text-xs font-bold">
-                      {order.seller.user.name[0]}
+                      {order.seller?.user?.name?.[0] || 'V'}
                    </div>
                    <div>
-                      <p className="text-xs font-bold text-gray-500">Seller: {order.seller.user.name}</p>
+                      <p className="text-xs font-bold text-gray-500">Seller: {order.seller?.user?.name || 'Verified Merchant'}</p>
                       <p className="text-[10px] text-gray-400 uppercase font-bold tracking-tighter">Verified Marketplace Vendor</p>
                    </div>
                 </div>

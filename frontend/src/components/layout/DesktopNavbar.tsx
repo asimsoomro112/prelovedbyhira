@@ -35,14 +35,11 @@ export default function DesktopNavbar() {
 
   return (
     <motion.nav
-      style={{ y: navY, scale: navScale }}
-      className="fixed top-0 left-0 right-0 z-[100] px-6 hidden lg:flex justify-center pointer-events-none"
+      className="fixed top-4 left-0 right-0 z-[100] px-6 hidden lg:flex justify-center"
     >
       <div className={`
         w-full max-w-7xl h-20 rounded-[32px] flex items-center justify-between px-8 transition-all duration-500 pointer-events-auto
-        ${isScrolled 
-          ? "glass-ultra crystal-border shadow-gold-3d translate-y-[-10px]" 
-          : "bg-transparent border-transparent"}
+        glass-ultra crystal-border shadow-gold-3d
       `}>
         {/* LOGO AREA */}
         <Link href="/" className="flex items-center gap-3 group shrink-0">
@@ -84,7 +81,7 @@ export default function DesktopNavbar() {
         </div>
 
         {/* SEARCH CONSOLE (COMMAND-K STYLE) */}
-        <div className="flex items-center flex-1 max-w-md mx-8">
+        <div className="flex items-center flex-1 max-w-sm mx-8">
           <div className="w-full relative group">
              <div className="absolute inset-0 bg-gold-400/5 rounded-2xl blur-xl group-hover:bg-gold-400/10 transition-colors" />
              <div className="relative h-12 glass-crystal rounded-2xl crystal-border flex items-center px-4 gap-3">
@@ -102,7 +99,7 @@ export default function DesktopNavbar() {
         </div>
 
         {/* ACTIONS */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <NavAction 
             icon={theme === 'dark' ? <Sun /> : <Moon />} 
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
@@ -124,34 +121,45 @@ export default function DesktopNavbar() {
             </div>
           </Link>
 
-          {user ? (
-            <div className="relative group/user">
-              <button className="flex items-center gap-3 p-1 pr-4 rounded-2xl glass-crystal crystal-border hover:bg-gold-400/5 transition-all">
-                <div className="w-10 h-10 rounded-xl bg-gold-400 text-white flex items-center justify-center font-bold shadow-gold overflow-hidden">
-                   {user.avatar ? <img src={user.avatar} className="w-full h-full object-cover" /> : user.name[0]}
+          {(user && user.name) ? (
+            <div className="relative group/user flex items-center">
+              <button 
+                type="button"
+                className="h-12 min-w-[48px] lg:min-w-[140px] flex items-center gap-3 p-1 pr-4 rounded-2xl bg-gold-400 hover:bg-gold-600 transition-all shadow-gold z-[101]"
+              >
+                <div className="w-10 h-10 rounded-xl bg-white/20 text-white flex items-center justify-center font-bold overflow-hidden shrink-0 border border-white/20">
+                   {user.avatar ? (
+                     <img src={user.avatar} className="w-full h-full object-cover" alt={user.name} />
+                   ) : (
+                     <span className="text-white text-lg">{user.name[0]?.toUpperCase() || 'U'}</span>
+                   )}
                 </div>
-                <div className="hidden md:block text-left">
-                  <p className="text-xs font-bold truncate max-w-[80px]">{user.name}</p>
-                  <p className="text-[8px] font-bold text-gold-400 uppercase tracking-widest">{user.role}</p>
+                <div className="hidden lg:block text-left">
+                  <p className="text-[10px] font-black text-white truncate max-w-[80px] uppercase tracking-tighter leading-none">{user.name.split(' ')[0]}</p>
+                  <p className="text-[7px] font-bold text-white/80 uppercase tracking-widest mt-1">{user.role}</p>
                 </div>
-                <ChevronDown className="w-4 h-4 text-gray-500 group-hover/user:rotate-180 transition-transform" />
+                <ChevronDown className="w-3.5 h-3.5 text-white/80 group-hover/user:rotate-180 transition-transform shrink-0" />
               </button>
 
-              {/* DROPDOWN */}
-              <div className="absolute top-full right-0 mt-4 w-64 glass-ultra crystal-border rounded-3xl opacity-0 translate-y-4 pointer-events-none group-hover/user:opacity-100 group-hover/user:translate-y-0 group-hover/user:pointer-events-auto transition-all duration-500 shadow-gold-3d p-4">
+              {/* DROPDOWN MENU - ABSOLUTE PIXELS POSITIONING */}
+              <div className="absolute top-20 right-0 w-64 glass-ultra crystal-border rounded-[32px] opacity-0 pointer-events-none group-hover/user:opacity-100 group-hover/user:pointer-events-auto transition-all duration-300 shadow-gold-3d p-4 z-[110]">
                  <div className="space-y-1">
-                    <DropdownLink icon={<LayoutDashboard />} label="Dashboard" href={`/${user.role.toLowerCase()}/dashboard`} />
-                    <DropdownLink icon={<Package />} label="My Orders" href="/customer/orders" />
-                    <DropdownLink icon={<Settings />} label="Settings" href="/customer/profile" />
-                    <div className="h-px bg-white/10 my-2" />
-                    <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-400 hover:bg-red-400/10 transition-all text-sm font-bold">
+                    <div className="px-4 py-2 mb-2 border-b border-white/10">
+                       <p className="text-[8px] font-bold text-gold-400 uppercase tracking-[0.2em]">Signed in as</p>
+                       <p className="text-xs font-bold text-dark-900 dark:text-cream-50 truncate">{user.email}</p>
+                    </div>
+                    <DropdownLink icon={<LayoutDashboard />} label="Control Panel" href={user.role === 'ADMIN' ? '/admin/dashboard' : (user.role === 'SELLER' ? '/seller/dashboard' : '/customer/dashboard')} />
+                    <DropdownLink icon={<Package />} label="My Orders" href={user.role === 'SELLER' ? '/seller/orders' : '/customer/orders'} />
+                    <DropdownLink icon={<Settings />} label="Account Settings" href={user.role === 'SELLER' ? '/seller/profile' : '/customer/profile'} />
+                    <div className="h-px bg-white/10 my-3" />
+                    <button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-red-500 hover:bg-red-500/10 transition-all text-sm font-bold">
                        <LogOut className="w-4 h-4" /> Sign Out
                     </button>
                  </div>
               </div>
             </div>
           ) : (
-            <Link href="/login" className="px-8 py-3 bg-gradient-to-r from-gold-400 to-gold-600 text-white rounded-pill font-bold shadow-gold hover:scale-105 active:scale-95 transition-all text-sm">
+            <Link href="/login" className="h-12 px-8 flex items-center bg-gradient-to-r from-gold-400 to-gold-600 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all text-xs whitespace-nowrap">
               Connect Account
             </Link>
           )}
@@ -165,9 +173,9 @@ function NavAction({ icon, count, hasPulse, onClick }: any) {
   return (
     <button 
       onClick={onClick}
-      className="relative w-12 h-12 rounded-2xl glass-crystal crystal-border flex items-center justify-center hover:bg-gold-400/5 transition-all group"
+      className="relative w-12 h-12 rounded-2xl glass-ultra crystal-border flex items-center justify-center hover:bg-gold-400/10 transition-all group border border-white/10"
     >
-      <div className="group-hover:scale-110 transition-transform text-gray-500 group-hover:text-gold-400">
+      <div className="group-hover:scale-110 transition-transform text-dark-900/70 dark:text-cream-50/70 group-hover:text-gold-400">
         {icon}
       </div>
       {count > 0 && (

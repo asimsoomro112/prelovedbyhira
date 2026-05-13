@@ -4,11 +4,11 @@ import { auth, db } from '../config/firebase.config';
 import { AppError } from '../middleware/errorHandler';
 
 const registerSchema = z.object({
-  uid: z.string(), // Firebase UID from frontend
+  uid: z.string(),
   name: z.string().min(2),
   email: z.string().email(),
-  phone: z.string().min(10).optional(),
-  role: z.enum(['CUSTOMER', 'SELLER']),
+  phone: z.string().min(10).optional().nullable(),
+  role: z.enum(['CUSTOMER', 'SELLER']).optional().default('CUSTOMER'),
 });
 
 export const syncUser = async (req: Request, res: Response, next: NextFunction) => {
@@ -69,10 +69,14 @@ export const getProfile = async (req: any, res: Response, next: NextFunction) =>
 
 export const updateProfile = async (req: any, res: Response, next: NextFunction) => {
   try {
-    await db.collection('users').doc(req.user.id).update({
-      ...req.body,
-      updatedAt: new Date().toISOString(),
-    });
+    // Whitelist allowed fields to prevent privilege escalation
+    const { name, phone, bio } = req.body;
+    const updateData: any = { updatedAt: new Date().toISOString() };
+    if (name !== undefined) updateData.name = name;
+    if (phone !== undefined) updateData.phone = phone;
+    if (bio !== undefined) updateData.bio = bio;
+
+    await db.collection('users').doc(req.user.id).update(updateData);
     res.json({ message: 'Profile updated in vault' });
   } catch (error) {
     next(error);

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, useScroll, useTransform } from "framer-motion";
-import { Home, Search, Plus, Heart, User, ShoppingBag, Sparkles, ChevronDown, Gem, TrendingUp, Star, Zap, X } from "lucide-react";
+import { Home, Search, Plus, Heart, User, ShoppingBag, Sparkles, ChevronDown, Gem, TrendingUp, Star, Zap, X, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -19,35 +19,33 @@ export default function BottomNavbar() {
   const allTabs = [
     { id: "home", label: "Home", icon: Home, href: "/" },
     { id: "categories", label: "Categories", icon: Sparkles, onClick: () => setIsMenuOpen(true) },
+    { id: "vault", label: "Vault", icon: LayoutDashboard, href: "/seller/dashboard" },
     { 
       id: "shop", 
       label: "Shop", 
       icon: ShoppingBag, 
       href: "/products", 
-      isFab: true, 
-      role: "CUSTOMER" 
+      isFab: true 
     },
     { 
       id: "sell", 
       label: "Sell", 
       icon: Plus, 
       href: "/seller/add-product", 
-      isFab: true, 
-      role: "SELLER" 
+      isFab: true 
     },
     { id: "search", label: "Search", icon: Search, onClick: () => setIsSearchOpen(!isSearchOpen) },
-    { id: "profile", label: "Profile", icon: User, href: "/customer/profile" },
+    { id: "profile", label: "Profile", icon: User, href: user?.role === 'SELLER' ? "/seller/profile" : "/customer/profile" },
   ];
 
   const tabs = allTabs.filter(tab => {
-    // Show Shop FAB for CUSTOMERS and GUESTS (user is null)
-    if (tab.id === 'shop') {
-      return !user || user.role === 'CUSTOMER';
-    }
-    // Show Sell FAB only for SELLERS and ADMINS
-    if (tab.id === 'sell') {
-      return user?.role === 'SELLER' || user?.role === 'ADMIN';
-    }
+    const isSeller = user?.role === 'SELLER' || user?.role === 'ADMIN';
+
+    if (tab.id === 'shop') return !isSeller;
+    if (tab.id === 'sell') return isSeller;
+    if (tab.id === 'vault') return isSeller;
+    if (tab.id === 'categories') return !isSeller;
+    
     return true;
   });
 

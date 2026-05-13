@@ -9,25 +9,28 @@ import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity } = useCartStore();
+  const { items, removeItem, updateItem } = useCartStore();
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ['cart-products', items.map(i => i.id)],
+    queryKey: ['cart-products', items.map(i => i.productId)],
     queryFn: async () => {
       if (items.length === 0) return [];
-      const responses = await Promise.all(items.map(item => api.get(`/products/${item.id}`)));
-      return responses.map(r => r.data);
+      const responses = await Promise.all(items.map(item => api.get(`/products/${item.productId}`)));
+      // The API returns { product, related }, we only need the product in the cart
+      return responses.map(r => r.data.product);
     },
     enabled: items.length > 0
   });
 
   const subtotal = products?.reduce((acc, product) => {
-    const item = items.find(i => i.id === product.id);
+    const item = items.find(i => i.productId === product.id);
     return acc + (product.sellingPrice * (item?.quantity || 0));
   }, 0) || 0;
 
-  const fee = subtotal > 0 ? 500 : 0; // Flat platform fee
-  const total = subtotal + fee;
+  // 🚚 Shipping Logic: Rs. 300 per unique seller
+  const uniqueSellers = products ? Array.from(new Set(products.map(p => p.sellerId))) : [];
+  const shippingCost = uniqueSellers.length * 300;
+  const total = subtotal + shippingCost;
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-12 lg:py-24">
@@ -61,7 +64,7 @@ export default function CartPage() {
                 </motion.div>
               ) : (
                 products?.map((product) => {
-                  const item = items.find(i => i.id === product.id);
+                  const item = items.find(i => i.productId === product.id);
                   return (
                     <motion.div 
                       key={product.id}
@@ -83,7 +86,7 @@ export default function CartPage() {
                             <p className="text-xs text-gray-500 font-medium uppercase tracking-tighter">Size: {product.size} • {product.condition}</p>
                           </div>
                           <button 
-                            onClick={() => removeItem(product.id)}
+                            onClick={() => removeItem(item!.id)}
                             className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all shadow-sm"
                           >
                             <Trash2 className="w-5 h-5" />
@@ -93,14 +96,14 @@ export default function CartPage() {
                         <div className="flex justify-between items-end">
                            <div className="flex items-center glass-crystal crystal-border rounded-xl p-1 gap-4">
                               <button 
-                                onClick={() => updateQuantity(product.id, Math.max(1, (item?.quantity || 1) - 1))}
+                                onClick={() => updateItem(item!.id, Math.max(1, (item?.quantity || 1) - 1))}
                                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gold-400/10 text-gold-400"
                               >
                                 <Minus className="w-4 h-4" />
                               </button>
                               <span className="text-sm font-bold w-4 text-center">{item?.quantity}</span>
                               <button 
-                                onClick={() => updateQuantity(product.id, (item?.quantity || 1) + 1)}
+                                onClick={() => updateItem(item!.id, (item?.quantity || 1) + 1)}
                                 className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gold-400/10 text-gold-400"
                               >
                                 <Plus className="w-4 h-4" />
@@ -128,8 +131,8 @@ export default function CartPage() {
                 <span className="text-dark-900 dark:text-cream-50 font-bold">Rs. {subtotal.toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm font-medium text-gray-500">
-                <span>Platform Fee</span>
-                <span className="text-dark-900 dark:text-cream-50 font-bold">Rs. {fee.toLocaleString()}</span>
+                <span>Shipping Cost (Rs. 300/seller)</span>
+                <span className="text-dark-900 dark:text-cream-50 font-bold">Rs. {shippingCost.toLocaleString()}</span>
               </div>
               <div className="h-px bg-gold-400/10 my-4" />
               <div className="flex justify-between items-end">

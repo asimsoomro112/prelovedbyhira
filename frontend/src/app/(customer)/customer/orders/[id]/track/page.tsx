@@ -38,6 +38,8 @@ export default function OrderTrackingPage() {
 
   if (isLoading) return <div className="h-screen flex items-center justify-center animate-pulse text-gold-400 font-bold uppercase tracking-widest">Finding your package...</div>;
 
+  if (!order) return <div className="h-screen flex items-center justify-center text-gray-500">Order not found or access restricted.</div>;
+
   const currentStepIndex = STEPS.findIndex(s => s.id === order.status);
   const displayIndex = currentStepIndex === -1 ? (order.status === 'CANCELLED' ? -1 : 0) : currentStepIndex;
 

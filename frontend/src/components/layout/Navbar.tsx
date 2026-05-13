@@ -18,7 +18,9 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { useTheme } from "next-themes";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useCartStore } from "@/store/useCartStore";
 import NotificationBell from "./NotificationBell";
+import { useEffect } from "react";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -26,7 +28,12 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
+  const { itemCount, fetchCart } = useCartStore();
   const pathname = usePathname();
+
+  useEffect(() => {
+    if (user) fetchCart();
+  }, [user, fetchCart]);
 
   const isSeller = user?.role === "SELLER";
   const isAdmin = user?.role === "ADMIN";
@@ -92,6 +99,15 @@ export default function Navbar() {
                 <NotificationBell />
                 <Link href="/customer/wishlist" className="hidden lg:block p-2.5 hover:bg-gold-400/10 rounded-full text-gray-600 dark:text-gray-300">
                   <Heart className="w-6 h-6" />
+                </Link>
+
+                <Link href="/cart" className="relative p-2.5 hover:bg-gold-400/10 rounded-full text-gray-600 dark:text-gray-300 transition-all group">
+                   <ShoppingBag className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                   {itemCount > 0 && (
+                     <span className="absolute top-1.5 right-1.5 w-5 h-5 bg-gold-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center border-2 border-white dark:border-dark-950 animate-bounce-subtle">
+                       {itemCount}
+                     </span>
+                   )}
                 </Link>
                 
                 <div className="h-6 w-px bg-gold-400/20 hidden lg:block" />

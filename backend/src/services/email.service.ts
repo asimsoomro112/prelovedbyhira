@@ -58,7 +58,7 @@ export const sendOTPEmail = async (email: string, otp: string) => {
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.EMAIL_USER}>`,
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `🔑 ${otp} is your Hira Access Key`,
     html: baseTemplate(content),
@@ -78,7 +78,7 @@ export const sendOrderConfirmation = async (email: string, orderData: any) => {
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.EMAIL_USER}>`,
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `✨ Order Secured: #ORD-${orderData.id}`,
     html: baseTemplate(content),
@@ -98,9 +98,29 @@ export const sendSellerNotification = async (email: string, orderData: any) => {
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.EMAIL_USER}>`,
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `💰 You just made a sale! Item: ${orderData.itemName}`,
+    html: baseTemplate(content),
+  });
+};
+
+export const sendSellerRejectionEmail = async (email: string, name: string, reason: string) => {
+  const content = `
+    <span class="h2">Verification Update</span>
+    <p class="text">Dear <b>${name}</b>, unfortunately your seller verification has been declined.</p>
+    <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
+        <p style="color: ${GOLD}; font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 15px;">Reason</p>
+        <p style="margin: 5px 0; font-size: 14px;">${reason}</p>
+    </div>
+    <p class="text">You may re-apply with corrected documents at any time from your seller dashboard.</p>
+    <a href="https://prelovedbyhira.com/seller/verification" class="btn">Re-Apply Now</a>
+  `;
+
+  await transporter.sendMail({
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `Seller Verification Update — ${name}`,
     html: baseTemplate(content),
   });
 };
@@ -114,7 +134,7 @@ export const sendVerificationEmail = async (email: string, name: string, token: 
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.EMAIL_USER}>`,
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `🥂 Welcome to the Vault, ${name}`,
     html: baseTemplate(content),

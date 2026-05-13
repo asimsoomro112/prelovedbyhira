@@ -30,9 +30,20 @@ export default function SellerDashboard() {
     }
   });
 
+  const { data: vStatusData } = useQuery({
+    queryKey: ["seller-verification-status"],
+    queryFn: async () => {
+      const { data } = await api.get("/seller/verification/status");
+      return data.status;
+    },
+  });
+
   if (isLoading) return <div className="h-screen flex items-center justify-center font-display text-gold-400">Initializing Vault...</div>;
 
   const { stats, recentOrders, shopHealth } = dashboardData || {};
+  const isVerified = vStatusData === 'APPROVED';
+  const isPending = vStatusData === 'SELFIE_UPLOADED' || vStatusData === 'IDENTITY_VERIFIED' || vStatusData === 'PENDING';
+  const isRejected = vStatusData === 'REJECTED';
 
   return (
     <div className="max-w-screen-xl mx-auto px-6 py-12 lg:py-24 space-y-12">
@@ -95,12 +106,13 @@ export default function SellerDashboard() {
         <div className="space-y-8">
            <h2 className="text-2xl font-display font-bold">Action Center</h2>
            <div className="space-y-4">
-              {!user?.isVerified && (
+              {!isVerified && (
                 <ActionItem 
-                  icon={<AlertTriangle className="text-amber-500" />} 
-                  title="Identity Verification" 
-                  desc="Please upload your ID to unlock withdrawals."
-                  action="Verify Now"
+                  icon={isPending ? <Clock className="text-gold-400" /> : <AlertTriangle className="text-amber-500" />} 
+                  title={isPending ? "Verification Pending" : isRejected ? "Verification Rejected" : "Identity Verification"} 
+                  desc={isPending ? "Our team is reviewing your documents. Usually takes 24-48h." : isRejected ? "Review the feedback and retry verification." : "Please upload your ID to unlock withdrawals."}
+                  action={isPending ? "Check Status" : "Verify Now"}
+                  link="/seller/verification"
                 />
               )}
               <ActionItem 
@@ -108,6 +120,7 @@ export default function SellerDashboard() {
                 title="Pending Balance" 
                 desc={`Rs. ${stats?.pendingBalance?.toLocaleString()} will be released soon.`}
                 action="Details"
+                link="/seller/earnings"
               />
               <div className="p-8 glass-ultra crystal-border rounded-[32px] bg-gold-400 text-white space-y-4">
                  <Sparkles className="w-8 h-8" />
@@ -167,7 +180,7 @@ function OrderRow({ id, item, price, status, time, urgent }: any) {
   );
 }
 
-function ActionItem({ icon, title, desc, action }: any) {
+function ActionItem({ icon, title, desc, action, link }: any) {
   return (
     <div className="p-6 glass-crystal crystal-border rounded-3xl flex gap-6 items-start">
        <div className="shrink-0 pt-1">{icon}</div>
@@ -176,7 +189,13 @@ function ActionItem({ icon, title, desc, action }: any) {
              <h4 className="text-sm font-bold text-dark-900 dark:text-cream-50">{title}</h4>
              <p className="text-xs text-gray-500 leading-relaxed">{desc}</p>
           </div>
-          <button className="text-[10px] font-bold text-gold-400 uppercase tracking-widest hover:underline">{action}</button>
+          {link ? (
+            <Link href={link} className="text-[10px] font-bold text-gold-400 uppercase tracking-widest hover:underline block">
+              {action}
+            </Link>
+          ) : (
+            <button className="text-[10px] font-bold text-gold-400 uppercase tracking-widest hover:underline">{action}</button>
+          )}
        </div>
     </div>
   );

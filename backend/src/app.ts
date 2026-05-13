@@ -11,6 +11,7 @@ import userRoutes from './routes/user.routes';
 import sellerRoutes from './routes/seller.routes';
 import adminRoutes from './routes/admin.routes';
 import productRoutes from './routes/product.routes';
+import cartRoutes from './routes/cart.routes';
 import orderRoutes from './routes/order.routes';
 import payoutRoutes from './routes/payout.routes';
 import disputeRoutes from './routes/dispute.routes';
@@ -18,6 +19,8 @@ import reviewRoutes from './routes/review.routes';
 import wishlistRoutes from './routes/wishlist.routes';
 import notificationRoutes from './routes/notification.routes';
 import aiRoutes from './routes/ai.routes';
+import categoryRoutes from './routes/category.routes';
+import uploadRoutes from './routes/upload.routes';
 
 const app = express();
 
@@ -61,6 +64,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/seller', sellerRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payouts', payoutRoutes);
 app.use('/api/disputes', disputeRoutes);
@@ -68,6 +72,8 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/wishlist', wishlistRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/upload', uploadRoutes);
 
 // ─── 404 Handler ────────────────────────────
 app.use((_req, res) => {

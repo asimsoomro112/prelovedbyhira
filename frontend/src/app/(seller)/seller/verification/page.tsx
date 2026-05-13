@@ -44,6 +44,9 @@ export default function SellerVerificationPage() {
   const [isAIProcessing, setIsAIProcessing] = useState(false);
   const [isLoadingStatus, setIsLoadingStatus] = useState(true);
   const [rejectionReason, setRejectionReason] = useState<string | null>(null);
+  const [aiResult, setAiResult] = useState<any>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [vStatus, setVStatus] = useState<string>("");
   const { user } = useAuthStore();
   const router = useRouter();
 
@@ -54,9 +57,10 @@ export default function SellerVerificationPage() {
   const checkStatus = async () => {
     try {
       const { data } = await api.get("/seller/verification/status");
+      setVStatus(data.status);
       if (data.status === 'IDENTITY_VERIFIED') setStep(3);
       if (data.status === 'SELFIE_UPLOADED') setStep(5);
-      if (data.status === 'APPROVED') setStep(5);
+      if (data.status === 'APPROVED' || data.status === 'ACTIVE') setStep(5);
       if (data.status === 'REJECTED') {
         setStep(6); // Step 6 for Rejection view
         setRejectionReason(data.rejectionReason);
@@ -200,6 +204,7 @@ export default function SellerVerificationPage() {
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Phone Number</label>
+                        {/* @ts-ignore - phone may not be on the User interface currently */}
                         <input defaultValue={user?.phone || ""} placeholder="03XXXXXXXXX" className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-2xl px-6 py-4 outline-none focus:border-gold-400 transition-all font-bold" />
                       </div>
                    </div>
@@ -257,9 +262,12 @@ export default function SellerVerificationPage() {
                    <DocUpload label="Your Selfie" file={selfie} setFile={setSelfie} icon={<Camera className="w-6 h-6" />} isLarge />
                 </div>
 
-                <button type="button" onClick={() => setStep(4)} disabled={!selfie} className="w-full py-5 bg-gold-400 text-white rounded-2xl font-bold shadow-gold flex items-center justify-center gap-2">
-                  Final Step: Payout Info <ArrowRight className="w-5 h-5" />
-                </button>
+                <div className="flex gap-4">
+                  <button type="button" onClick={() => setStep(2)} className="flex-1 py-5 border-2 border-gold-400/20 text-gray-500 rounded-2xl font-bold hover:bg-gold-400/5 transition-all">Back</button>
+                  <button type="button" onClick={() => setStep(4)} disabled={!selfie} className="flex-[2] py-5 bg-gold-400 text-white rounded-2xl font-bold shadow-gold flex items-center justify-center gap-2">
+                    Final Step: Payout Info <ArrowRight className="w-5 h-5" />
+                  </button>
+                </div>
               </motion.div>
             )}
 
@@ -301,34 +309,52 @@ export default function SellerVerificationPage() {
             {step === 5 && (
               <motion.div key="s5" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-10">
                  <div className="relative w-32 h-32 mx-auto">
-                    <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 20, ease: "linear" }} className="absolute inset-0 border-2 border-dashed border-gold-400 rounded-full" />
-                    <div className="absolute inset-2 bg-gold-400/10 rounded-full flex items-center justify-center text-gold-400">
+                    <motion.div 
+                      animate={{ rotate: 360 }} 
+                      transition={{ repeat: Infinity, duration: 20, ease: "linear" }} 
+                      className={`absolute inset-0 border-2 border-dashed rounded-full ${vStatus === 'APPROVED' || vStatus === 'ACTIVE' ? 'border-emerald-500' : 'border-gold-400'}`} 
+                    />
+                    <div className={`absolute inset-2 rounded-full flex items-center justify-center shadow-lg ${vStatus === 'APPROVED' || vStatus === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-500 shadow-emerald-500/20' : 'bg-gold-400/10 text-gold-400 shadow-gold-400/20'}`}>
                        <CheckCircle2 className="w-16 h-16" />
                     </div>
                  </div>
-
+ 
                  <div className="space-y-6">
                     <div className="space-y-2">
-                       <h2 className="text-4xl font-display font-bold text-gold-400">Identity Matched!</h2>
-                       <p className="text-zinc-500 dark:text-gray-400 font-medium">Hira AI has successfully matched your profile name with your CNIC.</p>
+                       <h2 className={`text-4xl font-display font-bold ${vStatus === 'APPROVED' || vStatus === 'ACTIVE' ? 'text-emerald-500' : 'text-gold-400'}`}>
+                         {vStatus === 'APPROVED' || vStatus === 'ACTIVE' ? "Boutique Fully Verified!" : "Identity Matched!"}
+                       </h2>
+                       <p className="text-zinc-500 dark:text-gray-400 font-medium">
+                         {vStatus === 'APPROVED' || vStatus === 'ACTIVE' 
+                           ? "Congratulations! Your merchant identity has been fully vetted and approved." 
+                           : "Hira AI has successfully matched your profile name with your CNIC."}
+                       </p>
                     </div>
-
+ 
                     <div className="grid gap-4 max-w-lg mx-auto text-left">
                        <div className="p-5 bg-gold-400/5 border border-gold-400/10 rounded-3xl flex gap-4">
                           <ShieldCheck className="w-6 h-6 text-gold-400 shrink-0" />
                           <div>
-                             <p className="text-sm font-bold text-dark-900 dark:text-white mb-1">Final Team Review</p>
-                             <p className="text-[11px] text-gray-500 leading-relaxed">Hamari team ab aapki selfie aur CNIC images ko manually verify karegi taake security standards maintain rahain. Is process mein 24-48 hours lag saktay hain.</p>
+                             <p className="text-sm font-bold text-dark-900 dark:text-white mb-1">
+                               {vStatus === 'APPROVED' || vStatus === 'ACTIVE' ? "Store Now Live" : "Final Team Review"}
+                             </p>
+                             <p className="text-[11px] text-gray-500 leading-relaxed">
+                                {vStatus === 'APPROVED' || vStatus === 'ACTIVE' 
+                                  ? "Aap ab products list kar saktay hain aur unki payments directly apne verified payout account mein receive kar saktay hain." 
+                                  : "Hamari team ab aapki selfie aur CNIC images ko manually verify karegi taake security standards maintain rahain."}
+                             </p>
                           </div>
                        </div>
 
-                       <div className="p-5 bg-blue-500/5 border border-blue-500/10 rounded-3xl flex gap-4">
-                          <AlertTriangle className="w-6 h-6 text-blue-400 shrink-0" />
-                          <div>
-                             <p className="text-sm font-bold text-dark-900 dark:text-white mb-1">Legal & Privacy Policy</p>
-                             <p className="text-[11px] text-gray-500 leading-relaxed">Aapka data sirf legal purposes aur marketplace verification ke liye use kiya ja raha hai. Yeh frauds se bachnay aur customers ka trust maintain rakhnay ke liye zaroori hai.</p>
+                        {!(vStatus === 'APPROVED' || vStatus === 'ACTIVE') && (
+                          <div className="p-5 bg-blue-500/5 border border-blue-500/10 rounded-3xl flex gap-4">
+                             <AlertTriangle className="w-6 h-6 text-blue-400 shrink-0" />
+                             <div>
+                                <p className="text-sm font-bold text-dark-900 dark:text-white mb-1">Legal & Privacy Policy</p>
+                                <p className="text-[11px] text-gray-500 leading-relaxed">Aapka data sirf legal purposes aur marketplace verification ke liye use kiya ja raha hai. Yeh frauds se bachnay aur customers ka trust maintain rakhnay ke liye zaroori hai.</p>
+                             </div>
                           </div>
-                       </div>
+                        )}
                     </div>
                  </div>
 

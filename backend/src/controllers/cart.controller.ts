@@ -1,117 +1,162 @@
 import { Response, NextFunction } from 'express';
-import { prisma } from '../lib/prisma';
-import { AuthRequest } from '../middleware/authenticate';
+import { db } from '../config/firebase.config';
+import { AuthRequest } from '../middleware/auth';
+import { AppError } from '../middleware/errorHandler';
 
 export const getCart = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    let cart = await prisma.cart.findUnique({
-      where: { userId: req.user!.id },
-      include: { 
-        items: { 
-          include: { 
-            product: { 
-              include: { 
-                seller: { include: { user: { select: { name: true } } } } 
-              } 
-            } 
-          } 
-        } 
-      },
-    });
+    if (!req.user) throw new AppError('Unauthorized', 401);
+    const userId = req.user.id;
 
-    if (!cart) {
-      cart = await prisma.cart.create({ 
-        data: { userId: req.user!.id }, 
-        include: { 
-          items: { 
-            include: { 
-              product: { 
-                include: { 
-                  seller: { include: { user: { select: { name: true } } } } 
-                } 
-              } 
-            } 
-          } 
-        } 
-      });
+    const cartDoc = await db.collection('carts').doc(userId).get();
+    if (!cartDoc.exists) {
+      res.json({ items: [], total: 0, itemCount: 0 });
+      return;
     }
 
-    const total = cart.items.reduce((sum: number, item: any) => sum + Number(item.product.sellingPrice) * item.quantity, 0);
-    res.json({ items: cart.items, total, itemCount: cart.items.length });
-  } catch (error) { 
-    next(error); 
+    const cartData = cartDoc.data()!;
+    const items = cartData.items || [];
+
+    // 🚀 PERF-02 Fix: Use batch reads instead of N+1 sequential queries
+    const productRefs = items.map((item: any) => db.collection('products').doc(item.productId));
+    const productDocs = items.length > 0 ? await db.getAll(...productRefs) : [];
+    
+    const itemsWithDetails = await Promise.all(items.map(async (item: any, index: number) => {
+      const productDoc = productDocs[index];
+      if (!productDoc || !productDoc.exists) return null;
+      
+      const productData = productDoc.data()!;
+      // Join seller data (Seller data could also be batched if needed, but we keep it simple for now)
+      const sellerDoc = await db.collection('users').doc(productData.sellerId).get();
+      
+      return {
+        ...item,
+        product: {
+          id: productDoc.id,
+          ...productData,
+          seller: { user: { name: sellerDoc.exists ? sellerDoc.data()?.name : "Preloved Member" } }
+        }
+      };
+    }));
+
+    const filteredItems = itemsWithDetails.filter(i => i !== null);
+    const total = filteredItems.reduce((sum: number, item: any) => sum + (item.product.sellingPrice * item.quantity), 0);
+
+    res.json({ 
+      items: filteredItems, 
+      total, 
+      itemCount: filteredItems.length 
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
 export const addToCart = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    if (!req.user) throw new AppError('Unauthorized', 401);
+    const userId = req.user.id;
     const { productId, quantity = 1 } = req.body;
-    const product = await prisma.product.findUnique({ where: { id: productId } });
-    if (!product || product.status !== 'ACTIVE') { 
-      res.status(404).json({ error: 'Product not available' }); 
-      return; 
+
+    if (!productId || typeof productId !== 'string') {
+      console.error("[CART ERROR] Invalid productId received:", productId);
+      throw new AppError('Invalid product ID format', 400);
     }
 
-    let cart = await prisma.cart.findUnique({ where: { userId: req.user!.id } });
-    if (!cart) cart = await prisma.cart.create({ data: { userId: req.user!.id } });
+    console.log(`[CART] User: ${userId} | Action: Add | Product: ${productId} | Quantity: ${quantity}`);
 
-    const existingItem = await prisma.cartItem.findUnique({ 
-      where: { cartId_productId: { cartId: cart.id, productId } } 
-    });
+    const productDoc = await db.collection('products').doc(productId).get();
+    if (!productDoc.exists) throw new AppError('Product not found in vault', 404);
+    
+    const productData = productDoc.data();
+    if (productData?.status !== 'ACTIVE') throw new AppError('Product is not available for purchase', 400);
 
-    if (existingItem) {
-      await prisma.cartItem.update({ 
-        where: { id: existingItem.id }, 
-        data: { quantity: existingItem.quantity + quantity } 
-      });
+    const cartRef = db.collection('carts').doc(userId);
+    const cartDoc = await cartRef.get();
+
+    let items = [];
+    if (cartDoc.exists) {
+      const data = cartDoc.data();
+      items = Array.isArray(data?.items) ? data.items : [];
+    }
+
+    const existingIndex = items.findIndex((i: any) => i.productId === productId);
+    if (existingIndex > -1) {
+      items[existingIndex].quantity += quantity;
     } else {
-      await prisma.cartItem.create({ 
-        data: { cartId: cart.id, productId, quantity } 
+      items.push({
+        id: Math.random().toString(36).substring(7),
+        productId,
+        quantity,
+        addedAt: new Date().toISOString()
       });
     }
-    res.json({ message: 'Added to cart' });
-  } catch (error) { 
-    next(error); 
+
+    await cartRef.set({ items, updatedAt: new Date().toISOString() }, { merge: true });
+    console.log(`[CART] Successfully added item to ${userId} bag`);
+    res.json({ message: 'Added to your luxury bag' });
+  } catch (error) {
+    console.error("[CART ERROR] addToCart failed:", error);
+    next(error);
   }
 };
 
 export const updateCartItem = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
+    if (!req.user) throw new AppError('Unauthorized', 401);
+    const userId = req.user.id;
+    const { itemId } = req.params;
     const { quantity } = req.body;
-    const itemId = req.params.itemId as string;
-    const cart = await prisma.cart.findUnique({ where: { userId: req.user!.id } });
-    if (!cart) { 
-      res.status(404).json({ error: 'Cart not found' }); 
-      return; 
-    }
+
+    const cartRef = db.collection('carts').doc(userId);
+    const cartDoc = await cartRef.get();
+    if (!cartDoc.exists) throw new AppError('Cart not found', 404);
+
+    const data = cartDoc.data();
+    let items = Array.isArray(data?.items) ? data.items : [];
 
     if (quantity <= 0) {
-      await prisma.cartItem.delete({ where: { id: itemId } });
+      items = items.filter((i: any) => i.id !== itemId);
     } else {
-      await prisma.cartItem.update({ where: { id: itemId }, data: { quantity } });
+      const itemIndex = items.findIndex((i: any) => i.id === itemId);
+      if (itemIndex > -1) items[itemIndex].quantity = quantity;
     }
-    res.json({ message: 'Cart updated' });
-  } catch (error) { 
-    next(error); 
+
+    await cartRef.set({ items, updatedAt: new Date().toISOString() }, { merge: true });
+    res.json({ message: 'Bag updated successfully' });
+  } catch (error) {
+    console.error("[CART ERROR] updateCartItem failed:", error);
+    next(error);
   }
 };
 
 export const removeFromCart = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const itemId = req.params.itemId as string;
-    await prisma.cartItem.delete({ where: { id: itemId } });
-    res.json({ message: 'Removed from cart' });
-  } catch (error) { 
-    next(error); 
+    if (!req.user) throw new AppError('Unauthorized', 401);
+    const userId = req.user.id;
+    const { itemId } = req.params;
+
+    const cartRef = db.collection('carts').doc(userId);
+    const cartDoc = await cartRef.get();
+    if (!cartDoc.exists) throw new AppError('Cart not found', 404);
+
+    const data = cartDoc.data();
+    const items = (Array.isArray(data?.items) ? data.items : []).filter((i: any) => i.id !== itemId);
+    
+    await cartRef.set({ items, updatedAt: new Date().toISOString() }, { merge: true });
+    res.json({ message: 'Removed from your bag' });
+  } catch (error) {
+    console.error("[CART ERROR] removeFromCart failed:", error);
+    next(error);
   }
 };
 
 export const clearCart = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
-    const cart = await prisma.cart.findUnique({ where: { userId: req.user!.id } });
-    if (cart) await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
-    res.json({ message: 'Cart cleared' });
-  } catch (error) { 
-    next(error); 
+    if (!req.user) throw new AppError('Unauthorized', 401);
+    await db.collection('carts').doc(req.user.id).delete();
+    res.json({ message: 'Bag cleared successfully' });
+  } catch (error) {
+    next(error);
   }
 };

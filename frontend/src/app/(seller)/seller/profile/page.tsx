@@ -128,7 +128,14 @@ export default function SellerProfilePage() {
       <div className="relative">
         <div className="h-48 lg:h-64 rounded-[40px] bg-gradient-to-br from-gold-400/20 to-gold-600/30 overflow-hidden border border-gold-400/10 relative">
            {coverPreview ? (
-             <Image src={coverPreview} alt="Cover" fill className="object-cover" />
+             <Image 
+               src={coverPreview} 
+               alt="Cover" 
+               fill 
+               sizes="(max-width: 1024px) 100vw, 1024px"
+               priority
+               className="object-cover" 
+             />
            ) : (
              <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
            )}
@@ -145,10 +152,16 @@ export default function SellerProfilePage() {
            <div className="relative group">
               <div className="w-40 h-40 rounded-[40px] bg-white p-1 shadow-card border border-gold-400/20 overflow-hidden">
                  <div className="w-full h-full rounded-[38px] bg-gold-400 flex items-center justify-center text-white text-5xl font-bold shadow-inner relative overflow-hidden">
-                    {avatarPreview ? (
-                       <Image src={avatarPreview} alt={user?.name || ""} fill className="object-cover" />
+                    {avatarPreview || profile?.avatar || profile?.profileImage || profile?.profilePicture ? (
+                       <Image 
+                         src={avatarPreview || profile?.avatar || profile?.profileImage || profile?.profilePicture} 
+                         alt={profile?.name || ""} 
+                         fill 
+                         sizes="160px"
+                         className="object-cover" 
+                       />
                     ) : (
-                       profile?.name?.[0]
+                       <span className="uppercase">{profile?.name?.[0] || 'V'}</span>
                     )}
                  </div>
               </div>
@@ -163,15 +176,15 @@ export default function SellerProfilePage() {
            
            <div className="flex-1 pb-4 space-y-2">
               <div className="flex items-center gap-3">
-                 <h1 className="text-4xl font-display font-bold">{profile?.name}</h1>
-                 {profile?.verificationStatus === 'ACTIVE' && (
+                 <h1 className="text-4xl font-display font-bold text-dark-900 dark:text-cream-50">{profile?.name || user?.name}</h1>
+                 {profile?.verificationStatus === 'ACTIVE' || profile?.verificationStatus === 'APPROVED' && (
                    <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-pill text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 border border-emerald-500/20">
                       <ShieldCheck className="w-3 h-3" />
                       Verified Boutique
                    </div>
                  )}
               </div>
-              <p className="text-gray-500 font-medium">Boutique Member since {profile?.identityVerifiedAt ? new Date(profile.identityVerifiedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Joining Process'}</p>
+              <p className="text-gray-500 font-medium">Boutique Member since {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Joining Process'}</p>
            </div>
 
            <div className="pb-4 flex gap-4">
@@ -194,23 +207,23 @@ export default function SellerProfilePage() {
             <div className="bg-white dark:bg-dark-900 p-8 rounded-[40px] shadow-card border border-gold-400/5 space-y-6">
                <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest border-b border-gold-400/10 pb-4">Contact Intelligence</h3>
                <div className="space-y-4">
-                  <DetailItem icon={Mail} label="Email Address" value={profile?.email || "Not set"} />
-                  <DetailItem icon={Phone} label="Contact Phone" value={profile?.phone || "Pending Update"} />
-                  <DetailItem icon={MapPin} label="Base Location" value={profile?.city || "Karachi, Pakistan"} />
-                  <DetailItem icon={Calendar} label="Member Status" value={profile?.verificationStatus || "PENDING"} />
+                  <DetailItem icon={Mail} label="Email Address" value={profile?.email || user?.email || "Not set"} />
+                  <DetailItem icon={Phone} label="Contact Phone" value={profile?.phone || "Verification Pending"} />
+                  <DetailItem icon={MapPin} label="Base Location" value={profile?.city || "Update in Settings"} />
+                  <DetailItem icon={Calendar} label="Member Status" value={profile?.verificationStatus?.replace('_', ' ') || "PENDING"} />
                </div>
             </div>
 
-            <div className="bg-gradient-to-br from-dark-900 to-black p-8 rounded-[40px] shadow-2xl space-y-6 text-white border border-white/5">
-               <h3 className="text-xs font-bold text-gray-500 uppercase tracking-widest border-b border-white/10 pb-4">Performance Insights</h3>
+            <div className="bg-white dark:bg-gradient-to-br dark:from-dark-900 dark:to-black p-8 rounded-[40px] shadow-card dark:shadow-2xl space-y-6 text-dark-900 dark:text-white border border-gold-400/10 dark:border-white/5 transition-all">
+               <h3 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest border-b border-gold-400/10 dark:border-white/10 pb-4">Performance Insights</h3>
                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                      <p className="text-2xl font-accent font-bold text-gold-400">{profile?.rating || "5.0"}</p>
                      <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Global Rating</p>
                   </div>
                   <div className="space-y-1">
-                     <p className="text-2xl font-accent font-bold text-gold-400">{profile?.totalEarnings ? `₨ ${profile.totalEarnings.toLocaleString()}` : "Rs. 0"}</p>
-                     <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Sales Velocity</p>
+                     <p className="text-2xl font-accent font-bold text-gold-400">{profile?.totalEarnings ? `₨ ${profile.totalEarnings.toLocaleString()}` : "₨ 0"}</p>
+                     <p className="text-[10px] text-gray-500 uppercase font-bold tracking-widest">Total Earnings</p>
                   </div>
                </div>
             </div>
@@ -219,11 +232,11 @@ export default function SellerProfilePage() {
          {/* Main Bio/Settings Area */}
          <div className="lg:col-span-2 space-y-12">
             <div className="space-y-6">
-               <h3 className="text-2xl font-display font-bold flex items-center gap-3">
+               <h3 className="text-2xl font-display font-bold flex items-center gap-3 text-dark-900 dark:text-cream-50">
                   <User className="text-gold-400" /> Boutique Bio
                </h3>
                <p className="text-gray-600 dark:text-gray-400 leading-relaxed text-lg italic">
-                  &quot;{profile?.boutiqueBio || "Welcome to my luxury boutique on PrelovedByHira. I specialize in curated preloved fashion with a focus on quality and authenticity."}&quot;
+                  {profile?.boutiqueBio ? `"${profile.boutiqueBio}"` : "No bio provided yet. Update your profile to tell customers about your luxury collection."}
                </p>
             </div>
 
