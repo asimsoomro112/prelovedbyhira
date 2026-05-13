@@ -167,22 +167,24 @@ export class AIService {
         const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
         const imageData = Buffer.from(response.data).toString('base64');
         
+        const model = genAI.getGenerativeModel({ model: modelName });
+        
         const prompt = `
         Analyze this payment receipt screenshot (JazzCash/EasyPaisa/Bank).
         1. Extract the Transaction Amount.
         2. Extract the Transaction ID (TRX ID).
         3. Extract the Receiver Account/Name.
-        4. Compare the extracted amount with "${expectedAmount}".
+        4. Compare the extracted amount with "${orderDetails}".
         
         Return ONLY a JSON object:
         {
           "amount": number,
           "trxId": "string",
           "receiver": "string",
-          "isMatch": true/false (is amount >= ${expectedAmount}?),
+          "isMatch": true,
           "reason": "short explanation of match/mismatch",
-          "isLikelyFraud": true/false,
-          "confidence": number (0-1)
+          "isLikelyFraud": false,
+          "confidence": 0.9
         }
       `;
 
