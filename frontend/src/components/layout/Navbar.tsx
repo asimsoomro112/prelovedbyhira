@@ -43,10 +43,24 @@ export default function Navbar() {
       <div className="max-w-screen-xl mx-auto px-4 lg:px-8">
         <div className="flex h-20 items-center justify-between gap-8">
           
-          {/* Logo */}
-          <Link href="/" className="font-display italic text-2xl shrink-0 group">
-            Preloved<span className="font-bold not-italic text-gold-400 group-hover:tracking-wider transition-all duration-500">ByHira</span>
-          </Link>
+          {/* Logo & Navigation */}
+          <div className="flex items-center gap-12">
+            <Link href="/" className="font-display italic text-2xl shrink-0 group">
+              Preloved<span className="font-bold not-italic text-gold-400 group-hover:tracking-wider transition-all duration-500">ByHira</span>
+            </Link>
+
+            <div className="hidden lg:flex items-center gap-8">
+              <Link href="/products" className={`text-[10px] font-bold uppercase tracking-[0.2em] hover:text-gold-400 transition-colors ${pathname === '/products' ? 'text-gold-400' : 'text-gray-500'}`}>
+                Shop
+              </Link>
+              <Link href="/products?category=Bridal" className="text-[10px] font-bold uppercase tracking-[0.2em] text-gray-500 hover:text-gold-400 transition-colors">
+                Bridal
+              </Link>
+              <Link href="/products?onSale=true" className="text-[10px] font-bold uppercase tracking-[0.2em] text-red-500 hover:text-red-600 transition-colors">
+                Flash Sale
+              </Link>
+            </div>
+          </div>
 
           {/* Search Bar (Desktop) */}
           <div className="hidden md:flex flex-1 max-w-xl relative group">
