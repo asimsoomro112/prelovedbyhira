@@ -106,7 +106,17 @@ export const listPayouts = async (req: express.Request, res: express.Response, n
     const payouts = await Promise.all(snapshot.docs.map(async (doc: any) => {
        const data = doc.data();
        const sellerDoc = await db.collection('users').doc(data.sellerId).get();
-       return { id: doc.id, ...data, sellerName: sellerDoc.data()?.name };
+       const userData = sellerDoc.data();
+       return { 
+         id: doc.id, 
+         ...data, 
+         seller: {
+           user: {
+             name: userData?.name || 'Verified Merchant',
+             email: userData?.email || 'No email'
+           }
+         }
+       };
     }));
 
     res.json(payouts);

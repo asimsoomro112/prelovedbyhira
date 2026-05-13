@@ -53,8 +53,8 @@ export default function AdminPayoutsPage() {
                 ) : payouts.map(p => (
                   <tr key={p.id} className="hover:bg-gold-400/5 transition-colors group">
                     <td className="px-8 py-6">
-                      <p className="font-bold text-dark-900 dark:text-cream-50">{p.seller.user.name}</p>
-                      <p className="text-xs text-gray-500">{p.seller.user.email}</p>
+                      <p className="font-bold text-dark-900 dark:text-cream-50">{p.seller?.user?.name || 'Unknown Seller'}</p>
+                      <p className="text-xs text-gray-500">{p.seller?.user?.email || 'N/A'}</p>
                     </td>
                     <td className="px-8 py-6">
                       <p className="font-accent font-bold text-gold-400 text-lg">Rs. {p.amount.toLocaleString()}</p>
