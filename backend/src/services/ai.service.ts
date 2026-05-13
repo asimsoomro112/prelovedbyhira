@@ -166,31 +166,25 @@ export class AIService {
         console.log(`[Neural Link] Scanning receipt with ${modelName}...`);
         const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
         const imageData = Buffer.from(response.data).toString('base64');
-
-        const model = genAI.getGenerativeModel({ model: modelName });
         
-        const prompt = `You are the Hira AI Payment Auditor. 
-        Analyze this bank transfer receipt/screenshot and extract key transaction details.
-        
-        Order Reference Data:
-        - Expected Amount: Rs. ${orderDetails.totalPrice}
-        - Expected Recipient: "PrelovedByHira" or "asimsoomro" (platform accounts)
-        
-        Extract:
-        1. Amount (PKR)
-        2. Recipient Account Title
-        3. Transaction ID/Reference
-        4. Date & Time
+        const prompt = `
+        Analyze this payment receipt screenshot (JazzCash/EasyPaisa/Bank).
+        1. Extract the Transaction Amount.
+        2. Extract the Transaction ID (TRX ID).
+        3. Extract the Receiver Account/Name.
+        4. Compare the extracted amount with "${expectedAmount}".
         
         Return ONLY a JSON object:
         {
           "amount": number,
-          "recipient": "string",
-          "transactionId": "string",
-          "date": "string",
-          "isMatch": boolean (true if amount matches ${orderDetails.totalPrice} and recipient is correct),
-          "reason": "explanation of verification"
-        }`;
+          "trxId": "string",
+          "receiver": "string",
+          "isMatch": true/false (is amount >= ${expectedAmount}?),
+          "reason": "short explanation of match/mismatch",
+          "isLikelyFraud": true/false,
+          "confidence": number (0-1)
+        }
+      `;
 
         const result = await model.generateContent([
           prompt,
@@ -205,7 +199,7 @@ export class AIService {
         const text = result.response.text();
         const cleanJson = text.replace(/```json|```/gi, "").trim();
         return JSON.parse(cleanJson);
-      } catch (error) {
+      } catch (error: any) {
         console.warn(`[AI Audit] ${modelName} failed, trying next...`);
         lastError = error;
       }

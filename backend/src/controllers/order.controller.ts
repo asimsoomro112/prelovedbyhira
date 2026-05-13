@@ -308,43 +308,38 @@ export const submitPaymentProof = async (req: AuthRequest, res: Response, next: 
 
     if (order.buyerId !== req.user!.id) throw new AppError('Unauthorized', 403);
 
-    // 🤖 ACTUAL AI VERIFICATION
-    let aiResults: any = { isMatch: false, reason: "AI extraction failed" };
-    let aiVerified = false;
-
+    // 🤖 AI VERIFICATION SCAN
+    let aiResults: any = { isMatch: false, reason: "Neural link timeout" };
     try {
-      aiResults = await AIService.verifyPaymentReceipt(proofUrl, { totalPrice: order.totalPrice });
-      aiVerified = aiResults.isMatch;
-      console.log(`[Hira AI] Neural Audit Complete. Match: ${aiVerified}`);
+      aiResults = await AIService.verifyPaymentReceipt(proofUrl, order.totalPrice);
     } catch (err) {
-      console.warn("[Hira AI] Neural Audit failed to connect, proceeding to manual queue.");
+      console.warn("[Hira AI] Payment audit failed, queuing for manual review.");
     }
 
     await orderRef.update({
       paymentProofUrl: proofUrl,
       status: 'PAYMENT_SUBMITTED',
-      aiVerified,
-      aiExtraction: aiResults, // Store what AI found for admin to see
+      aiVerified: aiResults.isMatch,
+      aiExtraction: aiResults,
       updatedAt: new Date().toISOString()
     });
 
     res.json({ 
-      message: aiVerified 
-        ? 'Hira AI has verified your receipt! Admin will perform a final check before releasing the order.' 
-        : 'Receipt submitted. Hira AI could not automatically verify details (Amount/Recipient), so Admin will review it manually shortly.',
-      aiVerified,
-      aiReason: aiResults.reason
+      message: aiResults.isMatch 
+        ? 'Confirmed! Hira AI has matched your payment receipt. Admin will perform a final review shortly.' 
+        : `Receipt uploaded. ${aiResults.reason || 'AI could not automatically verify the amount.'} Admin will review it manually.`,
+      aiResults
     });
   } catch (error) {
     next(error);
   }
 };
 
-import { NotificationService } from '../services/notification.service';
-
 export const adminConfirmPayment = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
+    const proofImageUrl = (req as any).file?.path; // Receipt uploaded by Admin
+
     const orderRef = db.collection('orders').doc(id as string);
     
     let sellerId = "";
@@ -359,6 +354,7 @@ export const adminConfirmPayment = async (req: Request, res: Response, next: Nex
       transaction.update(orderRef, { 
         status: 'PAID', 
         adminConfirmed: true,
+        adminReceiptUrl: proofImageUrl || null,
         updatedAt: new Date().toISOString() 
       });
       
@@ -367,30 +363,28 @@ export const adminConfirmPayment = async (req: Request, res: Response, next: Nex
         updatedAt: new Date().toISOString() 
       });
 
-      // Create Transaction
       const transRef = db.collection('transactions').doc();
       transaction.set(transRef, {
         userId: order.buyerId,
         orderId: id,
         type: 'DEBIT',
         amount: order.totalPrice,
-        description: `Manual Bank Payment for order ${id}`,
+        description: `Payment confirmed for order ${id}`,
         status: 'COMPLETED',
         createdAt: new Date().toISOString(),
       });
     });
 
-    // Notify Seller
     if (sellerId) {
       await NotificationService.create({
         userId: sellerId,
-        title: "Payment Verified! 💰",
-        message: "Admin has verified the payment for your item. It is now officially SOLD. Please ship the product and enter tracking details.",
+        title: "Payment Confirmed! 📦",
+        message: "Payment received confirmed. Now send product for shipping to the customer provided address.",
         type: "ORDER_UPDATE"
       });
     }
 
-    res.json({ message: 'Payment confirmed by Admin. Seller notified.' });
+    res.json({ message: 'Payment confirmed. Seller notified to ship.' });
   } catch (error) {
     next(error);
   }
