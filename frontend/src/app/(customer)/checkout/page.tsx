@@ -44,53 +44,38 @@ export default function CheckoutPage() {
 
     setIsProcessing(true);
     try {
-      // 📦 GROUPING: Track which sellers have already been charged shipping
-      const sellersChargedShipping = new Set();
-
-      for (const item of items) {
+      // 🚀 Step 1: Create Orders (One per product)
+      const orderPromises = items.map(async (item, index) => {
         const sellerId = item.product?.sellerId;
-        let itemShipping = 0;
-        
-        if (sellerId && !sellersChargedShipping.has(sellerId)) {
-          itemShipping = 300;
-          sellersChargedShipping.add(sellerId);
-        }
-      // 🚀 Step 1: Create Orders
-      const orderPromises = uniqueSellers.map(async (sellerId) => {
-        const sellerItems = items.filter(i => i.product?.sellerId === sellerId);
-        
-        // Create an order for EACH product (as requested for easier tracking)
-        // or one per seller. Let's do one per product to match the previous split.
-        const productOrders = await Promise.all(sellerItems.map(async (item, index) => {
-          const itemShippingCost = index === 0 ? 300 : 0;
-          return api.post("/orders/create", {
-            productId: item.productId,
-            shippingAddress: shippingDetails,
-            shippingCost: itemShippingCost,
-          });
-        }));
-        return productOrders;
+        // Check if this is the FIRST item for this seller in the cart to charge shipping
+        const isFirstForSeller = items.findIndex(i => i.product?.sellerId === sellerId) === items.indexOf(item);
+        const itemShippingCost = isFirstForSeller ? 300 : 0;
+
+        return api.post("/orders/create", {
+          productId: item.productId,
+          shippingAddress: shippingDetails,
+          shippingCost: itemShippingCost,
+        });
       });
 
       const responses = await Promise.all(orderPromises);
-      const allOrders = responses.flat();
+      const allOrders = responses.map(r => r.data.order);
 
       // 🚀 Step 2: Upload Receipt if exists
-      if (receipt) {
-        // Here you would upload to Cloudinary first
-        // For simulation, we'll assume the first order is the primary one or upload proof to all
-        const firstOrderId = allOrders[0].data.order.id;
+      if (receipt && allOrders.length > 0) {
+        // In a real app, upload to Cloudinary first. 
+        // Here we use the mock URL provided earlier or implement real upload if needed.
+        const proofUrl = "https://res.cloudinary.com/dzr3qqsz1/image/upload/v1715560000/receipt_placeholder.png";
         
-        // Mock Cloudinary Upload
-        const proofUrl = "https://res.cloudinary.com/demo/image/upload/v1625123456/receipt.jpg";
-        
-        await api.post(`/orders/${firstOrderId}/submit-proof`, { proofUrl });
+        // Link proof to the first order (system will track it)
+        await api.post(`/orders/${allOrders[0].id}/submit-proof`, { proofUrl });
       }
 
       toast.success("Orders placed successfully! Please wait for Admin confirmation.");
       clearCart();
       router.push("/customer/orders");
     } catch (error: any) {
+      console.error("Checkout Error:", error);
       toast.error(error.response?.data?.message || "Failed to place orders");
     } finally {
       setIsProcessing(false);
