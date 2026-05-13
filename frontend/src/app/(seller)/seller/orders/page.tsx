@@ -149,19 +149,27 @@ export default function SellerOrdersPage() {
 
                       <div className="flex flex-col sm:flex-row justify-end items-end gap-3 pt-2">
                          {order.status === 'PAID' && (
-                           <div className="flex flex-col gap-2 items-end">
-                             <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 rounded-lg text-[9px] font-bold uppercase tracking-widest flex items-center gap-1.5 mb-1">
-                               <ShieldCheck className="w-3 h-3" /> Payment Verified
+                           <div className="flex flex-col gap-4 w-full">
+                             <div className="p-6 bg-emerald-500/5 border-2 border-dashed border-emerald-500/20 rounded-3xl space-y-3">
+                               <div className="flex items-center gap-3 text-emerald-500">
+                                 <ShieldCheck className="w-6 h-6" />
+                                 <p className="font-display font-bold text-lg">Payment Received Confirmed! 💰</p>
+                               </div>
+                               <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed font-medium">
+                                 Now send the product for shipping to the customer provided address. Once shipped, click the button below to provide tracking details.
+                               </p>
                              </div>
-                             <button 
-                              onClick={() => {
-                                setSelectedOrder(order);
-                                setIsShippingModal(true);
-                              }}
-                              className="w-full sm:w-auto px-8 py-4 bg-emerald-500 text-white rounded-pill font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
-                             >
-                                <Truck className="w-4 h-4" /> Ship Item Now
-                             </button>
+                             <div className="flex justify-end gap-3 pt-2">
+                               <button 
+                                onClick={() => {
+                                  setSelectedOrder(order);
+                                  setIsShippingModal(true);
+                                }}
+                                className="w-full sm:w-auto px-10 py-5 bg-emerald-500 text-white rounded-pill font-bold shadow-lg shadow-emerald-500/20 hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+                               >
+                                  <Truck className="w-5 h-5" /> Ship Product Now
+                               </button>
+                             </div>
                            </div>
                          )}
                         <button 
