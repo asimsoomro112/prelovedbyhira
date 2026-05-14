@@ -149,7 +149,7 @@ export default function SellerExplorePage() {
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-12">
-             {latestProducts?.map((product: any) => (
+             {latestProducts?.products?.map((product: any) => (
                <Link href={`/product/${product.id}`} key={product.id} className="group cursor-pointer">
                   <div className="aspect-[3/4] glass-ultra crystal-border rounded-[40px] overflow-hidden relative mb-8 shadow-soft group-hover:shadow-gold-3d transition-all">
                      <img 
