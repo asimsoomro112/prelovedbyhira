@@ -5,7 +5,10 @@ import { upload } from '../middleware/upload';
 
 const router = Router();
 
-// Apply auth to all seller routes
+// Public route for Shop Profile
+router.get('/public/:id', sellerController.getPublicSellerProfile);
+
+// Apply auth to all seller routes below
 router.use(authenticate);
 
 // Allow CUSTOMER to submit verification, but protect other stats/status routes

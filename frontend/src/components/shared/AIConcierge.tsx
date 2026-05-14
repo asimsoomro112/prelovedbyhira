@@ -95,7 +95,7 @@ export default function AIConcierge() {
         onClick={() => setIsOpen(true)}
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.9 }}
-        className="fixed bottom-32 lg:bottom-10 right-6 z-[200] w-16 h-16 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 shadow-gold flex items-center justify-center group overflow-hidden"
+        className="fixed bottom-24 sm:bottom-10 right-6 z-[200] w-16 h-16 rounded-full bg-gradient-to-br from-gold-400 to-gold-600 shadow-gold flex items-center justify-center group overflow-hidden"
       >
         <div className="absolute inset-0 bg-white/20 blur-xl animate-pulse" />
         <Sparkles className="w-8 h-8 text-white relative z-10 group-hover:rotate-12 transition-transform" />
@@ -105,42 +105,42 @@ export default function AIConcierge() {
       {/* 🎭 CONCIERGE INTERFACE */}
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-[250] flex items-end justify-end p-6 pointer-events-none">
+          <div className="fixed inset-0 z-[250] flex items-end justify-center sm:justify-end sm:p-6 pointer-events-none">
             {/* Backdrop */}
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }} 
               exit={{ opacity: 0 }}
               onClick={() => setIsOpen(false)}
-              className="absolute inset-0 bg-dark-950/20 backdrop-blur-sm pointer-events-auto"
+              className="absolute inset-0 bg-dark-950/40 backdrop-blur-md pointer-events-auto"
             />
 
             <motion.div 
-              initial={{ y: 100, opacity: 0, scale: 0.9, rotateX: 20 }}
-              animate={{ y: 0, opacity: 1, scale: 1, rotateX: 0 }}
-              exit={{ y: 100, opacity: 0, scale: 0.9 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="relative w-full max-w-md h-[600px] glass-ultra crystal-border rounded-[48px] shadow-2xl flex flex-col pointer-events-auto overflow-hidden"
+              initial={{ y: "100%", opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 30, stiffness: 300 }}
+              className="relative w-full sm:max-w-md h-[100dvh] sm:h-[600px] glass-ultra crystal-border sm:rounded-[48px] rounded-t-[32px] shadow-2xl flex flex-col pointer-events-auto overflow-hidden"
             >
               {/* HEADER */}
-              <div className="p-8 bg-gradient-to-br from-gold-400/10 to-gold-600/10 border-b border-gold-400/10 flex items-center justify-between">
+              <div className="p-6 sm:p-8 bg-gradient-to-br from-gold-400/10 to-gold-600/10 border-b border-gold-400/10 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-4">
                    <div className="relative w-12 h-12 rounded-2xl bg-gold-400 flex items-center justify-center shadow-gold">
                       <Sparkles className="w-6 h-6 text-white" />
                       <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-dark-900" />
                    </div>
                    <div>
-                      <h3 className="text-xl font-display font-bold text-dark-900 dark:text-cream-50">Hira AI <span className="italic text-gold-400">Concierge</span></h3>
+                      <h3 className="text-lg sm:text-xl font-display font-bold text-dark-900 dark:text-cream-50">Hira AI <span className="italic text-gold-400">Concierge</span></h3>
                       <p className="text-[9px] font-bold text-gold-400 uppercase tracking-widest mt-1">2026 Neural Assistant</p>
                    </div>
                 </div>
-                <button onClick={() => setIsOpen(false)} className="w-10 h-10 rounded-xl hover:bg-gold-400/10 flex items-center justify-center text-gray-400 transition-colors">
-                   <X className="w-6 h-6" />
+                <button onClick={() => setIsOpen(false)} className="w-12 h-12 rounded-2xl hover:bg-gold-400/10 flex items-center justify-center text-gray-400 transition-colors">
+                   <X className="w-8 h-8 sm:w-6 sm:h-6" />
                 </button>
               </div>
 
               {/* CHAT AREA */}
-              <div ref={scrollRef} className="flex-1 overflow-y-auto p-8 space-y-6 scrollbar-none">
+              <div ref={scrollRef} className="flex-1 overflow-y-auto p-6 sm:p-8 space-y-6 scrollbar-none touch-pan-y">
                 {messages.map((msg) => (
                   <motion.div 
                     key={msg.id}
@@ -148,7 +148,7 @@ export default function AIConcierge() {
                     animate={{ opacity: 1, y: 0 }}
                     className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    <div className={`max-w-[85%] p-5 rounded-[24px] ${
+                    <div className={`max-w-[90%] sm:max-w-[85%] p-4 sm:p-5 rounded-[24px] ${
                       msg.role === 'user' 
                         ? 'bg-gold-400 text-white shadow-gold rounded-tr-none' 
                         : 'glass-crystal crystal-border text-dark-800 dark:text-cream-50 rounded-tl-none'
@@ -182,8 +182,8 @@ export default function AIConcierge() {
               </div>
 
               {/* INPUT AREA */}
-              <div className="p-6 bg-gradient-to-t from-gold-400/5 to-transparent border-t border-gold-400/10">
-                <div className="flex flex-wrap gap-2 mb-4">
+              <div className="p-4 sm:p-6 bg-gradient-to-t from-gold-400/5 to-transparent border-t border-gold-400/10 shrink-0 pb-safe">
+                <div className="flex gap-2 mb-4 overflow-x-auto scrollbar-none pb-1">
                    <QuickAction label="Track Order" icon={<Package className="w-3 h-3" />} onClick={() => setInput("Track my order")} />
                    <QuickAction label="List Item" icon={<ShoppingBag className="w-3 h-3" />} onClick={() => setInput("I want to sell something")} />
                    <QuickAction label="Complaint" icon={<AlertTriangle className="w-3 h-3" />} onClick={() => setInput("I have an issue")} />
@@ -191,7 +191,7 @@ export default function AIConcierge() {
                 <div className="relative group">
                    <div className="absolute inset-0 bg-gold-400/5 rounded-2xl blur-lg group-hover:bg-gold-400/10 transition-colors" />
                    <div className="relative glass-crystal crystal-border rounded-2xl h-14 flex items-center px-4 gap-3 focus-within:border-gold-400/50 transition-all">
-                      <button className="text-gray-400 hover:text-gold-400"><ImageIcon className="w-5 h-5" /></button>
+                      <button className="text-gray-400 hover:text-gold-400 min-w-[32px] flex items-center justify-center"><ImageIcon className="w-5 h-5" /></button>
                       <input 
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
@@ -199,12 +199,11 @@ export default function AIConcierge() {
                         placeholder="Message Concierge..." 
                         className="bg-transparent border-none outline-none flex-1 text-sm font-bold text-dark-900 dark:text-cream-50 placeholder:text-gray-500"
                       />
-                      <button className="text-gray-400 hover:text-gold-400"><Mic className="w-5 h-5" /></button>
                       <button 
                         onClick={handleSend}
-                        className="w-10 h-10 rounded-xl bg-gold-400 text-white flex items-center justify-center shadow-gold hover:scale-105 active:scale-95 transition-all"
+                        className="w-11 h-11 rounded-xl bg-gold-400 text-white flex items-center justify-center shadow-gold hover:scale-105 active:scale-95 transition-all shrink-0"
                       >
-                         <Send className="w-4 h-4" />
+                         <Send className="w-5 h-5" />
                       </button>
                    </div>
                 </div>
@@ -227,7 +226,7 @@ function QuickAction({ label, icon, onClick }: any) {
   return (
     <button 
       onClick={onClick}
-      className="flex items-center gap-2 px-3 py-1.5 glass-crystal crystal-border rounded-xl text-[9px] font-bold uppercase tracking-widest text-gray-500 hover:text-gold-400 hover:border-gold-400 transition-all"
+      className="flex items-center gap-2 px-4 py-2.5 glass-crystal crystal-border rounded-xl text-[10px] font-bold uppercase tracking-widest text-zinc-500 dark:text-zinc-400 hover:text-gold-400 hover:border-gold-400 transition-all whitespace-nowrap active:scale-95"
     >
        {icon} {label}
     </button>

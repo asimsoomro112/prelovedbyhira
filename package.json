@@ -9,6 +9,7 @@
   "description": "PrelovedByHira — Preloved Fashion Marketplace for Pakistan",
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
+    "dev:mobile": "concurrently \"npm run dev:backend\" \"cd frontend && npm run mobile\"",
     "dev:backend": "cd backend && npm run dev",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
     "build:frontend": "cd frontend && npm run build",

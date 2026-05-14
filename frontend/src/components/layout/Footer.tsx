@@ -32,22 +32,22 @@ export function Footer() {
     <footer className="bg-brand-dark text-white mt-auto">
       {/* Newsletter */}
       <div className="border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
               <h3 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Stay in the Loop ✨</h3>
               <p className="text-sm text-gray-400 mt-1">Get exclusive deals and new arrivals straight to your inbox.</p>
             </div>
             <div className="flex w-full md:w-auto gap-2">
-              <input type="email" placeholder="Enter your email" className="flex-1 md:w-72 px-4 py-2.5 rounded-lg bg-white/10 border border-white/10 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:border-brand-gold transition-colors" id="newsletter-email" />
-              <button className="btn-primary whitespace-nowrap" id="newsletter-submit">Subscribe</button>
+              <input type="email" inputMode="email" autoComplete="email" placeholder="Enter your email" className="flex-1 md:w-72 px-4 py-3 rounded-lg bg-white/10 border border-white/10 text-base text-white placeholder:text-gray-500 focus:outline-none focus:border-brand-gold transition-colors min-h-[48px]" id="newsletter-email" />
+              <button className="btn-primary whitespace-nowrap min-h-[48px]" id="newsletter-submit">Subscribe</button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Links */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
@@ -57,7 +57,7 @@ export function Footer() {
             <p className="text-sm text-gray-300 mt-3 leading-relaxed">Pakistan&apos;s premier preloved fashion marketplace. Sustainable style, affordable luxury.</p>
             <div className="flex gap-3 mt-4">
               {['facebook', 'instagram', 'twitter'].map((social) => (
-                <a key={social} href={`https://${social}.com`} target="_blank" rel="noopener noreferrer" className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center hover:bg-gold-400 transition-colors text-white text-xs uppercase font-bold">
+                <a key={social} href={`https://${social}.com`} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-gold-400 transition-colors text-white text-xs uppercase font-bold min-w-[44px] min-h-[44px]" aria-label={`Visit our ${social}`}>
                   {social[0].toUpperCase()}
                 </a>
               ))}
@@ -71,7 +71,7 @@ export function Footer() {
               <ul className="space-y-2.5">
                 {links.map((link) => (
                   <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-gray-300 hover:text-gold-400 transition-colors">{link.label}</Link>
+                    <Link href={link.href} className="text-sm text-gray-300 hover:text-gold-400 transition-colors py-1 inline-block min-h-[36px] flex items-center">{link.label}</Link>
                   </li>
                 ))}
               </ul>
@@ -82,7 +82,7 @@ export function Footer() {
 
       {/* Bottom */}
       <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
           <p className="text-xs text-gray-500">© {currentYear} PrelovedByHira. All rights reserved.</p>
           <p className="text-xs text-gray-500 flex items-center gap-1">
             Made with <Heart className="w-3 h-3 text-brand-gold fill-brand-gold" /> in Pakistan

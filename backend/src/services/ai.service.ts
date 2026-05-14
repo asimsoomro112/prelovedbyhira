@@ -40,10 +40,11 @@ export class AIService {
       ]);
 
       const text = result.response.text();
-      // Remove potential markdown formatting
-      const cleanJson = text.replace(/```json|```/gi, "").trim();
-      if (!cleanJson) throw new Error("AI returned an empty response");
+      // Robust JSON extraction
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json|```/gi, "").trim();
       
+      if (!cleanJson) throw new Error("AI returned an empty response");
       const extractedData = JSON.parse(cleanJson);
 
       console.log(`[Hira AI] Neural Scan Complete for: ${extractedData.fullName}`);
@@ -200,7 +201,8 @@ export class AIService {
         ]);
 
         const text = result.response.text();
-        const cleanJson = text.replace(/```json|```/gi, "").trim();
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json|```/gi, "").trim();
         return JSON.parse(cleanJson);
       } catch (error: any) {
         console.warn(`[AI Audit] ${modelName} failed, trying next...`);

@@ -13,7 +13,11 @@ import {
   MessageSquare,
   Search,
   ShoppingBag,
-  ArrowRight
+  ArrowRight,
+  Upload,
+  X,
+  Camera,
+  AlertTriangle
 } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
@@ -22,6 +26,9 @@ import { toast } from "sonner";
 
 export default function MyOrdersPage() {
   const [activeTab, setActiveTab] = useState("ALL");
+  const [reuploadOrderId, setReuploadOrderId] = useState<string | null>(null);
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
 
   const { data: orders, isLoading } = useQuery({
@@ -37,13 +44,33 @@ export default function MyOrdersPage() {
 
   const confirmReceipt = useMutation({
     mutationFn: async (orderId: string) => {
-      return await api.put(`/orders/${orderId}/confirm`);
+      return await api.put(`/orders/${orderId}/confirm-delivery`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-orders"] });
       toast.success("Delivery confirmed! Your escrow has been released to the seller.");
     },
   });
+
+  const handleReupload = async () => {
+    if (!reuploadOrderId || !receiptFile) return;
+    setIsSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append('receiptImage', receiptFile);
+      await api.post(`/orders/${reuploadOrderId}/submit-proof`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      toast.success("Receipt re-uploaded successfully! AI verification in progress.");
+      setReuploadOrderId(null);
+      setReceiptFile(null);
+      queryClient.invalidateQueries({ queryKey: ["my-orders"] });
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || "Failed to upload receipt");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const tabs = ["ALL", "ACTIVE", "COMPLETED", "CANCELLED", "DISPUTED"];
 
@@ -105,9 +132,30 @@ export default function MyOrdersPage() {
                   </div>
                   <div className="text-left md:text-right">
                     <p className="text-3xl font-accent font-bold text-gold-400">Rs. {order.totalPrice.toLocaleString()}</p>
+                    {order.quantity > 1 && (
+                      <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">
+                        Qty: {order.quantity} × Rs. {order.unitPrice?.toLocaleString() || (order.totalPrice / order.quantity).toLocaleString()}
+                      </p>
+                    )}
                     <p className="text-[10px] text-gray-400 font-bold uppercase mt-1">Ordered on {new Date(order.createdAt).toLocaleDateString()}</p>
                   </div>
                 </div>
+
+                {order.paymentRejected && (
+                  <div className="bg-red-500/5 border border-red-500/10 rounded-2xl p-4 flex items-start gap-4">
+                     <AlertTriangle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                     <div className="space-y-1">
+                        <p className="text-xs font-bold text-red-500 uppercase tracking-widest">Payment Rejected</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 font-medium">Reason: {order.rejectionReason}</p>
+                        <button 
+                          onClick={() => setReuploadOrderId(order.id)}
+                          className="text-xs font-bold text-gold-400 underline decoration-gold-400/30 underline-offset-4 hover:text-gold-500 transition-colors pt-1"
+                        >
+                          Re-upload Receipt Now
+                        </button>
+                     </div>
+                  </div>
+                )}
 
                 <div className="flex items-center gap-4 p-4 bg-cream-50 dark:bg-dark-800 rounded-2xl border border-gold-400/5">
                    <div className="w-10 h-10 rounded-full bg-gold-400/10 text-gold-400 flex items-center justify-center text-xs font-bold">
@@ -156,6 +204,69 @@ export default function MyOrdersPage() {
           ))
         )}
       </div>
+
+      {/* Re-upload Modal */}
+      {reuploadOrderId && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-[150] flex items-center justify-center p-6">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-dark-900 w-full max-w-md rounded-[40px] p-10 relative shadow-2xl border border-gold-400/10"
+          >
+            <button onClick={() => setReuploadOrderId(null)} className="absolute top-8 right-8 p-2 text-gray-400 hover:text-gold-400">
+              <X className="w-6 h-6" />
+            </button>
+            
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="w-16 h-16 bg-gold-400/10 text-gold-400 rounded-3xl flex items-center justify-center mx-auto mb-4">
+                   <Upload className="w-8 h-8" />
+                </div>
+                <h3 className="text-2xl font-display font-bold">Re-upload Receipt</h3>
+                <p className="text-sm text-gray-500 mt-2">Please upload a clear screenshot of your bank transfer.</p>
+              </div>
+
+              <div className="space-y-4">
+                <label className="relative h-64 border-2 border-dashed border-gold-400/20 rounded-[32px] flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-gold-400/5 transition-all overflow-hidden bg-cream-50/50 dark:bg-dark-800/50">
+                   <input 
+                    type="file" 
+                    accept="image/*" 
+                    className="hidden" 
+                    onChange={(e) => setReceiptFile(e.target.files?.[0] || null)}
+                   />
+                   {receiptFile ? (
+                     <div className="relative w-full h-full">
+                        <Image src={URL.createObjectURL(receiptFile)} alt="Receipt" fill className="object-cover" />
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                           <Camera className="w-8 h-8 text-white" />
+                        </div>
+                     </div>
+                   ) : (
+                     <>
+                       <Upload className="w-10 h-10 text-gold-400/40" />
+                       <div className="text-center">
+                          <span className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest">Select Receipt Image</span>
+                          <span className="text-[9px] text-gray-400/60 mt-1 block">JPG, PNG or PDF (Capture)</span>
+                       </div>
+                     </>
+                   )}
+                </label>
+              </div>
+
+              <div className="flex gap-4">
+                <button onClick={() => setReuploadOrderId(null)} className="flex-1 py-4 bg-gray-100 dark:bg-dark-800 rounded-2xl font-bold text-gray-500 active:scale-95 transition-all">Cancel</button>
+                <button 
+                  disabled={!receiptFile || isSubmitting}
+                  onClick={handleReupload}
+                  className="flex-[2] py-4 bg-gold-400 text-white rounded-2xl font-bold shadow-gold disabled:opacity-50 active:scale-95 transition-all"
+                >
+                  {isSubmitting ? 'Uploading...' : 'Confirm Upload 🚀'}
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
     </div>
   );
 }

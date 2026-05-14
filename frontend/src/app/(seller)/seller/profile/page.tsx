@@ -210,7 +210,7 @@ export default function SellerProfilePage() {
                   <DetailItem icon={Mail} label="Email Address" value={profile?.email || user?.email || "Not set"} />
                   <DetailItem icon={Phone} label="Contact Phone" value={profile?.phone || "Verification Pending"} />
                   <DetailItem icon={MapPin} label="Base Location" value={profile?.city || "Update in Settings"} />
-                  <DetailItem icon={Calendar} label="Member Status" value={profile?.verificationStatus?.replace('_', ' ') || "PENDING"} />
+                  <DetailItem icon={Calendar} label="Member Status" value={profile?.verificationStatus?.replace('_', ' ') || "REQUIRED"} />
                </div>
             </div>
 

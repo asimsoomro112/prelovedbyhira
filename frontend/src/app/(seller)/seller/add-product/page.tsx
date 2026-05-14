@@ -18,7 +18,8 @@ import {
   AlertCircle,
   FileText,
   ShieldCheck,
-  Clock
+  Clock,
+  Layers
 } from "lucide-react";
 import Image from "next/image";
 import { toast } from "sonner";
@@ -36,7 +37,10 @@ const productSchema = z.object({
   defects: z.string().optional(),
   usageDuration: z.string().min(1, "Usage duration is required"),
   size: z.string().min(1, "Size is required"),
+  stock: z.number().min(1, "Stock must be at least 1"),
   description: z.string().min(20, "Description must be at least 20 characters"),
+  originalPacking: z.boolean().default(false),
+  invoiceAvailable: z.boolean().default(false),
 }).refine((data) => data.sellingPrice < data.originalPrice, {
   message: "Selling price must be less than original price",
   path: ["sellingPrice"],
@@ -70,7 +74,7 @@ export default function AddProductPage() {
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
-    defaultValues: { condition: "EXCELLENT" }
+    defaultValues: { condition: "EXCELLENT", stock: 1, originalPacking: false, invoiceAvailable: false }
   });
 
   if (isVerifying) {
@@ -82,7 +86,7 @@ export default function AddProductPage() {
   }
 
   if (vStatus !== "APPROVED" && vStatus !== "ACTIVE") {
-    const isPending = vStatus === 'SELFIE_UPLOADED' || vStatus === 'IDENTITY_VERIFIED' || vStatus === 'PENDING';
+    const isPending = vStatus === 'PENDING';
     const isRejected = vStatus === 'REJECTED';
 
     return (
@@ -176,12 +180,12 @@ export default function AddProductPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 lg:p-12 space-y-12">
+    <div className="max-w-4xl mx-auto px-4 py-8 md:p-12 space-y-8 md:space-y-12">
       {/* Progress Header */}
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-display font-bold">List New Item</h1>
-          <p className="text-sm text-gray-500 font-bold uppercase tracking-widest">Step {step} of 3</p>
+          <h1 className="text-fluid-section font-display font-bold">List Item</h1>
+          <p className="text-[10px] md:text-sm text-gray-500 font-bold uppercase tracking-widest">Step {step} / 3</p>
         </div>
         <div className="h-2 bg-gold-400/10 rounded-full overflow-hidden">
           <motion.div 
@@ -220,13 +224,13 @@ export default function AddProductPage() {
                 </label>
 
                 {previews.map((preview, i) => (
-                  <div key={i} className="relative aspect-square rounded-3xl overflow-hidden border border-gold-400/10 group">
+                  <div key={i} className="relative aspect-square rounded-3xl overflow-hidden border border-gold-400/10 group bg-white dark:bg-dark-900">
                     <Image src={preview} alt="Preview" fill className="object-cover" />
-                    {i === 0 && <div className="absolute top-2 left-2 bg-gold-400 text-white text-[8px] font-bold px-2 py-1 rounded-pill shadow-gold">COVER</div>}
+                    {i === 0 && <div className="absolute top-2 left-2 bg-gold-400 text-white text-[8px] font-bold px-2 py-1 rounded-full shadow-gold z-10">COVER</div>}
                     <button 
                       type="button" 
                       onClick={() => removeImage(i)}
-                      className="absolute top-2 right-2 w-8 h-8 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-2 right-2 w-9 h-9 md:w-8 md:h-8 rounded-full bg-red-500 text-white flex items-center justify-center lg:opacity-0 group-hover:opacity-100 transition-all z-20 shadow-lg active:scale-90"
                     >
                       <X className="w-4 h-4" />
                     </button>
@@ -234,11 +238,11 @@ export default function AddProductPage() {
                 ))}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex justify-end pt-4">
                 <button 
                   type="button" 
                   onClick={() => setStep(2)}
-                  className="px-8 py-4 bg-gold-400 text-white rounded-pill font-bold shadow-gold flex items-center gap-2"
+                  className="w-full sm:w-auto px-8 py-4 bg-gold-400 text-white rounded-2xl font-bold shadow-gold flex items-center justify-center gap-2 active:scale-95 transition-all text-sm min-h-[52px]"
                 >
                   Next Step <ArrowRight className="w-5 h-5" />
                 </button>
@@ -297,6 +301,19 @@ export default function AddProductPage() {
                   {errors.sellingPrice && <p className="text-xs text-red-500">{errors.sellingPrice.message}</p>}
                 </div>
 
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest flex items-center gap-2">
+                    <Layers className="w-3 h-3" /> Stock Quantity
+                  </label>
+                  <input type="number" {...register("stock", { valueAsNumber: true })} className="add-input" min={1} />
+                  {errors.stock && <p className="text-xs text-red-500">{errors.stock.message}</p>}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Size</label>
+                  <input {...register("size")} placeholder="e.g. Medium, EU 38" className="add-input" />
+                </div>
+
                 <div className="md:col-span-2 space-y-4">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Condition</label>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -314,12 +331,7 @@ export default function AddProductPage() {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Size</label>
-                  <input {...register("size")} placeholder="e.g. Medium, EU 38" className="add-input" />
-                </div>
-
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Usage Duration</label>
                   <select {...register("usageDuration")} className="add-input">
                     <option value="Brand New">Brand New</option>
@@ -339,11 +351,51 @@ export default function AddProductPage() {
                   <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">Defects (Optional)</label>
                   <textarea {...register("defects")} rows={2} className="add-input resize-none border-amber-500/20 bg-amber-500/5" placeholder="Mention any marks, stains, or missing buttons..." />
                 </div>
+
+                <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-dark-900 rounded-2xl border border-gold-400/10">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-bold">Original Packaging</span>
+                      <span className="text-[10px] text-gray-400">Box, bag, or original tags included?</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setValue("originalPacking", !watch("originalPacking"))}
+                      className={`w-12 h-6 rounded-full transition-all relative ${watch("originalPacking") ? "bg-gold-400" : "bg-gray-200 dark:bg-dark-800"}`}
+                    >
+                      <motion.div 
+                        animate={{ x: watch("originalPacking") ? 24 : 4 }}
+                        className="absolute top-1 left-0 w-4 h-4 bg-white rounded-full shadow-sm"
+                      />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center justify-between p-4 bg-white dark:bg-dark-900 rounded-2xl border border-gold-400/10">
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm font-bold">Invoice Available</span>
+                      <span className="text-[10px] text-gray-400">Original receipt or digital proof?</span>
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => setValue("invoiceAvailable", !watch("invoiceAvailable"))}
+                      className={`w-12 h-6 rounded-full transition-all relative ${watch("invoiceAvailable") ? "bg-gold-400" : "bg-gray-200 dark:bg-dark-800"}`}
+                    >
+                      <motion.div 
+                        animate={{ x: watch("invoiceAvailable") ? 24 : 4 }}
+                        className="absolute top-1 left-0 w-4 h-4 bg-white rounded-full shadow-sm"
+                      />
+                    </button>
+                  </div>
+                </div>
               </div>
 
-              <div className="flex justify-between">
-                <button type="button" onClick={() => setStep(1)} className="px-8 py-4 text-gold-400 font-bold flex items-center gap-2"><ArrowLeft className="w-5 h-5" /> Back</button>
-                <button type="button" onClick={() => setStep(3)} className="px-8 py-4 bg-gold-400 text-white rounded-pill font-bold shadow-gold flex items-center gap-2">Next Step <ArrowRight className="w-5 h-5" /></button>
+              <div className="flex flex-col-reverse sm:flex-row justify-between gap-3 pt-4">
+                <button type="button" onClick={() => setStep(1)} className="w-full sm:w-auto px-8 py-4 text-gold-400 font-bold flex items-center justify-center gap-2 min-h-[48px] active:bg-gold-400/5 rounded-2xl transition-all">
+                  <ArrowLeft className="w-5 h-5" /> Back
+                </button>
+                <button type="button" onClick={() => setStep(3)} className="w-full sm:w-auto px-8 py-4 bg-gold-400 text-white rounded-2xl font-bold shadow-gold flex items-center justify-center gap-2 min-h-[52px] active:scale-95 transition-all text-sm">
+                  Next Step <ArrowRight className="w-5 h-5" />
+                </button>
               </div>
             </motion.div>
           )}
@@ -385,8 +437,8 @@ export default function AddProductPage() {
                          <p className="text-sm font-bold text-gold-400">{watch("condition")}</p>
                       </div>
                       <div className="p-4 bg-cream-50 dark:bg-dark-800 rounded-2xl">
-                         <p className="text-[10px] text-gray-400 uppercase font-bold">Size</p>
-                         <p className="text-sm font-bold text-gold-400">{watch("size")}</p>
+                         <p className="text-[10px] text-gray-400 uppercase font-bold">Stock</p>
+                         <p className="text-sm font-bold text-gold-400">{watch("stock")} Units</p>
                       </div>
                     </div>
 
@@ -402,12 +454,14 @@ export default function AddProductPage() {
                  </div>
               </div>
 
-              <div className="flex justify-between items-center">
-                <button type="button" onClick={() => setStep(2)} className="px-8 py-4 text-gold-400 font-bold flex items-center gap-2"><ArrowLeft className="w-5 h-5" /> Back</button>
+              <div className="flex flex-col-reverse sm:flex-row justify-between items-center gap-4 pt-4 pb-12">
+                <button type="button" onClick={() => setStep(2)} className="w-full sm:w-auto px-8 py-4 text-gold-400 font-bold flex items-center justify-center gap-2 min-h-[48px] active:bg-gold-400/5 rounded-2xl transition-all">
+                  <ArrowLeft className="w-5 h-5" /> Back
+                </button>
                 <button 
                   type="submit" 
                   disabled={isLoading}
-                  className="px-12 py-5 bg-gradient-to-r from-gold-400 to-gold-600 text-white rounded-pill font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+                  className="w-full sm:w-auto px-12 py-5 bg-gradient-to-r from-gold-400 to-gold-600 text-white rounded-2xl font-bold shadow-gold active:scale-95 transition-all flex items-center justify-center gap-3 min-h-[56px] text-base"
                 >
                   {isLoading ? "Publishing..." : "Publish Product 🚀"}
                 </button>

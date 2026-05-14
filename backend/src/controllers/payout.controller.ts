@@ -25,18 +25,44 @@ export const getPayoutHistory = async (req: AuthRequest, res: Response, next: Ne
   try {
     const sellerId = req.user!.id;
     
-    const snapshot = await db.collection('payouts')
-      .where('sellerId', '==', sellerId)
-      .get();
+    const [transSnapshot, payoutsSnapshot] = await Promise.all([
+      db.collection('transactions').where('userId', '==', sellerId).get(),
+      db.collection('payouts').where('sellerId', '==', sellerId).get()
+    ]);
 
-    const transactions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    transactions.sort((a: any, b: any) => {
-      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const transactions = transSnapshot.docs.map(doc => {
+      const d = doc.data();
+      return { 
+        id: doc.id, 
+        ...d,
+        type: d.type || (d.amount < 0 ? 'DEBIT' : 'CREDIT') 
+      };
+    });
+
+    const payouts = payoutsSnapshot.docs.map(doc => {
+      const d = doc.data();
+      return { 
+        id: doc.id, 
+        ...d, 
+        type: 'DEBIT', 
+        description: d.description || `Payout Request via ${d.method || 'Transfer'}` 
+      };
+    });
+
+    // 🛡️ DEDUPLICATION: We only show the detailed 'payout' record if it exists, 
+    // to avoid showing both the ledger entry and the request record.
+    const payoutIds = new Set(payouts.map(p => p.id));
+    const filteredTransactions = transactions.filter(t => !t.payoutId);
+
+    const combined = [...filteredTransactions, ...payouts];
+    
+    combined.sort((a: any, b: any) => {
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       return dateB - dateA;
     });
 
-    res.json(transactions);
+    res.json(combined);
   } catch (error) {
     next(error);
   }
@@ -83,7 +109,20 @@ export const requestPayout = async (req: AuthRequest, res: Response, next: NextF
 
       transaction.update(sellerRef, {
         pendingBalance: seller.pendingBalance - amount,
+        totalPayouts: (seller.totalPayouts || 0) + Number(amount),
         updatedAt: new Date().toISOString()
+      });
+
+      // Unified Transaction Record
+      const transRef = db.collection('transactions').doc();
+      transaction.set(transRef, {
+        userId: sellerId,
+        payoutId: payoutRef.id, // Link to the payout record
+        type: 'DEBIT',
+        amount: Number(amount),
+        description: `Payout Request via ${method}`,
+        status: 'PENDING',
+        createdAt: new Date().toISOString(),
       });
     });
 

@@ -169,6 +169,15 @@ export const updatePayoutStatus = async (req: express.Request, res: express.Resp
       });
     }
 
+    // 🔄 SYNC: Update the linked transaction record status
+    const transSnapshot = await db.collection('transactions').where('payoutId', '==', id).limit(1).get();
+    if (!transSnapshot.empty) {
+      await transSnapshot.docs[0].ref.update({ 
+        status,
+        updatedAt: new Date().toISOString()
+      });
+    }
+
     res.json({ message: `Payout status updated to ${status}` });
   } catch (error) {
     next(error);

@@ -9,6 +9,11 @@ const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
   phone: z.string().min(10).optional(),
   bio: z.string().optional(),
+  city: z.string().optional(),
+  address: z.string().optional(),
+  interests: z.array(z.string()).optional(),
+  size: z.array(z.string()).optional(),
+  onboardingCompleted: z.boolean().optional(),
 });
 
 export const getProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -38,7 +43,7 @@ export const updateProfile = async (req: AuthRequest, res: Response, next: NextF
       updatedAt: new Date().toISOString(),
     };
 
-    await db.collection('users').doc(req.user.id).update(updateData);
+    await db.collection('users').doc(req.user.id).set(updateData, { merge: true });
 
     const updatedDoc = await db.collection('users').doc(req.user.id).get();
     res.json({ 
@@ -56,7 +61,7 @@ export const getDashboardStats = async (req: AuthRequest, res: Response, next: N
     const userId = req.user.id;
 
     const [activeOrdersSnap, wishlistSnap, ordersSnap, userDoc] = await Promise.all([
-      db.collection('orders').where('buyerId', '==', userId).where('status', 'in', ['PAID', 'SHIPPED', 'PROCESSING']).get(),
+      db.collection('orders').where('buyerId', '==', userId).where('status', 'in', ['PAID', 'SHIPPED', 'PROCESSING', 'PENDING']).get(),
       db.collection('wishlists').where('userId', '==', userId).get(),
       db.collection('orders').where('buyerId', '==', userId).get(),
       db.collection('users').doc(userId).get()

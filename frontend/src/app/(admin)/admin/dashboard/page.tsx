@@ -61,21 +61,21 @@ export default function AdminDashboard() {
   const { stats, recentOrders, topSellers } = dashboardData || {};
 
   return (
-    <div className="p-4 lg:p-8 space-y-10">
+    <div className="p-4 md:p-6 lg:p-8 space-y-8 md:space-y-10 pb-32 lg:pb-8">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-display font-bold">Admin Central</h1>
-          <p className="text-gray-500">System overview and growth metrics for PrelovedByHira.</p>
+        <div className="space-y-1">
+          <h1 className="text-fluid-section font-display font-bold text-dark-900 dark:text-cream-50">Admin Central</h1>
+          <p className="text-gray-500 text-sm">System overview and growth metrics.</p>
         </div>
-        <div className="flex gap-3">
-          <button className="px-6 py-3 bg-white dark:bg-dark-800 border border-gold-400/10 rounded-pill font-bold text-sm shadow-soft">Download Report</button>
-          <button className="px-6 py-3 bg-gold-400 text-white rounded-pill font-bold text-sm shadow-gold" onClick={() => window.location.reload()}>Refresh Data</button>
+        <div className="flex flex-row md:flex-row gap-3 w-full md:w-auto">
+          <button className="flex-1 md:flex-none px-4 md:px-6 py-3 bg-white dark:bg-dark-800 border border-gold-400/10 rounded-pill font-bold text-xs md:text-sm shadow-soft active:scale-95 transition-all">Report</button>
+          <button className="flex-1 md:flex-none px-4 md:px-6 py-3 bg-gold-400 text-white rounded-pill font-bold text-xs md:text-sm shadow-gold active:scale-95 transition-all" onClick={() => window.location.reload()}>Refresh</button>
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Grid - 2 columns on mobile */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
         <AdminStatCard label="Total Users" value={stats?.users?.toLocaleString()} change="Active" icon={<Users className="w-6 h-6" />} color="bg-blue-500" />
         <AdminStatCard label="Total Sellers" value={stats?.sellers?.toLocaleString()} change="Verified" icon={<Store className="w-6 h-6" />} color="bg-purple-500" />
         <AdminStatCard label="Active Products" value={stats?.products?.toLocaleString()} change="Live" icon={<ShoppingBag className="w-6 h-6" />} color="bg-gold-400" />
@@ -85,10 +85,10 @@ export default function AdminDashboard() {
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Sales Chart */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-dark-800 p-8 rounded-[40px] shadow-soft border border-gold-400/5 space-y-8 text-dark-900 dark:text-white">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-display font-bold">Revenue Overview</h2>
-              <select className="bg-cream-50 dark:bg-dark-900 px-4 py-2 rounded-xl text-xs font-bold outline-none border border-gold-400/10">
+          <div className="bg-white dark:bg-dark-800 p-6 md:p-8 rounded-3xl md:rounded-[40px] shadow-soft border border-gold-400/5 space-y-6 md:space-y-8 text-dark-900 dark:text-white">
+            <div className="flex flex-row items-center justify-between gap-4">
+              <h2 className="text-lg md:text-xl font-display font-bold">Revenue</h2>
+              <select className="bg-cream-50 dark:bg-dark-900 px-3 py-1.5 md:px-4 md:py-2 rounded-xl text-[10px] md:text-xs font-bold outline-none border border-gold-400/10 min-h-[36px]">
                 <option>Last 7 Days</option>
                 <option>Last 30 Days</option>
                 <option>All Time</option>
@@ -116,13 +116,13 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Recent Orders */}
-          <div className="bg-white dark:bg-dark-800 rounded-[40px] shadow-soft border border-gold-400/5 overflow-hidden text-dark-900 dark:text-white">
-             <div className="p-8 flex items-center justify-between border-b border-gold-400/10">
-                <h2 className="text-xl font-display font-bold">Recent Orders</h2>
+          {/* Recent Orders - Responsive Table/Cards */}
+          <div className="bg-white dark:bg-dark-800 rounded-3xl md:rounded-[40px] shadow-soft border border-gold-400/5 overflow-hidden text-dark-900 dark:text-white">
+             <div className="p-6 md:p-8 flex items-center justify-between border-b border-gold-400/10">
+                <h2 className="text-lg md:text-xl font-display font-bold">Recent Orders</h2>
                 <Link href="/admin/orders" className="text-sm font-bold text-gold-400 hover:underline">View All</Link>
              </div>
-             <div className="overflow-x-auto">
+             <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left">
                   <thead className="bg-cream-50 dark:bg-dark-900/50 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">
                     <tr>
@@ -161,13 +161,44 @@ export default function AdminDashboard() {
                   </tbody>
                 </table>
              </div>
+
+             {/* ✅ Mobile Card View */}
+             <div className="md:hidden divide-y divide-gold-400/10">
+                {recentOrders?.map((order: any) => (
+                  <div key={order.id} className="p-5 space-y-4 active:bg-gold-400/5 transition-all">
+                     <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                           <p className="text-[10px] font-bold text-gold-400 uppercase tracking-widest">#{order.id.slice(0, 8)}</p>
+                           <div className="flex items-center gap-2">
+                              <div className="w-6 h-6 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center text-[10px] font-bold">
+                                {order.buyer.name[0]}
+                              </div>
+                              <span className="text-sm font-bold">{order.buyer.name}</span>
+                           </div>
+                        </div>
+                        <span className={`px-2 py-0.5 rounded-full text-[9px] font-bold ${order.status === 'PAID' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-amber-500/10 text-amber-500'}`}>
+                           {order.status}
+                        </span>
+                     </div>
+                     <div className="flex justify-between items-end">
+                        <div className="space-y-0.5">
+                           <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">Seller</p>
+                           <p className="text-xs font-medium text-gray-600 dark:text-gray-300">
+                             {order.seller?.user?.name || order.product?.seller?.user?.name || 'Verified Merchant'}
+                           </p>
+                        </div>
+                        <p className="text-base font-accent font-bold text-gold-400">Rs. {order.totalPrice.toLocaleString()}</p>
+                     </div>
+                  </div>
+                ))}
+             </div>
           </div>
         </div>
 
         {/* Top Sellers Sidebar */}
         <div className="space-y-6">
-           <div className="bg-white dark:bg-dark-800 p-8 rounded-[40px] shadow-soft border border-gold-400/5 space-y-8 text-dark-900 dark:text-white">
-              <h2 className="text-xl font-display font-bold">Top Sellers</h2>
+           <div className="bg-white dark:bg-dark-800 p-6 md:p-8 rounded-3xl md:rounded-[40px] shadow-soft border border-gold-400/5 space-y-6 md:space-y-8 text-dark-900 dark:text-white">
+              <h2 className="text-lg md:text-xl font-display font-bold">Top Sellers</h2>
               <div className="space-y-6">
                  {topSellers?.map((seller: any) => (
                    <div key={seller.id} className="flex items-center justify-between group cursor-pointer">
@@ -193,8 +224,8 @@ export default function AdminDashboard() {
            </div>
 
            {/* Quick Actions */}
-           <div className="p-8 bg-dark-900 text-white rounded-[40px] shadow-gold-lg border border-gold-400/20 space-y-6">
-              <h2 className="text-xl font-display font-bold text-gold-400">Global Alerts</h2>
+           <div className="p-6 md:p-8 bg-dark-900 text-white rounded-3xl md:rounded-[40px] shadow-gold-lg border border-gold-400/20 space-y-6">
+              <h2 className="text-lg md:text-xl font-display font-bold text-gold-400">Global Alerts</h2>
               <div className="space-y-4">
                  <AdminAlert icon={<Clock className="w-4 h-4" />} label="New Verifications" href="/admin/sellers" />
                  <AdminAlert icon={<ShoppingBag className="w-4 h-4" />} label="Pending Payouts" href="/admin/payouts" />
@@ -211,14 +242,15 @@ function AdminStatCard({ label, value, change, icon, color }: any) {
   return (
     <motion.div 
       whileHover={{ y: -4 }}
-      className="bg-white dark:bg-dark-800 p-8 rounded-[32px] shadow-soft border border-gold-400/5 space-y-6 overflow-hidden relative group text-dark-900 dark:text-white"
+      whileTap={{ scale: 0.98 }}
+      className="bg-white dark:bg-dark-800 p-6 md:p-8 rounded-2xl md:rounded-[32px] shadow-soft border border-gold-400/5 space-y-4 md:space-y-6 overflow-hidden relative group text-dark-900 dark:text-white"
     >
-      <div className={`w-14 h-14 ${color} bg-opacity-10 rounded-2xl flex items-center justify-center text-gold-400 group-hover:scale-110 transition-transform`}>
+      <div className={`w-12 h-12 md:w-14 md:h-14 ${color} bg-opacity-10 rounded-xl md:rounded-2xl flex items-center justify-center text-gold-400 group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
       <div className="space-y-1">
         <p className="text-[10px] text-gray-400 font-bold uppercase tracking-[0.2em]">{label}</p>
-        <h3 className="text-3xl font-display font-bold">{value || "0"}</h3>
+        <h3 className="text-xl md:text-3xl font-display font-bold">{value || "0"}</h3>
         <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-500 pt-2">
            <ArrowUpRight className="w-3 h-3" /> {change} <span className="text-gray-400 ml-1">Live Status</span>
         </div>

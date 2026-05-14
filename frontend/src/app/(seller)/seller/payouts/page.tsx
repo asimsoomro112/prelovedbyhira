@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -24,11 +25,18 @@ export default function SellerPayoutsPage() {
   const [amount, setAmount] = useState("");
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    return () => setMounted(false);
+  }, []);
   
   // New account form
   const [newAccType, setNewAccType] = useState("BANK");
   const [newAccTitle, setNewAccTitle] = useState("");
   const [newAccDetails, setNewAccDetails] = useState("");
+  const [newAccBank, setNewAccBank] = useState("");
 
   const queryClient = useQueryClient();
 
@@ -76,6 +84,7 @@ export default function SellerPayoutsPage() {
       setIsAddingNew(false);
       setNewAccTitle("");
       setNewAccDetails("");
+      setNewAccBank("");
     }
   });
 
@@ -119,7 +128,9 @@ export default function SellerPayoutsPage() {
     requestMutation.mutate({
       amount: parseFloat(amount),
       method: selectedAcc.type,
-      details: `${selectedAcc.title} - ${selectedAcc.details}`
+      details: selectedAcc.type === 'BANK' 
+        ? `${selectedAcc.title} - ${selectedAcc.details} (${selectedAcc.bankName || 'No Bank Specified'})`
+        : `${selectedAcc.title} - ${selectedAcc.details}`
     });
   };
 
@@ -129,7 +140,8 @@ export default function SellerPayoutsPage() {
     addAccountMutation.mutate({
       type: newAccType,
       title: newAccTitle,
-      details: newAccDetails
+      details: newAccDetails,
+      bankName: newAccType === 'BANK' ? newAccBank : ""
     });
   };
 
@@ -224,149 +236,172 @@ export default function SellerPayoutsPage() {
       </div>
 
       {/* Request Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsModalOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100]" />
-            <motion.div initial={{ opacity: 0, y: 50 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 50 }} className="fixed bottom-0 left-0 right-0 md:top-1/2 md:left-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:bottom-auto w-full md:max-w-2xl bg-white dark:bg-dark-900 rounded-t-[40px] md:rounded-[48px] p-8 md:p-10 z-[110] shadow-2xl border-t md:border border-gold-400/10 overflow-y-auto max-h-[90vh]">
-               <div className="flex items-center justify-between mb-8">
-                  <h2 className="text-3xl font-display font-bold">New Payout</h2>
-                  <button onClick={() => setIsModalOpen(false)} className="p-3 bg-gold-400/10 text-gold-400 rounded-2xl hover:scale-110 transition-transform">
-                    <X className="w-6 h-6" />
-                  </button>
-               </div>
+      {isModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[9999] flex items-end md:items-center justify-center">
+          <motion.div 
+            initial={{ opacity: 0 }} 
+            animate={{ opacity: 1 }} 
+            exit={{ opacity: 0 }} 
+            onClick={() => setIsModalOpen(false)} 
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm" 
+          />
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: 50 }} 
+            className="relative w-full md:max-w-2xl bg-white dark:bg-dark-900 rounded-t-[40px] md:rounded-[48px] p-8 md:p-10 shadow-2xl border-t md:border border-gold-400/10 overflow-y-auto max-h-[90vh]"
+          >
+             <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-display font-bold">New Payout</h2>
+                <button onClick={() => setIsModalOpen(false)} className="p-3 bg-gold-400/10 text-gold-400 rounded-2xl hover:scale-110 transition-transform">
+                  <X className="w-6 h-6" />
+                </button>
+             </div>
 
-               {!isAddingNew ? (
-                 <form onSubmit={handleSubmit} className="space-y-8">
-                    <div className="space-y-4">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Withdrawal Amount (PKR)</label>
-                      <input 
-                        type="number" 
-                        value={amount}
-                        onChange={(e) => setAmount(e.target.value)}
-                        placeholder={minPayout > 0 ? `Min ${minPayout.toLocaleString()} PKR` : "Enter Amount"}
-                        className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-3xl px-8 py-6 text-2xl font-accent font-bold outline-none focus:border-gold-400 transition-all"
-                      />
-                      <p className="text-[10px] text-gray-400 ml-2">Total Available: Rs. {balance?.pendingBalance?.toLocaleString() || 0}</p>
+             {!isAddingNew ? (
+               <form onSubmit={handleSubmit} className="space-y-8">
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Withdrawal Amount (PKR)</label>
+                    <input 
+                      type="number" 
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder={minPayout > 0 ? `Min ${minPayout.toLocaleString()} PKR` : "Enter Amount"}
+                      className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-3xl px-8 py-6 text-2xl font-accent font-bold outline-none focus:border-gold-400 transition-all"
+                    />
+                    <p className="text-[10px] text-gray-400 ml-2">Total Available: Rs. {balance?.pendingBalance?.toLocaleString() || 0}</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Select Payout Account</label>
+                      <button 
+                        type="button" 
+                        onClick={() => setIsAddingNew(true)}
+                        className="text-[10px] font-bold text-gold-400 uppercase tracking-widest flex items-center gap-1 hover:underline"
+                      >
+                        <Plus className="w-3 h-3" /> Add New Account
+                      </button>
                     </div>
-
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Select Payout Account</label>
-                        <button 
-                          type="button" 
-                          onClick={() => setIsAddingNew(true)}
-                          className="text-[10px] font-bold text-gold-400 uppercase tracking-widest flex items-center gap-1 hover:underline"
-                        >
-                          <Plus className="w-3 h-3" /> Add New Account
-                        </button>
-                      </div>
-                      
-                      <div className="grid gap-3">
-                         {accounts?.length === 0 ? (
-                           <div className="p-8 border-2 border-dashed border-gold-400/20 rounded-3xl text-center text-gray-400 text-sm">
-                             No saved accounts found.
-                           </div>
-                         ) : (
-                           accounts?.map((acc: any) => (
-                             <div 
-                               key={acc.id}
-                               onClick={() => setSelectedAccountId(acc.id)}
-                               className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${selectedAccountId === acc.id ? "border-gold-400 bg-gold-400/5" : "border-gold-400/10 hover:border-gold-400/30"}`}
-                             >
-                               <div className="flex items-center gap-4">
-                                  <div className="w-10 h-10 bg-gold-400/10 rounded-xl flex items-center justify-center text-gold-400">
-                                     {acc.type === 'BANK' ? <CreditCard className="w-5 h-5" /> : acc.type === 'JAZZCASH' ? <Smartphone className="w-5 h-5" /> : <Banknote className="w-5 h-5" />}
-                                  </div>
-                                  <div>
-                                     <p className="text-sm font-bold">{acc.title}</p>
-                                     <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">{acc.type} • {acc.details}</p>
-                                  </div>
-                               </div>
-                               <button 
-                                 type="button"
-                                 onClick={(e) => { e.stopPropagation(); deleteAccountMutation.mutate(acc.id); }}
-                                 className="p-2 text-gray-300 hover:text-red-500 transition-colors"
-                               >
-                                 <X className="w-4 h-4" />
-                               </button>
+                    
+                    <div className="grid gap-3">
+                       {accounts?.length === 0 ? (
+                         <div className="p-8 border-2 border-dashed border-gold-400/20 rounded-3xl text-center text-gray-400 text-sm">
+                           No saved accounts found.
+                         </div>
+                       ) : (
+                         accounts?.map((acc: any) => (
+                           <div 
+                             key={acc.id}
+                             onClick={() => setSelectedAccountId(acc.id)}
+                             className={`p-5 rounded-2xl border-2 transition-all cursor-pointer flex items-center justify-between ${selectedAccountId === acc.id ? "border-gold-400 bg-gold-400/5" : "border-gold-400/10 hover:border-gold-400/30"}`}
+                           >
+                             <div className="flex items-center gap-4">
+                                <div className="w-10 h-10 bg-gold-400/10 rounded-xl flex items-center justify-center text-gold-400">
+                                   {acc.type === 'BANK' ? <CreditCard className="w-5 h-5" /> : acc.type === 'JAZZCASH' ? <Smartphone className="w-5 h-5" /> : <Banknote className="w-5 h-5" />}
+                                </div>
+                                <div>
+                                   <p className="text-sm font-bold">{acc.title}</p>
+                                   <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">{acc.type} • {acc.details} {acc.bankName && `• ${acc.bankName}`}</p>
+                                </div>
                              </div>
-                           ))
-                         )}
-                      </div>
+                             <button 
+                               type="button"
+                               onClick={(e) => { e.stopPropagation(); deleteAccountMutation.mutate(acc.id); }}
+                               className="p-2 text-gray-300 hover:text-red-500 transition-colors"
+                             >
+                               <X className="w-4 h-4" />
+                             </button>
+                           </div>
+                         ))
+                       )}
                     </div>
+                  </div>
 
+                  <button 
+                    type="submit"
+                    disabled={requestMutation.isPending || !selectedAccountId}
+                    className="w-full py-6 bg-gold-400 text-white rounded-pill font-bold shadow-gold hover:scale-[1.02] active:scale-95 transition-all text-lg disabled:opacity-50 disabled:grayscale"
+                  >
+                    {requestMutation.isPending ? "Processing Request..." : "Request Withdrawal 🚀"}
+                  </button>
+               </form>
+             ) : (
+               <form onSubmit={handleAddAccount} className="space-y-6">
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Method Type</label>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[{id: 'BANK', icon: CreditCard, label: 'Bank'}, {id: 'JAZZCASH', icon: Smartphone, label: 'JazzCash'}, {id: 'EASYPAISA', icon: Banknote, label: 'Easypaisa'}].map((m) => (
+                        <button 
+                          key={m.id}
+                          type="button"
+                          onClick={() => setNewAccType(m.id)}
+                          className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${newAccType === m.id ? "border-gold-400 bg-gold-400/5 text-gold-400" : "border-gold-400/10 text-gray-400"}`}
+                        >
+                          <m.icon className="w-5 h-5" />
+                          <span className="text-[10px] font-bold uppercase">{m.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Account Title / Name</label>
+                    <input 
+                      type="text" 
+                      value={newAccTitle}
+                      onChange={(e) => setNewAccTitle(e.target.value)}
+                      placeholder="e.g. John Doe"
+                      className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:border-gold-400 transition-all"
+                    />
+                  </div>
+
+                  <div className="space-y-4">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Account Number / IBAN / Phone</label>
+                    <input 
+                      type="text" 
+                      value={newAccDetails}
+                      onChange={(e) => setNewAccDetails(e.target.value)}
+                      placeholder={newAccType === 'BANK' ? 'Enter IBAN' : 'Enter Phone Number'}
+                      className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:border-gold-400 transition-all"
+                    />
+                  </div>
+
+                  {newAccType === 'BANK' && (
+                    <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Bank Name</label>
+                      <input 
+                        type="text" 
+                        value={newAccBank}
+                        onChange={(e) => setNewAccBank(e.target.value)}
+                        placeholder="e.g. Meezan Bank, HBL, UBL"
+                        className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:border-gold-400 transition-all"
+                      />
+                    </motion.div>
+                  )}
+
+                  <div className="flex gap-4 pt-4">
+                    <button 
+                      type="button"
+                      onClick={() => setIsAddingNew(false)}
+                      className="flex-1 py-4 bg-gray-100 dark:bg-dark-800 text-gray-500 rounded-2xl font-bold text-sm hover:bg-gray-200 transition-all"
+                    >
+                      Cancel
+                    </button>
                     <button 
                       type="submit"
-                      disabled={requestMutation.isPending || !selectedAccountId}
-                      className="w-full py-6 bg-gold-400 text-white rounded-pill font-bold shadow-gold hover:scale-[1.02] active:scale-95 transition-all text-lg disabled:opacity-50 disabled:grayscale"
+                      disabled={addAccountMutation.isPending}
+                      className="flex-1 py-4 bg-gold-400 text-white rounded-2xl font-bold text-sm shadow-gold hover:scale-[1.02] transition-all"
                     >
-                      {requestMutation.isPending ? "Processing Request..." : "Request Withdrawal 🚀"}
+                      {addAccountMutation.isPending ? "Saving..." : "Save Account"}
                     </button>
-                 </form>
-               ) : (
-                 <form onSubmit={handleAddAccount} className="space-y-6">
-                    <div className="space-y-4">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Method Type</label>
-                      <div className="grid grid-cols-3 gap-4">
-                        {[{id: 'BANK', icon: CreditCard, label: 'Bank'}, {id: 'JAZZCASH', icon: Smartphone, label: 'JazzCash'}, {id: 'EASYPAISA', icon: Banknote, label: 'Easypaisa'}].map((m) => (
-                          <button 
-                            key={m.id}
-                            type="button"
-                            onClick={() => setNewAccType(m.id)}
-                            className={`p-4 rounded-2xl border-2 transition-all flex flex-col items-center gap-2 ${newAccType === m.id ? "border-gold-400 bg-gold-400/5 text-gold-400" : "border-gold-400/10 text-gray-400"}`}
-                          >
-                            <m.icon className="w-5 h-5" />
-                            <span className="text-[10px] font-bold uppercase">{m.label}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Account Title / Name</label>
-                      <input 
-                        type="text" 
-                        value={newAccTitle}
-                        onChange={(e) => setNewAccTitle(e.target.value)}
-                        placeholder="e.g. John Doe"
-                        className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:border-gold-400 transition-all"
-                      />
-                    </div>
-
-                    <div className="space-y-4">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Account Number / IBAN / Phone</label>
-                      <input 
-                        type="text" 
-                        value={newAccDetails}
-                        onChange={(e) => setNewAccDetails(e.target.value)}
-                        placeholder={newAccType === 'BANK' ? 'Enter IBAN' : 'Enter Phone Number'}
-                        className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-2xl px-6 py-4 text-sm font-medium outline-none focus:border-gold-400 transition-all"
-                      />
-                    </div>
-
-                    <div className="flex gap-4 pt-4">
-                      <button 
-                        type="button"
-                        onClick={() => setIsAddingNew(false)}
-                        className="flex-1 py-4 bg-gray-100 dark:bg-dark-800 text-gray-500 rounded-2xl font-bold text-sm hover:bg-gray-200 transition-all"
-                      >
-                        Cancel
-                      </button>
-                      <button 
-                        type="submit"
-                        disabled={addAccountMutation.isPending}
-                        className="flex-1 py-4 bg-gold-400 text-white rounded-2xl font-bold text-sm shadow-gold hover:scale-[1.02] transition-all"
-                      >
-                        {addAccountMutation.isPending ? "Saving..." : "Save Account"}
-                      </button>
-                    </div>
-                 </form>
-               )}
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+                  </div>
+               </form>
+             )}
+          </motion.div>
+        </div>, 
+        document.body
+      )}
     </div>
   );
 }

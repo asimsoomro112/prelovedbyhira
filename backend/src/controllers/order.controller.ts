@@ -5,51 +5,88 @@ import { AppError } from '../middleware/errorHandler';
 import admin from 'firebase-admin';
 import { NotificationService } from '../services/notification.service';
 import { uploadToCloudinary } from '../middleware/upload';
+import * as EmailService from '../services/email.service';
 
 export const createOrder = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { productId, shippingAddress, shippingCost = 0 } = req.body;
+    const { productId, shippingAddress, shippingCost = 0, quantity = 1 } = req.body;
     const buyerId = req.user!.id;
+    const qty = Math.max(1, parseInt(quantity));
 
-    const productDoc = await db.collection('products').doc(productId).get();
-    if (!productDoc.exists || productDoc.data()?.status !== 'ACTIVE') {
-      throw new AppError('Product is not available for purchase', 400);
-    }
-
-    const product = productDoc.data()!;
+    const productRef = db.collection('products').doc(productId);
     
-    // 🛡️ SECURITY: Prevent self-purchase
-    if (product.sellerId === buyerId) {
-      throw new AppError('You cannot purchase your own product', 400);
+    const result = await db.runTransaction(async (transaction) => {
+      const productDoc = await transaction.get(productRef);
+      
+      if (!productDoc.exists) {
+        throw new AppError('Product not found in vault', 404);
+      }
+
+      const product = productDoc.data()!;
+      
+      if (product.status !== 'ACTIVE' || (product.stock || 0) < qty) {
+        throw new AppError('Requested quantity is no longer available', 400);
+      }
+
+      // 🛡️ SECURITY: Prevent self-purchase
+      if (product.sellerId === buyerId) {
+        throw new AppError('You cannot purchase your own product', 400);
+      }
+
+      const unitPrice = Number(product.sellingPrice);
+      const sellingPriceTotal = unitPrice * qty;
+      const platformFee = sellingPriceTotal * 0.20; // 20% Admin Commission
+      const netAmount = sellingPriceTotal * 0.80;   // 80% to Seller
+      const totalPrice = sellingPriceTotal + Number(shippingCost);
+
+      const orderData = {
+        buyerId,
+        sellerId: product.sellerId,
+        productId,
+        quantity: qty,
+        unitPrice,
+        totalPrice,
+        platformFee,
+        netAmount,
+        shippingCost: Number(shippingCost),
+        status: 'AWAITING_PAYMENT',
+        shippingAddress,
+        paymentProofUrl: null,
+        aiVerified: false,
+        adminConfirmed: false,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const orderRef = db.collection('orders').doc();
+      transaction.set(orderRef, orderData);
+
+      // 📉 RESERVE STOCK IMMEDIATELY
+      const newStock = (product.stock || 0) - qty;
+      transaction.update(productRef, {
+        stock: newStock,
+        status: newStock <= 0 ? 'SOLD' : 'ACTIVE',
+        updatedAt: new Date().toISOString()
+      });
+
+      return { id: orderRef.id, ...orderData };
+    });
+
+    // 📧 Send Emails (Outside transaction for performance)
+    const buyerDoc = await db.collection('users').doc(buyerId).get();
+    if (buyerDoc.exists) {
+      await EmailService.sendOrderConfirmation(buyerDoc.data()!.email, { id: result.id, total: result.totalPrice });
     }
 
-    const sellingPrice = Number(product.sellingPrice);
-    const platformFee = sellingPrice * 0.20; // 20% Admin Commission
-    const netAmount = sellingPrice * 0.80;   // 80% to Seller
-    const totalPrice = sellingPrice + Number(shippingCost); // Customer pays Product + Shipping
-
-    const orderData = {
-      buyerId,
-      sellerId: product.sellerId,
-      productId,
-      totalPrice,
-      platformFee,
-      netAmount,
-      shippingCost: Number(shippingCost),
-      status: 'AWAITING_PAYMENT', // New Initial Status
-      shippingAddress,
-      paymentProofUrl: null,
-      aiVerified: false,
-      adminConfirmed: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-
-    const orderRef = await db.collection('orders').add(orderData);
+    const productDoc = await productRef.get();
+    const sellerDoc = await db.collection('users').doc(result.sellerId).get();
+    if (sellerDoc.exists) {
+      await EmailService.sendSellerNotification(sellerDoc.data()!.email, { itemName: productDoc.data()?.title || 'Item', earnings: result.netAmount, id: result.id });
+    }
 
     res.status(201).json({ 
-      order: { id: orderRef.id, ...orderData },
-      message: 'Order created. Please upload payment receipt to finalize.'
+      order: result,
+      message: 'Order created and stock reserved. Please upload payment receipt to finalize.'
     });
   } catch (error) {
     next(error);
@@ -117,6 +154,14 @@ export const markAsShipped = async (req: AuthRequest, res: Response, next: NextF
       updatedAt: new Date().toISOString()
     });
 
+    // 📧 Send Shipped Email
+    const order = orderDoc.data()!;
+    const buyerDoc = await db.collection('users').doc(order.buyerId).get();
+    if (buyerDoc.exists) {
+      const productDoc = await db.collection('products').doc(order.productId).get();
+      await EmailService.sendOrderStatusUpdate(buyerDoc.data()!.email, id, 'SHIPPED', productDoc.data()?.title || 'Luxury Item');
+    }
+
     res.json({ message: 'Order marked as shipped in vault' });
   } catch (error) {
     next(error);
@@ -171,6 +216,15 @@ export const confirmDelivery = async (req: AuthRequest, res: Response, next: Nex
         createdAt: new Date().toISOString(),
       });
     });
+
+    // 📧 Send Confirmation Email
+    const orderDoc = await orderRef.get();
+    const order = orderDoc.data()!;
+    const buyerDoc = await db.collection('users').doc(order.buyerId).get();
+    if (buyerDoc.exists) {
+      const productDoc = await db.collection('products').doc(order.productId).get();
+      await EmailService.sendOrderStatusUpdate(buyerDoc.data()!.email, id, 'CONFIRMED', productDoc.data()?.title || 'Luxury Item');
+    }
 
     res.json({ message: 'Delivery confirmed, funds released to seller balance' });
   } catch (error) {
@@ -246,8 +300,12 @@ export const getSellerOrders = async (req: AuthRequest, res: Response, next: Nex
     const orders = ordersData.map((o: any, idx: number) => {
       const pDoc = productDocs[idx];
       const bDoc = buyerDocs[idx];
+      
+      // 🛡️ SECURITY: Exclude payment proofs from seller view
+      const { paymentProofUrl, adminReceiptUrl, ...orderData } = o;
+
       return {
-        ...o,
+        ...orderData,
         product: pDoc?.exists ? { id: pDoc.id, ...pDoc.data() } : { title: 'Unknown Product', images: [] },
         buyer: bDoc?.exists ? { id: bDoc.id, ...bDoc.data() } : { name: 'Unknown Buyer' }
       };
@@ -300,7 +358,14 @@ import { AIService } from '../services/ai.service';
 export const submitPaymentProof = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const { id } = req.params;
-    const { proofUrl } = req.body;
+    let proofUrl = req.body.proofUrl;
+
+    if (req.file) {
+      const { url } = await uploadToCloudinary(req.file.buffer, 'receipts');
+      proofUrl = url;
+    }
+
+    if (!proofUrl) throw new AppError('Payment proof (image) is required', 400);
 
     const orderRef = db.collection('orders').doc(id as string);
     const orderDoc = await orderRef.get();
@@ -321,6 +386,8 @@ export const submitPaymentProof = async (req: AuthRequest, res: Response, next: 
     await orderRef.update({
       paymentProofUrl: proofUrl,
       status: 'PAYMENT_SUBMITTED',
+      paymentRejected: false,
+      rejectionReason: null,
       aiVerified: aiResults.isMatch,
       aiExtraction: aiResults,
       updatedAt: new Date().toISOString()
@@ -357,16 +424,13 @@ export const adminConfirmPayment = async (req: Request, res: Response, next: Nex
       const order = orderDoc.data()!;
       sellerId = order.sellerId;
       const productRef = db.collection('products').doc(order.productId);
-
+      const productDoc = await transaction.get(productRef);
+      if (!productDoc.exists) throw new AppError('Product not found', 404);
+      
+      const product = productDoc.data()!;
       transaction.update(orderRef, { 
         status: 'PAID', 
         adminConfirmed: true,
-        adminReceiptUrl: proofImageUrl || null,
-        updatedAt: new Date().toISOString() 
-      });
-      
-      transaction.update(productRef, { 
-        status: 'SOLD', 
         updatedAt: new Date().toISOString() 
       });
 
@@ -391,7 +455,134 @@ export const adminConfirmPayment = async (req: Request, res: Response, next: Nex
       });
     }
 
+    // 📧 Send Payment Confirmation Email to Buyer
+    const orderDoc = await orderRef.get();
+    const orderData = orderDoc.data()!;
+    const buyerDoc = await db.collection('users').doc(orderData.buyerId).get();
+    if (buyerDoc.exists) {
+      const productDoc = await db.collection('products').doc(orderData.productId).get();
+      await EmailService.sendOrderStatusUpdate(buyerDoc.data()!.email, id as string, 'PAID', productDoc.data()?.title || 'Luxury Item');
+    }
+
     res.json({ message: 'Payment confirmed. Seller notified to ship.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const adminRejectPayment = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    if (!reason) throw new AppError('Rejection reason is required', 400);
+
+    const orderRef = db.collection('orders').doc(id as string);
+    const orderDoc = await orderRef.get();
+    if (!orderDoc.exists) throw new AppError('Order not found', 404);
+
+    const order = orderDoc.data()!;
+    
+    await orderRef.update({
+      status: 'PENDING',
+      paymentProofUrl: null,
+      paymentRejected: true,
+      rejectionReason: reason,
+      updatedAt: new Date().toISOString()
+    });
+
+    await NotificationService.create({
+      userId: order.buyerId,
+      title: "Payment Rejected ❌",
+      message: `Your payment for order #${(id as string).slice(-8).toUpperCase()} was rejected: ${reason}. Please upload a valid receipt.`,
+      type: "ORDER_UPDATE"
+    });
+
+    // 📧 Send Rejection Email
+    const buyerDoc = await db.collection('users').doc(order.buyerId).get();
+    if (buyerDoc.exists) {
+      await EmailService.sendPaymentRejectedEmail(buyerDoc.data()!.email, id as string, reason);
+    }
+
+    res.json({ message: 'Payment rejected. Customer notified.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const submitReview = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { id } = req.params;
+    const { rating, comment } = req.body;
+
+    if (!rating || rating < 1 || rating > 5) {
+      throw new AppError('Valid rating (1-5) is required', 400);
+    }
+
+    const orderRef = db.collection('orders').doc(id as string);
+    const orderDoc = await orderRef.get();
+
+    if (!orderDoc.exists) throw new AppError('Order not found', 404);
+    const order = orderDoc.data()!;
+
+    if (order.buyerId !== req.user!.id) throw new AppError('Unauthorized', 403);
+    if (order.status !== 'CONFIRMED') throw new AppError('Reviews can only be submitted for confirmed deliveries', 400);
+    if (order.reviewed) throw new AppError('Review already submitted for this order', 400);
+
+    const productRef = db.collection('products').doc(order.productId);
+    const sellerRef = db.collection('sellers').doc(order.sellerId);
+
+    await db.runTransaction(async (transaction) => {
+      const productDoc = await transaction.get(productRef);
+      const sellerDoc = await transaction.get(sellerRef);
+
+      if (!productDoc.exists) throw new AppError('Product not found', 404);
+      const product = productDoc.data()!;
+
+      // Create Review Record
+      const reviewRef = db.collection('reviews').doc();
+      transaction.set(reviewRef, {
+        orderId: id,
+        productId: order.productId,
+        buyerId: order.buyerId,
+        sellerId: order.sellerId,
+        rating: Number(rating),
+        comment: comment || "",
+        createdAt: new Date().toISOString()
+      });
+
+      // Update Order Status
+      transaction.update(orderRef, { reviewed: true });
+
+      // Update Product Rating
+      const currentRating = product.rating || 0;
+      const reviewCount = product.reviewCount || 0;
+      const newReviewCount = reviewCount + 1;
+      const newRating = ((currentRating * reviewCount) + Number(rating)) / newReviewCount;
+
+      transaction.update(productRef, {
+        rating: newRating,
+        reviewCount: newReviewCount,
+        updatedAt: new Date().toISOString()
+      });
+
+      // Update Seller Rating (Aggregation)
+      if (sellerDoc.exists) {
+        const sData = sellerDoc.data()!;
+        const sRating = sData.rating || 0;
+        const sReviewCount = sData.reviewCount || 0;
+        const sNewCount = sReviewCount + 1;
+        const sNewRating = ((sRating * sReviewCount) + Number(rating)) / sNewCount;
+
+        transaction.update(sellerRef, {
+          rating: sNewRating,
+          reviewCount: sNewCount,
+          updatedAt: new Date().toISOString()
+        });
+      }
+    });
+
+    res.json({ message: 'Review submitted! Your feedback helps the luxury community.' });
   } catch (error) {
     next(error);
   }

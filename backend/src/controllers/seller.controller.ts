@@ -1,4 +1,4 @@
-import { Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { db } from '../config/firebase.config';
 import { AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
@@ -50,12 +50,12 @@ export const submitIdentity = async (req: AuthRequest, res: Response, next: Next
       cnicFront,
       cnicBack,
       cnicNumber: extractedData.cnicNumber,
-      verificationStatus: 'IDENTITY_VERIFIED',
+      verificationStatus: 'IDENTITY_VERIFIED', // Keeping this internal step status
       aiExtractedData: extractedData,
       identityVerifiedAt: new Date().toISOString(),
     };
 
-    await db.collection('sellers').doc(req.user!.id).update(updateData);
+    await db.collection('sellers').doc(req.user!.id).set(updateData, { merge: true });
 
     res.json({ 
       success: true,
@@ -81,7 +81,7 @@ export const submitSelfie = async (req: AuthRequest, res: Response, next: NextFu
 
     const updateData: any = {
       selfieUrl,
-      verificationStatus: 'SELFIE_UPLOADED',
+      verificationStatus: 'PENDING', // Now it's actually pending admin review
       selfieUploadedAt: new Date().toISOString(),
       payoutMethod,
     };
@@ -96,7 +96,7 @@ export const submitSelfie = async (req: AuthRequest, res: Response, next: NextFu
 
     await db.runTransaction(async (transaction) => {
       const sellerRef = db.collection('sellers').doc(req.user!.id);
-      transaction.update(sellerRef, updateData);
+      transaction.set(sellerRef, updateData, { merge: true });
 
       // Automatically save the payout account so it shows up in the Payouts page
       if (payoutMethod && payoutDetails) {
@@ -114,6 +114,7 @@ export const submitSelfie = async (req: AuthRequest, res: Response, next: NextFu
           type: payoutMethod, // JAZZCASH, EASYPAISA, BANK_TRANSFER
           details: detailsObj?.accountNumber || detailsObj?.iban || (typeof payoutDetails === 'string' ? payoutDetails : ""),
           title: detailsObj?.accountName || req.user?.name || "Preloved Member",
+          bankName: detailsObj?.bankName || "",
           createdAt: new Date().toISOString()
         });
       }
@@ -130,12 +131,40 @@ export const submitSelfie = async (req: AuthRequest, res: Response, next: NextFu
 
 export const getVerificationStatus = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const sellerDoc = await db.collection('sellers').doc(req.user!.id).get();
-    if (!sellerDoc.exists) throw new AppError('Seller profile not found', 404);
+    const sellerId = req.user!.id;
+    let sellerDoc = await db.collection('sellers').doc(sellerId).get();
+    
+    // Auto-create seller profile if it's missing but user is a SELLER/ADMIN
+    if (!sellerDoc.exists) {
+      if (req.user!.role !== 'SELLER' && req.user!.role !== 'ADMIN') {
+        throw new AppError('Unauthorized', 403);
+      }
+
+      const newSeller = {
+        userId: sellerId,
+        isVerified: false,
+        verificationStatus: 'REQUIRED',
+        rating: 5.0,
+        totalSales: 0,
+        totalEarnings: 0,
+        pendingBalance: 0,
+        createdAt: new Date().toISOString(),
+      };
+      
+      await db.collection('sellers').doc(sellerId).set(newSeller);
+      sellerDoc = await db.collection('sellers').doc(sellerId).get();
+    }
 
     const data = sellerDoc.data();
+    let status = data?.verificationStatus;
+
+    // Self-healing: If it says PENDING but no selfie exists, it's actually REQUIRED
+    if (status === 'PENDING' && !data?.selfieUrl) {
+      status = 'REQUIRED';
+    }
+
     res.json({ 
-      status: data?.verificationStatus,
+      status,
       rejectionReason: data?.rejectionReason 
     });
   } catch (error) {
@@ -146,8 +175,28 @@ export const getVerificationStatus = async (req: AuthRequest, res: Response, nex
 export const getDashboardStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const sellerId = req.user!.id;
-    const sellerDoc = await db.collection('sellers').doc(sellerId).get();
-    if (!sellerDoc.exists) throw new AppError('Seller profile not found', 404);
+    let sellerDoc = await db.collection('sellers').doc(sellerId).get();
+    
+    // Auto-create seller profile if it's missing but user is a SELLER/ADMIN
+    if (!sellerDoc.exists) {
+      if (req.user!.role !== 'SELLER' && req.user!.role !== 'ADMIN') {
+        throw new AppError('Unauthorized', 403);
+      }
+
+      const newSeller = {
+        userId: sellerId,
+        isVerified: false,
+        verificationStatus: 'REQUIRED',
+        rating: 5.0,
+        totalSales: 0,
+        totalEarnings: 0,
+        pendingBalance: 0,
+        createdAt: new Date().toISOString(),
+      };
+      
+      await db.collection('sellers').doc(sellerId).set(newSeller);
+      sellerDoc = await db.collection('sellers').doc(sellerId).get();
+    }
     const seller = sellerDoc.data()!;
 
     // Stats calculations
@@ -170,8 +219,17 @@ export const getDashboardStats = async (req: AuthRequest, res: Response, next: N
       .limit(5)
       .get();
 
-    const recentOrders = recentOrdersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    // Manual sort if needed or just return raw
+    const recentOrdersRaw = recentOrdersSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    
+    // Fetch product details for each order to get the title
+    const recentOrders = await Promise.all(recentOrdersRaw.map(async (order: any) => {
+      if (order.productId) {
+        const productDoc = await db.collection('products').doc(order.productId).get();
+        return { ...order, product: productDoc.data() };
+      }
+      return order;
+    }));
+
     recentOrders.sort((a: any, b: any) => {
       const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
@@ -227,7 +285,7 @@ export const getSellerProfile = async (req: AuthRequest, res: Response, next: Ne
       const newSeller = {
         userId: sellerId,
         isVerified: false,
-        verificationStatus: 'PENDING',
+        verificationStatus: 'REQUIRED', // New default status
         rating: 5.0,
         totalSales: 0,
         totalEarnings: 0,
@@ -240,11 +298,19 @@ export const getSellerProfile = async (req: AuthRequest, res: Response, next: Ne
     }
 
     const seller = sellerDoc.data()!;
+    let verificationStatus = seller.verificationStatus;
+
+    // Self-healing: Legacy PENDING status with no submission should be REQUIRED
+    if (verificationStatus === 'PENDING' && !seller.selfieUrl) {
+      verificationStatus = 'REQUIRED';
+    }
+
     res.json({
       name: req.user?.name || "Preloved Member",
       email: req.user?.email || "",
       avatar: req.user?.avatar || seller.avatar || "",
-      ...seller
+      ...seller,
+      verificationStatus
     });
   } catch (error) {
     next(error);
@@ -297,6 +363,41 @@ export const updateSellerProfile = async (req: AuthRequest, res: Response, next:
       message: 'Seller identity synchronized with vault',
       avatar: updateData.avatar,
       coverImage: updateData.coverImage
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPublicSellerProfile = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const id = req.params.id as string;
+    
+    const [sellerDoc, userDoc, productsSnapshot] = await Promise.all([
+      db.collection('sellers').doc(id).get(),
+      db.collection('users').doc(id).get(),
+      db.collection('products').where('sellerId', '==', id).where('status', '==', 'ACTIVE').get()
+    ]);
+
+    if (!sellerDoc.exists || !userDoc.exists) {
+      throw new AppError('Shop not found', 404);
+    }
+
+    const sellerData = sellerDoc.data()!;
+    const userData = userDoc.data()!;
+    const products = productsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
+    res.json({
+      shopName: sellerData.shopName || userData.name,
+      bio: sellerData.bio || userData.bio || 'Premium seller on Preloved Market.',
+      avatar: sellerData.avatar || userData.avatar || null,
+      coverImage: sellerData.coverImage || null,
+      rating: sellerData.rating || 5.0,
+      totalSales: sellerData.totalSales || 0,
+      isVerified: sellerData.verificationStatus === 'APPROVED',
+      joinedAt: userData.createdAt || sellerData.createdAt,
+      city: sellerData.city || userData.city || 'Pakistan',
+      products
     });
   } catch (error) {
     next(error);

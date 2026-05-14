@@ -30,10 +30,12 @@ export default function WishlistPage() {
   });
 
   return (
-    <div className="max-w-screen-xl mx-auto px-6 py-12 space-y-12">
-      <div className="flex items-center justify-between">
-        <h1 className="text-4xl font-display font-bold">My Wishlist</h1>
-        <p className="text-sm text-gray-500 font-bold uppercase tracking-widest">{wishlist?.length || 0} Items Saved</p>
+    <div className="max-w-screen-xl mx-auto px-4 md:px-6 py-8 md:py-12 space-y-8 md:space-y-12">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="space-y-1">
+          <h1 className="text-fluid-section font-display font-bold text-dark-900 dark:text-cream-50">My Wishlist</h1>
+          <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">{wishlist?.length || 0} Items Saved</p>
+        </div>
       </div>
 
       {isLoading ? (
@@ -59,7 +61,7 @@ export default function WishlistPage() {
                 <ProductCard product={product} />
                 <button 
                   onClick={() => removeFromWishlist.mutate(product.id)}
-                  className="absolute top-4 right-4 w-10 h-10 bg-white/90 backdrop-blur-sm text-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all shadow-lg hover:bg-red-500 hover:text-white"
+                  className="absolute top-3 right-3 md:top-4 md:right-4 w-10 h-10 bg-white/90 dark:bg-dark-900/90 backdrop-blur-sm text-red-500 rounded-full flex items-center justify-center opacity-100 transition-all shadow-lg hover:bg-red-500 hover:text-white z-10 active:scale-90"
                 >
                   <Trash2 className="w-5 h-5" />
                 </button>

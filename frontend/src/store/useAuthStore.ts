@@ -7,6 +7,9 @@ interface User {
   email: string;
   role: 'ADMIN' | 'SELLER' | 'CUSTOMER' | string;
   avatar?: string;
+  phone?: string;
+  city?: string;
+  address?: string;
 }
 
 interface AuthState {

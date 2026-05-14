@@ -17,7 +17,14 @@ import {
   Command,
   Sparkles,
   Menu,
-  X
+  X,
+  CheckCircle2,
+  XCircle,
+  ChevronRight,
+  ShieldAlert,
+  Shield,
+  Lock,
+  PieChart
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -43,14 +50,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { icon: <Store />, label: "Sellers", href: "/admin/sellers" },
     { icon: <ShoppingBag />, label: "Products", href: "/admin/products" },
     { icon: <CreditCard />, label: "Orders", href: "/admin/orders" },
+    { icon: <Lock />, label: "Escrow Manager", href: "/admin/escrow" },
     { icon: <MessageSquare />, label: "Disputes", href: "/admin/disputes" },
     { icon: <BarChart3 />, label: "Payouts", href: "/admin/payouts" },
+    { icon: <PieChart />, label: "Commission", href: "/admin/commission" },
     { icon: <Settings />, label: "Settings", href: "/admin/settings" },
   ];
 
   const handleLogout = () => {
     logout();
-    window.location.href = "/";
+    window.location.href = "/login";
   };
 
   if (!user || user.role !== 'ADMIN') {
@@ -58,7 +67,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   }
 
   return (
-    <div className="min-h-screen bg-mesh dark:bg-black text-dark-900 dark:text-white flex p-0 lg:p-4 gap-4 transition-colors duration-500 overflow-x-hidden">
+    <div className="min-h-screen bg-mesh dark:bg-black text-dark-900 dark:text-white flex p-0 lg:p-4 gap-0 lg:gap-4 transition-colors duration-500 overflow-x-hidden">
       {/* 2026 MOBILE MENU OVERLAY */}
       <AnimatePresence>
         {isMobileMenuOpen && (
@@ -74,20 +83,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               className="fixed left-0 top-0 bottom-0 w-[80%] max-w-[300px] bg-white dark:bg-zinc-900 z-[160] p-6 lg:hidden flex flex-col border-r border-gold-400/20"
             >
                <div className="flex items-center justify-between mb-10">
-                  <span className="text-xl font-display font-bold">Admin<span className="text-gold-400">Vault</span></span>
+                  <span className="text-xl font-display font-bold">Admin<span className="text-gold-400">Panel</span></span>
                   <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 bg-gold-400/10 rounded-xl text-gold-400"><X /></button>
                </div>
                <nav className="flex-1 space-y-2">
                   {menuItems.map((item) => (
                     <Link 
                       key={item.href} href={item.href} onClick={() => setIsMobileMenuOpen(false)}
-                      className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm ${pathname === item.href ? "text-gold-400 bg-gold-400/10" : "text-zinc-500"}`}
+                      className={`flex items-center gap-4 px-5 py-4 rounded-2xl font-bold text-sm min-h-[48px] ${pathname === item.href ? "text-gold-400 bg-gold-400/10" : "text-zinc-500 active:bg-gold-400/5"}`}
                     >
                       {item.icon} {item.label}
                     </Link>
                   ))}
                </nav>
-               <button onClick={handleLogout} className="mt-auto py-4 bg-red-500/10 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-2">
+               <button onClick={handleLogout} className="mt-auto py-4 bg-red-500/10 text-red-500 rounded-2xl font-bold flex items-center justify-center gap-2 min-h-[48px]">
                   <LogOut className="w-4 h-4" /> Sign Out
                </button>
             </motion.aside>
@@ -153,9 +162,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* CONTENT AREA */}
       <main className="flex-1 flex flex-col gap-4 overflow-hidden min-h-screen lg:min-h-0">
         {/* Top Header */}
-        <header className="h-20 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-3xl crystal-border rounded-none lg:rounded-[32px] flex items-center justify-between px-6 lg:px-8 shadow-xl transition-all">
+        <header className="h-16 lg:h-20 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-3xl crystal-border rounded-none lg:rounded-[32px] flex items-center justify-between px-4 lg:px-8 shadow-xl transition-all shrink-0">
            <div className="flex items-center gap-4 flex-1">
-              <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-3 bg-gold-400/10 text-gold-400 rounded-xl">
+              <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-3 bg-gold-400/10 text-gold-400 rounded-xl min-w-[48px] min-h-[48px] flex items-center justify-center active:scale-90 transition-transform">
                  <Menu className="w-6 h-6" />
               </button>
               <div className="relative w-full max-w-md group hidden sm:flex">
@@ -172,13 +181,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                  <Bell className="w-5 h-5" />
                </button>
                <div className="w-px h-8 bg-zinc-200 dark:bg-white/10 mx-2 hidden sm:block" />
-               <button className="px-4 lg:px-6 h-11 bg-gold-400 text-white rounded-xl font-bold text-[10px] lg:text-xs shadow-gold hover:scale-105 transition-all truncate">
+               <button className="px-4 lg:px-6 h-11 bg-gold-400 text-white rounded-xl font-bold text-[10px] lg:text-xs shadow-gold hover:scale-105 active:scale-95 transition-all truncate min-h-[44px]">
                   Broadcast
                </button>
             </div>
          </header>
 
-         <div className="flex-1 overflow-y-auto scrollbar-none rounded-none lg:rounded-[32px] p-4 lg:p-0">
+         <div className="flex-1 overflow-y-auto scrollbar-none rounded-none lg:rounded-[32px] p-3 lg:p-0">
            {children}
          </div>
        </main>

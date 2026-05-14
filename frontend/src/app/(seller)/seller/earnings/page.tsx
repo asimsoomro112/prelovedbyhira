@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Wallet, 
   TrendingUp, 
@@ -30,6 +31,43 @@ export default function SellerEarningsPage() {
       return data;
     },
   });
+
+  const [filterType, setFilterType] = useState<'ALL' | 'CREDIT' | 'DEBIT'>('ALL');
+  const [showFilter, setShowFilter] = useState(false);
+
+  const filteredTransactions = transactions?.filter((t: any) => {
+    if (filterType === 'ALL') return true;
+    return t.type === filterType;
+  });
+
+  const downloadCSV = () => {
+    if (!transactions || transactions.length === 0) return;
+    
+    const headers = ["ID", "Type", "Description", "Date", "Amount", "Status"];
+    const rows = transactions.map((t: any) => [
+      t.id,
+      t.type,
+      t.description,
+      new Date(t.createdAt).toLocaleDateString(),
+      t.amount,
+      "COMPLETED"
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((e: any[]) => e.join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement("a");
+    const url = URL.createObjectURL(blob);
+    link.setAttribute("href", url);
+    link.setAttribute("download", `earnings_report_${new Date().toLocaleDateString()}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="p-4 lg:p-8 space-y-8 lg:space-y-12">
@@ -65,9 +103,41 @@ export default function SellerEarningsPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-xl lg:text-2xl font-display font-bold">Transaction History</h2>
-          <div className="flex gap-2">
-             <button className="p-2.5 lg:p-3 bg-white dark:bg-dark-800 rounded-xl border border-gold-400/10 text-gray-400 hover:text-gold-400 transition-all"><Filter className="w-4 h-4" /></button>
-             <button className="p-2.5 lg:p-3 bg-white dark:bg-dark-800 rounded-xl border border-gold-400/10 text-gray-400 hover:text-gold-400 transition-all"><Download className="w-4 h-4" /></button>
+          <div className="flex gap-2 relative">
+             <div className="relative">
+                <button 
+                  onClick={() => setShowFilter(!showFilter)}
+                  className={`p-2.5 lg:p-3 rounded-xl border transition-all ${showFilter ? 'bg-gold-400 text-white border-gold-400' : 'bg-white dark:bg-dark-800 border-gold-400/10 text-gray-400 hover:text-gold-400'}`}
+                >
+                  <Filter className="w-4 h-4" />
+                </button>
+                <AnimatePresence>
+                  {showFilter && (
+                    <motion.div 
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute right-0 mt-2 w-40 bg-white dark:bg-dark-900 border border-gold-400/10 rounded-2xl shadow-2xl z-50 overflow-hidden"
+                    >
+                      {['ALL', 'CREDIT', 'DEBIT'].map((type) => (
+                        <button 
+                          key={type}
+                          onClick={() => { setFilterType(type as any); setShowFilter(false); }}
+                          className={`w-full text-left px-4 py-3 text-[10px] font-bold uppercase tracking-widest hover:bg-gold-400/5 transition-colors ${filterType === type ? 'text-gold-400 bg-gold-400/5' : 'text-gray-500'}`}
+                        >
+                          {type === 'ALL' ? 'All Activity' : type === 'CREDIT' ? 'Earnings Only' : 'Payouts Only'}
+                        </button>
+                      ))}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+             </div>
+             <button 
+               onClick={downloadCSV}
+               className="p-2.5 lg:p-3 bg-white dark:bg-dark-800 rounded-xl border border-gold-400/10 text-gray-400 hover:text-gold-400 transition-all active:scale-95"
+             >
+               <Download className="w-4 h-4" />
+             </button>
           </div>
         </div>
 
@@ -87,23 +157,23 @@ export default function SellerEarningsPage() {
                 <tbody className="divide-y divide-gold-400/10">
                   {transLoading ? (
                     Array(3).fill(0).map((_, i) => <tr key={i} className="animate-pulse h-16 bg-gold-400/5" />)
-                  ) : transactions?.length === 0 ? (
+                  ) : filteredTransactions?.length === 0 ? (
                     <tr>
-                      <td colSpan={5} className="px-8 py-20 text-center text-gray-500 font-bold uppercase text-xs tracking-widest">No transactions yet</td>
+                      <td colSpan={5} className="px-8 py-20 text-center text-gray-500 font-bold uppercase text-xs tracking-widest">No transactions found</td>
                     </tr>
                   ) : (
-                    transactions?.map((t: any) => (
+                    filteredTransactions?.map((t: any) => (
                       <tr key={t.id} className="hover:bg-gold-400/5 transition-all">
                         <td className="px-8 py-6">
                            {t.type === 'CREDIT' ? (
                              <div className="flex items-center gap-3 text-emerald-500">
                                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center"><ArrowDownLeft className="w-4 h-4" /></div>
-                               <span className="font-bold text-xs uppercase tracking-widest">Credit</span>
+                               <span className="font-bold text-xs uppercase tracking-widest">Earnings</span>
                              </div>
                            ) : (
                              <div className="flex items-center gap-3 text-blue-500">
                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center"><ArrowUpRight className="w-4 h-4" /></div>
-                               <span className="font-bold text-xs uppercase tracking-widest">Debit</span>
+                               <span className="font-bold text-xs uppercase tracking-widest">Payout Request</span>
                              </div>
                            )}
                         </td>
@@ -132,12 +202,12 @@ export default function SellerEarningsPage() {
         <div className="md:hidden space-y-4">
            {transLoading ? (
              Array(3).fill(0).map((_, i) => <div key={i} className="h-24 bg-white dark:bg-dark-800 rounded-3xl animate-pulse" />)
-           ) : transactions?.length === 0 ? (
+           ) : filteredTransactions?.length === 0 ? (
               <div className="text-center py-20 bg-white dark:bg-dark-800 rounded-[32px] border border-gold-400/10">
                 <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest">No transactions yet</p>
               </div>
            ) : (
-             transactions?.map((t: any) => (
+             filteredTransactions?.map((t: any) => (
                <div key={t.id} className="bg-white dark:bg-dark-800 p-5 rounded-3xl border border-gold-400/10 flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${t.type === 'CREDIT' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-blue-500/10 text-blue-500'}`}>
@@ -145,7 +215,12 @@ export default function SellerEarningsPage() {
                     </div>
                     <div>
                        <p className="text-sm font-bold truncate max-w-[150px]">{t.description}</p>
-                       <p className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">{new Date(t.createdAt).toLocaleDateString()}</p>
+                       <div className="flex items-center gap-2 mt-0.5">
+                          <span className={`text-[9px] font-bold uppercase tracking-widest ${t.type === 'CREDIT' ? 'text-emerald-500' : 'text-blue-500'}`}>
+                             {t.type === 'CREDIT' ? 'Earnings' : 'Payout'}
+                          </span>
+                          <span className="text-[9px] text-gray-400 font-medium">• {new Date(t.createdAt).toLocaleDateString()}</span>
+                       </div>
                     </div>
                   </div>
                   <div className="text-right">

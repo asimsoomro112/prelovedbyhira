@@ -48,7 +48,15 @@ export default function LoginPage() {
 
       setAuth(data.user, token);
       toast.success(`Access Granted! Welcome ${data.user.name} ✨`);
-      router.push("/customer/dashboard");
+      
+      // Role-based redirection for Google Login
+      if (data.user.role === 'ADMIN') {
+        router.push("/admin/dashboard");
+      } else if (data.user.role === 'SELLER') {
+        router.push("/seller/dashboard");
+      } else {
+        router.push("/customer/dashboard");
+      }
     } catch (error: any) {
       toast.error(error.message || "Google Sign-in failed.");
     } finally {
@@ -75,7 +83,7 @@ export default function LoginPage() {
 
       // 3. Update Global State
       setAuth(data.user, token);
-      toast.success(`Welcome back to the Vault! ✨`);
+      toast.success(`Welcome back! ✨`);
       
       // Role-based redirection
       if (data.user.role === 'ADMIN') {
@@ -101,7 +109,7 @@ export default function LoginPage() {
       >
         <div className="p-8 space-y-8">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-display font-bold">Vault Access</h1>
+            <h1 className="text-3xl font-display font-bold">Login to Platform</h1>
             <p className="text-gray-500 text-sm">Pakistan&apos;s most secure preloved marketplace</p>
           </div>
 
@@ -154,7 +162,7 @@ export default function LoginPage() {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-gold-400 to-gold-600 text-white py-4 rounded-pill font-bold shadow-gold hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:scale-100"
             >
-              {isLoading ? "Synchronizing..." : "Enter the Vault"} 
+              {isLoading ? "Synchronizing..." : "Sign In"} 
               {!isLoading && <ArrowRight className="w-5 h-5" />}
             </button>
           </form>
@@ -180,7 +188,7 @@ export default function LoginPage() {
 
           <p className="text-center text-sm text-gray-500">
             New to the platform?{" "}
-            <Link href="/register" className="text-gold-400 font-bold hover:underline font-display">Request Membership</Link>
+            <Link href="/register" className="text-gold-400 font-bold hover:underline font-display">Join Now</Link>
           </p>
         </div>
       </motion.div>

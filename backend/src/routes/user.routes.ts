@@ -10,6 +10,7 @@ router.use(authenticate);
 router.get('/profile', userController.getProfile);
 router.get('/dashboard', userController.getDashboardStats);
 router.put('/profile', upload.single('avatar'), userController.updateProfile);
+router.patch('/profile', upload.single('avatar'), userController.updateProfile);
 router.delete('/account', userController.deleteAccount);
 
 export default router;

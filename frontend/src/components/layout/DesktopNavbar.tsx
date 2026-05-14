@@ -108,7 +108,9 @@ export default function DesktopNavbar() {
           <Link href="/customer/wishlist">
             <NavAction icon={<Heart />} label="Wishlist" count={0} />
           </Link>
-          <NavAction icon={<Bell />} label="Notifs" count={3} hasPulse />
+          <Link href="/notifications">
+            <NavAction icon={<Bell />} label="Notifs" count={3} hasPulse />
+          </Link>
           
           <Link href="/cart" className="relative group">
             <div className="w-12 h-12 rounded-2xl glass-crystal crystal-border flex items-center justify-center hover:bg-gold-400 hover:text-white transition-all duration-500">

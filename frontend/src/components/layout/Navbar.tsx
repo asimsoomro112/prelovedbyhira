@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { 
   Search, 
   ShoppingBag, 
@@ -30,6 +30,7 @@ export default function Navbar() {
   const { user, logout } = useAuthStore();
   const { itemCount, fetchCart } = useCartStore();
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     if (user) fetchCart();
@@ -157,7 +158,7 @@ export default function Navbar() {
                       <ShoppingBag className="w-5 h-5 text-gold-400" /> Order History
                     </Link>
                     <button 
-                      onClick={logout}
+                      onClick={() => { logout(); router.push('/login'); }}
                       className="w-full flex items-center gap-3 p-4 rounded-2xl hover:bg-red-500/5 text-red-500 text-sm font-bold transition-all mt-2 border-t border-gold-400/5"
                     >
                       <LogOut className="w-5 h-5" /> Logout

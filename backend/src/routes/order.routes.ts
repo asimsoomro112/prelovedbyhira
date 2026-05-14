@@ -16,8 +16,10 @@ router.get('/seller-orders', orderController.getSellerOrders);
 
 router.put('/:id/ship', orderController.markAsShipped);
 router.put('/:id/confirm-delivery', orderController.confirmDelivery);
-router.post('/:id/submit-proof', orderController.submitPaymentProof);
+router.post('/:id/submit-proof', upload.single('receiptImage'), orderController.submitPaymentProof);
 router.put('/:id/admin-confirm', upload.single('receiptImage'), orderController.adminConfirmPayment);
+router.put('/:id/admin-reject', orderController.adminRejectPayment);
 router.get('/:id', orderController.getOrderById);
+router.post('/:id/review', orderController.submitReview);
 
 export default router;

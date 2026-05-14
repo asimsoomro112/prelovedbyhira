@@ -140,3 +140,57 @@ export const sendVerificationEmail = async (email: string, name: string, token: 
     html: baseTemplate(content),
   });
 };
+
+export const sendPaymentRejectedEmail = async (email: string, orderId: string, reason: string) => {
+  const content = `
+    <span class="h2">Payment Rejected</span>
+    <p class="text">Our Neural Audit has identified an issue with your payment proof for order <b>#${orderId.slice(-8).toUpperCase()}</b>.</p>
+    <div style="background: rgba(211, 47, 47, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(211, 47, 47, 0.1); margin: 30px 0; text-align: left;">
+        <p style="color: #d32f2f; font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 15px;">Reason for Rejection</p>
+        <p style="margin: 5px 0; font-size: 14px; color: #d32f2f;">${reason}</p>
+    </div>
+    <p class="text">Please log in to your dashboard and re-upload a valid bank or wallet receipt to secure your item.</p>
+    <a href="https://prelovedbyhira.com/customer/orders" class="btn">Re-upload Proof</a>
+  `;
+
+  await transporter.sendMail({
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `❌ Action Required: Payment Proof Rejected (#${orderId.slice(-8).toUpperCase()})`,
+    html: baseTemplate(content),
+  });
+};
+
+export const sendOrderStatusUpdate = async (email: string, orderId: string, status: string, itemName: string) => {
+  const statusIcons: any = {
+    'PAID': '💰',
+    'SHIPPED': '🚚',
+    'DELIVERED': '🎁',
+    'CONFIRMED': '🤝'
+  };
+
+  const statusMessages: any = {
+    'PAID': 'Payment verified. Seller is preparing your item.',
+    'SHIPPED': 'Exciting news! Your item is on its way.',
+    'DELIVERED': 'Your luxury item has arrived at your location.',
+    'CONFIRMED': 'Trade completed. Thank you for using Hira Vault.'
+  };
+
+  const content = `
+    <span class="h2">Order Status Update</span>
+    <h1 class="h1" style="font-size: 28px; margin: 20px 0;">${status}</h1>
+    <p class="text">${statusMessages[status] || 'Your order status has been updated.'}</p>
+    <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
+        <p style="margin: 5px 0; font-size: 14px;">Order: <b>#${orderId.slice(-8).toUpperCase()}</b></p>
+        <p style="margin: 5px 0; font-size: 14px;">Item: <b>${itemName}</b></p>
+    </div>
+    <a href="https://prelovedbyhira.com/customer/orders" class="btn">View in Vault</a>
+  `;
+
+  await transporter.sendMail({
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `${statusIcons[status] || '✨'} Order ${status}: ${itemName}`,
+    html: baseTemplate(content),
+  });
+};

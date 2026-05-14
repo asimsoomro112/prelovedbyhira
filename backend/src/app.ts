@@ -21,13 +21,18 @@ import notificationRoutes from './routes/notification.routes';
 import aiRoutes from './routes/ai.routes';
 import categoryRoutes from './routes/category.routes';
 import uploadRoutes from './routes/upload.routes';
+import promotionRoutes from './routes/promotion.routes';
 
 const app = express();
 
 // ─── Middleware ────────────────────────────
 app.use(helmet());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: [
+    'http://localhost:3000', 
+    'http://192.168.100.72:3000',
+    process.env.FRONTEND_URL || 'http://localhost:3000'
+  ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization'],
@@ -74,6 +79,7 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/promotions', promotionRoutes);
 
 // ─── 404 Handler ────────────────────────────
 app.use((_req, res) => {

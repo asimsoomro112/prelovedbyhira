@@ -32,6 +32,7 @@ const verificationSchema = z.object({
   payoutMethod: z.enum(["JAZZCASH", "EASYPAISA", "BANK_TRANSFER"]),
   accountNumber: z.string().min(10, "Valid account number is required"),
   accountName: z.string().min(2, "Account holder name is required"),
+  bankName: z.string().optional(),
 });
 
 type VerificationValues = z.infer<typeof verificationSchema>;
@@ -59,7 +60,7 @@ export default function SellerVerificationPage() {
       const { data } = await api.get("/seller/verification/status");
       setVStatus(data.status);
       if (data.status === 'IDENTITY_VERIFIED') setStep(3);
-      if (data.status === 'SELFIE_UPLOADED') setStep(5);
+      if (data.status === 'PENDING') setStep(5);
       if (data.status === 'APPROVED' || data.status === 'ACTIVE') setStep(5);
       if (data.status === 'REJECTED') {
         setStep(6); // Step 6 for Rejection view
@@ -131,7 +132,8 @@ export default function SellerVerificationPage() {
       formData.append("payoutMethod", values.payoutMethod);
       formData.append("payoutDetails", JSON.stringify({ 
         accountNumber: values.accountNumber, 
-        accountName: values.accountName 
+        accountName: values.accountName,
+        bankName: values.bankName || ""
       }));
 
       await api.post("/seller/submit-selfie", formData, {
@@ -296,6 +298,12 @@ export default function SellerVerificationPage() {
                       <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Account Number / IBAN</label>
                       <input {...register("accountNumber")} placeholder="03XXXXXXXXX or PK..." className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-2xl px-6 py-4 outline-none focus:border-gold-400 transition-all font-bold" />
                     </div>
+                    {watch("payoutMethod") === "BANK_TRANSFER" && (
+                      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2">
+                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest ml-1">Bank Name</label>
+                        <input {...register("bankName")} placeholder="e.g. Meezan Bank, HBL, UBL" className="w-full bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/10 rounded-2xl px-6 py-4 outline-none focus:border-gold-400 transition-all font-bold" />
+                      </motion.div>
+                    )}
                  </div>
                  <div className="flex gap-4">
                   <button type="button" onClick={() => setStep(3)} className="flex-1 py-5 border-2 border-gold-400/20 text-gray-500 rounded-2xl font-bold">Back</button>
@@ -322,7 +330,7 @@ export default function SellerVerificationPage() {
                  <div className="space-y-6">
                     <div className="space-y-2">
                        <h2 className={`text-4xl font-display font-bold ${vStatus === 'APPROVED' || vStatus === 'ACTIVE' ? 'text-emerald-500' : 'text-gold-400'}`}>
-                         {vStatus === 'APPROVED' || vStatus === 'ACTIVE' ? "Boutique Fully Verified!" : "Identity Matched!"}
+                         {vStatus === 'APPROVED' || vStatus === 'ACTIVE' ? "Boutique Fully Verified!" : vStatus === 'PENDING' ? "Application Under Review" : "Identity Matched!"}
                        </h2>
                        <p className="text-zinc-500 dark:text-gray-400 font-medium">
                          {vStatus === 'APPROVED' || vStatus === 'ACTIVE' 

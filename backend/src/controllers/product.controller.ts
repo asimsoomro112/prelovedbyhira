@@ -45,7 +45,11 @@ export const getProductDetail = async (req: Request, res: Response, next: NextFu
 
 export const createProduct = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { title, brand, originalPrice, sellingPrice, condition, defects, usageDuration, size, category, description } = req.body;
+    const { 
+      title, brand, originalPrice, sellingPrice, condition, 
+      defects, usageDuration, size, category, description, 
+      stock = 1, originalPacking, invoiceAvailable 
+    } = req.body;
     
     if (!req.user) throw new AppError('Unauthorized', 401);
 
@@ -65,6 +69,9 @@ export const createProduct = async (req: AuthRequest, res: Response, next: NextF
       size,
       category,
       description,
+      stock: parseInt(stock as string) || 1,
+      originalPacking: originalPacking === 'true' || originalPacking === true,
+      invoiceAvailable: invoiceAvailable === 'true' || invoiceAvailable === true,
       images: imageUrls,
       status: 'PENDING',
       views: 0,
@@ -95,10 +102,22 @@ export const updateProduct = async (req: AuthRequest, res: Response, next: NextF
        throw new AppError('Unauthorized', 403);
     }
 
-    const updateData = {
+    const updateData: any = {
       ...req.body,
       updatedAt: new Date().toISOString(),
     };
+
+    // 🔒 RESTRICTION: Sellers cannot edit price after listing to prevent order conflicts
+    if (req.user?.role === 'SELLER') {
+      delete updateData.sellingPrice;
+      delete updateData.originalPrice;
+      delete updateData.sellerId; // Also prevent sellerId tampering
+    }
+
+    // 📦 Auto-activate if stock added to a SOLD item
+    if (updateData.stock > 0 && product.status === 'SOLD') {
+      updateData.status = 'ACTIVE';
+    }
 
     await db.collection('products').doc(id).update(updateData);
 
@@ -118,6 +137,17 @@ export const softDeleteProduct = async (req: AuthRequest, res: Response, next: N
     
     if (product.sellerId !== req.user?.id && req.user?.role !== 'ADMIN') {
       throw new AppError('Unauthorized', 403);
+    }
+
+    // 🔒 RESTRICTION: Prevent deletion if there are active orders
+    const activeOrders = await db.collection('orders')
+      .where('productId', '==', id)
+      .where('status', 'in', ['AWAITING_PAYMENT', 'PAYMENT_SUBMITTED', 'PAID', 'SHIPPED', 'DELIVERED'])
+      .limit(1)
+      .get();
+
+    if (!activeOrders.empty) {
+      throw new AppError('Cannot delete a product with active orders. Please fulfill or resolve the current transactions first.', 400);
     }
 
     await db.collection('products').doc(id).update({ 

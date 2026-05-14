@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { createUserWithEmailAndPassword, updateProfile, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import api from "@/lib/api";
+import { useAuthStore } from "@/store/useAuthStore";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -35,6 +36,7 @@ export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
+  const setAuth = useAuthStore((state) => state.setAuth);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -49,7 +51,7 @@ export default function RegisterPage() {
       const result = await signInWithPopup(auth, googleProvider);
       const token = await result.user.getIdToken();
 
-      await api.post("/auth/sync", {
+      const { data } = await api.post("/auth/sync", {
         uid: result.user.uid,
         name: result.user.displayName || "Marketplace Member",
         email: result.user.email,
@@ -58,8 +60,15 @@ export default function RegisterPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      toast.success("Welcome to the Preloved Vault! ✨");
-      router.push("/login");
+      setAuth(data.user, token);
+
+      toast.success("Welcome to PrelovedByHira! ✨");
+      // Redirect based on role: Sellers go to Vault, Customers go to Onboarding
+      if (selectedRole === "SELLER") {
+        router.push("/seller/dashboard");
+      } else {
+        router.push("/onboarding");
+      }
     } catch (error: any) {
       toast.error(error.message || "Google Registration failed.");
     } finally {
@@ -80,8 +89,8 @@ export default function RegisterPage() {
 
       const token = await userCredential.user.getIdToken();
 
-      // 2. Sync with Backend Vault
-      await api.post("/auth/sync", {
+      // 3. Update Global State
+      const { data } = await api.post("/auth/sync", {
         uid: userCredential.user.uid,
         name: values.name,
         email: values.email,
@@ -91,8 +100,15 @@ export default function RegisterPage() {
         headers: { Authorization: `Bearer ${token}` }
       });
 
-      toast.success("Welcome to the Preloved Vault! ✨");
-      router.push("/login");
+      setAuth(data.user, token);
+
+      toast.success("Welcome to PrelovedByHira! ✨");
+      // Redirect based on role: Sellers go to Vault, Customers go to Onboarding
+      if (values.role === "SELLER") {
+        router.push("/seller/dashboard");
+      } else {
+        router.push("/onboarding");
+      }
     } catch (error: any) {
       toast.error(error.message || "Registration failed.");
     } finally {
@@ -109,7 +125,7 @@ export default function RegisterPage() {
       >
         <div className="p-8 lg:p-12 space-y-10">
           <div className="text-center space-y-2">
-            <h1 className="text-3xl font-display font-bold">Request Membership</h1>
+            <h1 className="text-3xl font-display font-bold">Join the Platform</h1>
             <p className="text-gray-500 text-sm">Join Pakistan&apos;s elite community of luxury fashion enthusiasts</p>
           </div>
 
@@ -240,7 +256,7 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="w-full bg-gradient-to-r from-gold-400 to-gold-600 text-white py-4 rounded-pill font-bold shadow-gold hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {isLoading ? "Creating Identity..." : "Request Membership"} 
+              {isLoading ? "Creating Identity..." : "Create Account"} 
             {!isLoading && <ArrowRight className="w-5 h-5" />}
             </button>
           </form>
@@ -266,7 +282,7 @@ export default function RegisterPage() {
 
           <p className="text-center text-sm text-gray-500">
             Already a member?{" "}
-            <Link href="/login" className="text-gold-400 font-bold hover:underline font-display">Enter the Vault</Link>
+            <Link href="/login" className="text-gold-400 font-bold hover:underline font-display">Sign In</Link>
           </p>
         </div>
       </motion.div>

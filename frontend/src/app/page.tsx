@@ -53,45 +53,46 @@ export default function HomePage() {
         <>
           {/* 🚀 ORIGINAL 2026 LANDING PAGE CONTENT */}
       {/* 🚀 2026 HERO SECTION */}
-      <section className="relative min-h-screen flex items-center overflow-hidden">
+      <section className="relative min-h-[80vh] md:min-h-screen flex items-center overflow-hidden">
         {/* Animated Background Mesh */}
         <div className="absolute inset-0 bg-mesh opacity-50" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold-400/20 to-transparent" />
         
-        <div className="relative max-w-7xl mx-auto px-6 lg:px-8 pt-20 pb-32 grid lg:grid-cols-2 gap-20 items-center">
+        <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-8 md:pt-20 pb-16 md:pb-32 grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
           <motion.div 
             initial={{ opacity: 0, x: -50 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.8, ease: "easeOut" }}
-            className="space-y-12"
+            className="space-y-6 md:space-y-12"
           >
             <div className="inline-flex items-center gap-2 px-6 py-2.5 glass-ultra crystal-border rounded-full shadow-gold-3d">
               <Cpu className="w-4 h-4 text-gold-400 animate-pulse" />
               <span className="text-[10px] font-bold text-gold-400 uppercase tracking-[0.3em]">Next-Gen Preloved Ecosystem</span>
             </div>
 
-            <h1 className="text-6xl sm:text-8xl font-display font-bold leading-[1] text-dark-900 dark:text-cream-50 tracking-tighter">
+            <h1 className="text-fluid-hero font-display font-bold leading-[1] text-dark-900 dark:text-cream-50 tracking-tighter">
               The Future of <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 via-gold-300 to-gold-600 italic">Fashion Trade.</span>
             </h1>
 
-            <p className="text-xl text-dark-700/80 dark:text-cream-50/70 max-w-xl leading-relaxed font-medium">
+            <p className="text-base md:text-xl text-dark-700/80 dark:text-cream-50/70 max-w-xl leading-relaxed font-medium">
               A high-tech marketplace for Pakistan's elite fashion circle. Verified luxury, automated selling, and 2026-grade security.
             </p>
 
-            <div className="flex flex-wrap gap-6">
-              <Link href="/products" className="px-12 py-6 bg-gradient-to-br from-gold-400 to-gold-600 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center gap-3 group">
+            {/* ✅ CTAs stack vertically on mobile, side-by-side on tablet+ */}
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+              <Link href="/products" className="w-full md:w-auto px-8 md:px-12 py-4 md:py-6 bg-gradient-to-br from-gold-400 to-gold-600 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group min-h-[52px]">
                 Shop Collection <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
               </Link>
-              <Link href="/seller/dashboard" className="px-12 py-6 glass-ultra crystal-border text-dark-900 dark:text-cream-50 rounded-2xl font-bold hover:bg-gold-400/5 transition-all">
+              <Link href="/seller/dashboard" className="w-full md:w-auto px-8 md:px-12 py-4 md:py-6 glass-ultra crystal-border text-dark-900 dark:text-cream-50 rounded-2xl font-bold hover:bg-gold-400/5 active:scale-95 transition-all text-center min-h-[52px] flex items-center justify-center">
                 List Your Item
               </Link>
             </div>
 
-            <div className="pt-12 grid grid-cols-3 gap-8 border-t border-gold-400/10">
-               <StatItem label="Active Members" value="25k+" />
-               <StatItem label="Authentic Items" value="18k+" />
-               <StatItem label="Success Rate" value="99.2%" />
+            <div className="pt-6 md:pt-12 grid grid-cols-3 gap-4 md:gap-8 border-t border-gold-400/10">
+               <StatItem label="Members" value="25k+" />
+               <StatItem label="Items" value="18k+" />
+               <StatItem label="Success" value="99.2%" />
             </div>
           </motion.div>
 
@@ -155,9 +156,9 @@ export default function HomePage() {
       </section>
 
       {/* 🌍 2026 SUSTAINABILITY IMPACT (DIGITAL PASSPORT) */}
-      <section className="py-32 relative overflow-hidden bg-emerald-950/5 dark:bg-emerald-950/10 border-b border-gold-400/10">
-         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-20 items-center">
+      <section className="py-16 md:py-32 relative overflow-hidden bg-emerald-950/5 dark:bg-emerald-950/10 border-b border-gold-400/10">
+         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
                <div className="relative">
                   <div className="absolute -top-10 -left-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
                   <div className="glass-ultra crystal-border rounded-[48px] p-8 space-y-6 relative z-10 shadow-emerald-500/10">
@@ -190,7 +191,7 @@ export default function HomePage() {
                   <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
                      <Globe className="w-6 h-6" />
                   </div>
-                  <h2 className="text-4xl lg:text-6xl font-display font-bold text-dark-900 dark:text-cream-50">
+                  <h2 className="text-fluid-section font-display font-bold text-dark-900 dark:text-cream-50">
                      The Era of <br />
                      <span className="text-emerald-500 italic">Conscious Luxury.</span>
                   </h2>
@@ -213,17 +214,17 @@ export default function HomePage() {
       </section>
 
       {/* 💰 SELLER PITCH: "NO HAGGLING / AUTOMATIC SELLING" */}
-      <section className="py-32 relative overflow-hidden">
-         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className="glass-ultra crystal-border rounded-[64px] p-12 lg:p-24 shadow-gold-3d relative overflow-hidden">
+      <section className="py-16 md:py-32 relative overflow-hidden">
+         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+            <div className="glass-ultra crystal-border rounded-3xl md:rounded-[64px] p-6 md:p-12 lg:p-24 shadow-gold-3d relative overflow-hidden">
                <div className="absolute top-0 right-0 w-1/3 h-full bg-gold-400/5 blur-[120px]" />
                
-               <div className="grid lg:grid-cols-2 gap-20 items-center">
+               <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
                   <div className="space-y-8">
                      <div className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gold-400 text-white font-bold text-[10px] uppercase tracking-widest shadow-gold">
                         For Sellers
                      </div>
-                     <h2 className="text-4xl lg:text-6xl font-display font-bold text-dark-900 dark:text-cream-50 leading-[1.1]">
+                     <h2 className="text-fluid-section font-display font-bold text-dark-900 dark:text-cream-50 leading-[1.1]">
                         List once. <br />
                         <span className="text-gold-400 italic">Sell Automatically.</span>
                      </h2>
@@ -237,7 +238,7 @@ export default function HomePage() {
                         <FeaturePoint icon={<Coins />} title="Direct Payouts" desc="Receive funds directly to your wallet after delivery is confirmed." />
                      </div>
 
-                     <Link href="/seller/dashboard" className="inline-flex h-16 px-10 items-center bg-gold-400 text-white rounded-2xl font-bold shadow-gold hover:scale-105 transition-all">
+                     <Link href="/seller/dashboard" className="inline-flex h-14 px-8 md:px-10 items-center bg-gold-400 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all min-h-[52px]">
                         Start Selling Now
                      </Link>
                   </div>
@@ -258,11 +259,11 @@ export default function HomePage() {
       </section>
 
       {/* 💎 BENTO DISCOVERY */}
-      <section className="py-32 bg-mesh/10">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-           <div className="flex flex-col md:flex-row items-end justify-between mb-20 gap-8">
+      <section className="py-16 md:py-32 bg-mesh/10">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+           <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 md:mb-20 gap-4 md:gap-8">
               <div className="space-y-4">
-                 <h2 className="text-5xl lg:text-6xl font-display font-bold text-dark-900 dark:text-cream-50">Discovery <span className="italic text-gold-400">Hub.</span></h2>
+                 <h2 className="text-fluid-section font-display font-bold text-dark-900 dark:text-cream-50">Discovery <span className="italic text-gold-400">Hub.</span></h2>
                  <p className="text-dark-700/60 dark:text-cream-50/50 max-w-md">Every category is a curated portal to premium preloved luxury.</p>
               </div>
               <Link href="/products" className="group flex items-center gap-3 text-gold-400 font-bold hover:gap-5 transition-all">
@@ -270,12 +271,13 @@ export default function HomePage() {
               </Link>
            </div>
 
-           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+           {/* ✅ Horizontal scrollable on mobile, grid on desktop */}
+           <div className="flex md:grid md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 overflow-x-auto scroll-hide pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory">
              {categories.map((cat, i) => (
                <Link 
                  key={cat.slug} 
                  href={`/products?category=${cat.slug}`}
-                 className="group relative h-56 glass-ultra crystal-border rounded-[40px] p-8 hover:bg-gold-400/5 transition-all overflow-hidden text-center flex flex-col items-center justify-center gap-4"
+                 className="group relative h-44 md:h-56 min-w-[140px] md:min-w-0 w-[140px] md:w-auto glass-ultra crystal-border rounded-3xl md:rounded-[40px] p-6 md:p-8 hover:bg-gold-400/5 active:bg-gold-400/10 transition-all overflow-hidden text-center flex flex-col items-center justify-center gap-3 md:gap-4 snap-start shrink-0 md:shrink"
                >
                  <div className="text-gold-400 group-hover:scale-125 group-hover:-rotate-12 transition-transform duration-500">
                    {cat.icon}
@@ -290,15 +292,15 @@ export default function HomePage() {
       </section>
 
       {/* 🛠️ HOW IT WORKS (THE ROADMAP) */}
-      <section className="py-32 border-y border-gold-400/10 bg-white dark:bg-dark-950 relative overflow-hidden transition-colors duration-500">
+      <section className="py-16 md:py-32 border-y border-gold-400/10 bg-white dark:bg-dark-950 relative overflow-hidden transition-colors duration-500">
          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-         <div className="max-w-7xl mx-auto px-6 lg:px-8 text-center space-y-20 relative z-10">
+         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center space-y-10 md:space-y-20 relative z-10">
             <div className="space-y-4">
-               <h2 className="text-5xl font-display font-bold text-dark-900 dark:text-white">How It <span className="italic text-gold-400">Works.</span></h2>
+               <h2 className="text-fluid-section font-display font-bold text-dark-900 dark:text-white">How It <span className="italic text-gold-400">Works.</span></h2>
                <p className="text-dark-700/60 dark:text-cream-50/40 max-w-xl mx-auto">Zero Hassle. Maximum Trust. We've automated the hard parts so you can enjoy the fashion.</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-12">
+            <div className="grid md:grid-cols-3 gap-8 md:gap-12">
                <StepItem 
                  step="01" 
                  title="List Your Item" 
@@ -322,11 +324,11 @@ export default function HomePage() {
       </section>
 
       {/* 🎭 THE DUALITY: BUYERS vs SELLERS */}
-      <section className="py-32 relative">
-         <div className="max-w-7xl mx-auto px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-8">
+      <section className="py-16 md:py-32 relative">
+         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
                {/* BUYERS SIDE */}
-               <div className="glass-ultra crystal-border rounded-[48px] p-12 space-y-10 group hover:shadow-gold-3d transition-all">
+               <div className="glass-ultra crystal-border rounded-3xl md:rounded-[48px] p-6 md:p-12 space-y-6 md:space-y-10 group hover:shadow-gold-3d transition-all">
                   <div className="flex items-center gap-4">
                      <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400">
                         <ShoppingBag className="w-8 h-8" />
@@ -351,7 +353,7 @@ export default function HomePage() {
                </div>
 
                {/* SELLERS SIDE */}
-               <div className="glass-ultra crystal-border rounded-[48px] p-12 space-y-10 group hover:shadow-gold-3d transition-all border-gold-400/20">
+               <div className="glass-ultra crystal-border rounded-3xl md:rounded-[48px] p-6 md:p-12 space-y-6 md:space-y-10 group hover:shadow-gold-3d transition-all border-gold-400/20">
                   <div className="flex items-center gap-4">
                      <div className="w-16 h-16 rounded-2xl bg-gold-400/10 flex items-center justify-center text-gold-400">
                         <Coins className="w-8 h-8" />
@@ -379,9 +381,9 @@ export default function HomePage() {
       </section>
 
       {/* 🏁 FINAL CALL TO ACTION */}
-      <section className="py-40">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-           <div className="relative rounded-[80px] bg-dark-950 p-16 lg:p-32 overflow-hidden text-center group crystal-border">
+      <section className="py-16 md:py-40">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+           <div className="relative rounded-3xl md:rounded-[80px] bg-dark-950 p-8 md:p-16 lg:p-32 overflow-hidden text-center group crystal-border">
               <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30 group-hover:scale-110 transition-transform duration-[4s]" />
               <div className="absolute inset-0 bg-gradient-to-b from-dark-950/20 to-dark-950" />
               
@@ -389,16 +391,17 @@ export default function HomePage() {
                  <div className="w-20 h-20 bg-gold-400 rounded-[32px] mx-auto flex items-center justify-center shadow-gold rotate-12 group-hover:rotate-0 transition-transform duration-700">
                     <Sparkles className="w-10 h-10 text-white" />
                  </div>
-                 <h2 className="text-5xl lg:text-8xl font-display font-bold text-white leading-[1] tracking-tighter">
+                 <h2 className="text-fluid-hero font-display font-bold text-white leading-[1] tracking-tighter">
                    Elevate Your <br />
                    <span className="italic text-gold-400">Wardrobe.</span>
                  </h2>
-                 <p className="text-cream-50/60 text-xl leading-relaxed">Join the revolution of sustainable luxury. Whether buying or selling, we've got the tech to keep it premium.</p>
-                 <div className="flex flex-wrap justify-center gap-6 pt-6">
-                    <Link href="/register" className="px-14 py-6 bg-gold-400 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all text-lg">
+                 <p className="text-cream-50/60 text-base md:text-xl leading-relaxed">Join the revolution of sustainable luxury. Whether buying or selling, we've got the tech to keep it premium.</p>
+                 {/* ✅ Stack vertically on mobile */}
+                 <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-6 pt-4 md:pt-6">
+                    <Link href="/register" className="w-full md:w-auto px-10 md:px-14 py-4 md:py-6 bg-gold-400 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all text-base md:text-lg text-center min-h-[52px] flex items-center justify-center">
                        Get Started Free
                     </Link>
-                    <Link href="/products" className="px-14 py-6 glass-ultra crystal-border text-white rounded-2xl font-bold hover:bg-white/5 transition-all text-lg">
+                    <Link href="/products" className="w-full md:w-auto px-10 md:px-14 py-4 md:py-6 glass-ultra crystal-border text-white rounded-2xl font-bold hover:bg-white/5 active:scale-95 transition-all text-base md:text-lg text-center min-h-[52px] flex items-center justify-center">
                        Explore Market
                     </Link>
                  </div>
@@ -414,9 +417,9 @@ export default function HomePage() {
 
 function StatItem({ label, value }: any) {
   return (
-    <div className="space-y-2">
-      <p className="text-4xl font-display font-bold text-gold-400 leading-none">{value}</p>
-      <p className="text-[10px] font-bold text-dark-500 dark:text-cream-50/40 uppercase tracking-widest">{label}</p>
+    <div className="space-y-1 md:space-y-2">
+      <p className="text-2xl md:text-4xl font-display font-bold text-gold-400 leading-none">{value}</p>
+      <p className="text-[9px] md:text-[10px] font-bold text-dark-500 dark:text-cream-50/40 uppercase tracking-widest">{label}</p>
     </div>
   );
 }

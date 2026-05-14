@@ -19,7 +19,24 @@ export const syncUser = async (req: Request, res: Response, next: NextFunction) 
     // Check if user already exists in Firestore
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.exists) {
-       return res.status(200).json({ message: 'User already synced', user: userDoc.data() });
+      // Even if user exists, ensure seller profile is correct if they are a seller
+      if (role === 'SELLER') {
+        const sellerRef = db.collection('sellers').doc(uid);
+        const sellerDoc = await sellerRef.get();
+        if (!sellerDoc.exists || (sellerDoc.data()?.verificationStatus === 'PENDING' && !sellerDoc.data()?.selfieUrl)) {
+          await sellerRef.set({
+            userId: uid,
+            isVerified: false,
+            verificationStatus: 'REQUIRED',
+            rating: 5.0,
+            totalSales: 0,
+            totalEarnings: 0,
+            pendingBalance: 0,
+            createdAt: new Date().toISOString(),
+          }, { merge: true });
+        }
+      }
+      return res.status(200).json({ message: 'User already synced', user: userDoc.data() });
     }
 
     const userData = {
@@ -36,16 +53,21 @@ export const syncUser = async (req: Request, res: Response, next: NextFunction) 
     await db.collection('users').doc(uid).set(userData);
 
     if (role === 'SELLER') {
-      await db.collection('sellers').doc(uid).set({
-        userId: uid,
-        isVerified: false,
-        verificationStatus: 'PENDING',
-        rating: 0,
-        totalSales: 0,
-        totalEarnings: 0,
-        pendingBalance: 0,
-        createdAt: new Date().toISOString(),
-      });
+      const sellerRef = db.collection('sellers').doc(uid);
+      const sellerDoc = await sellerRef.get();
+      
+      if (!sellerDoc.exists || (sellerDoc.data()?.verificationStatus === 'PENDING' && !sellerDoc.data()?.selfieUrl)) {
+        await sellerRef.set({
+          userId: uid,
+          isVerified: false,
+          verificationStatus: 'REQUIRED',
+          rating: 0,
+          totalSales: 0,
+          totalEarnings: 0,
+          pendingBalance: 0,
+          createdAt: new Date().toISOString(),
+        }, { merge: true });
+      }
     }
 
     res.status(201).json({

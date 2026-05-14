@@ -10,7 +10,7 @@ const server = http.createServer(app);
 // ─── Start Server ───────────────────────────
 const startServer = async () => {
   try {
-    server.listen(config.port, () => {
+    server.listen(config.port, '0.0.0.0', () => {
       console.log(`
   ╔══════════════════════════════════════════════╗
   ║                                              ║
