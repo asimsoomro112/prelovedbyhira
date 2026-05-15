@@ -36,33 +36,95 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://revault.pk';
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: {
-    default: "ReVault | Premium Fashion Marketplace",
-    template: "%s | ReVault"
+    default: "ReVault — Pakistan's #1 Preloved Luxury Marketplace",
+    template: "%s | ReVault",
   },
-  description: "Experience premium preloved fashion with trusted quality. Buy and sell luxury dresses, bags, and jewelry in Pakistan.",
-  keywords: ["fashion", "preloved", "pakistan", "luxury", "sustainable fashion", "revault"],
+  description:
+    "Buy & sell authenticated preloved luxury fashion in Pakistan. Designer dresses, handbags, shoes & jewelry — verified by AI, protected by escrow. Join 10,000+ members.",
+  keywords: [
+    "preloved fashion Pakistan",
+    "luxury marketplace",
+    "second hand designer clothes",
+    "ReVault",
+    "buy sell preloved",
+    "sustainable fashion Pakistan",
+    "preloved dresses",
+    "luxury handbags Pakistan",
+    "thrift fashion",
+    "authenticated fashion",
+    "escrow marketplace",
+    "preloved jewelry",
+    "designer shoes Pakistan",
+  ],
+  authors: [{ name: "ReVault", url: SITE_URL }],
+  creator: "ReVault",
+  publisher: "ReVault",
+  formatDetection: { telephone: true, email: true },
+  alternates: {
+    canonical: SITE_URL,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
   openGraph: {
     type: "website",
     locale: "en_PK",
-    url: "https://revault.com",
+    url: SITE_URL,
     siteName: "ReVault",
-    title: "ReVault | Premium Fashion Marketplace",
-    description: "Preloved Fashion, Trusted by All ❤️",
-    images: [{ url: "/logo-social.jpg" }],
+    title: "ReVault — Pakistan's #1 Preloved Luxury Marketplace",
+    description:
+      "Authenticated preloved fashion — designer dresses, bags, shoes & jewelry. AI-verified, escrow-protected. Shop with confidence.",
+    images: [
+      {
+        url: "/og-default.png",
+        width: 1200,
+        height: 630,
+        alt: "ReVault — Premium Preloved Fashion Marketplace",
+        type: "image/png",
+      },
+      {
+        url: "/logo-social.jpg",
+        width: 800,
+        height: 800,
+        alt: "ReVault Logo",
+        type: "image/jpeg",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "ReVault",
-    description: "Premium Fashion Marketplace",
-    images: ["/logo-social.jpg"],
+    title: "ReVault — Pakistan's #1 Preloved Luxury Marketplace",
+    description:
+      "Buy & sell authenticated luxury fashion. AI-verified, escrow-protected. Join the vault.",
+    images: ["/og-default.png"],
+    creator: "@revaborhira",
   },
   icons: {
-    icon: "/favicon.jpg",
-    apple: "/favicon.jpg",
+    icon: [
+      { url: "/favicon.jpg", sizes: "any" },
+    ],
+    apple: [
+      { url: "/favicon.jpg", sizes: "180x180" },
+    ],
   },
   manifest: "/manifest.json",
+  category: "shopping",
+  other: {
+    "google-site-verification": process.env.NEXT_PUBLIC_GOOGLE_VERIFICATION || "",
+  },
 };
 
 export default function RootLayout({
@@ -71,9 +133,63 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning className="scroll-smooth">
+    <html lang="en" dir="ltr" suppressHydrationWarning className="scroll-smooth">
       <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Jost:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://res.cloudinary.com" />
+
+        {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": `${SITE_URL}/#organization`,
+                  name: "ReVault",
+                  url: SITE_URL,
+                  logo: {
+                    "@type": "ImageObject",
+                    url: `${SITE_URL}/logo-social.jpg`,
+                    width: 800,
+                    height: 800,
+                  },
+                  description:
+                    "Pakistan's #1 authenticated preloved luxury fashion marketplace. AI-verified, escrow-protected.",
+                  foundingDate: "2026",
+                  sameAs: [
+                    "https://instagram.com/revaborhira",
+                  ],
+                  contactPoint: {
+                    "@type": "ContactPoint",
+                    email: "care@revault.pk",
+                    contactType: "customer support",
+                    availableLanguage: ["English", "Urdu"],
+                  },
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": `${SITE_URL}/#website`,
+                  url: SITE_URL,
+                  name: "ReVault",
+                  publisher: { "@id": `${SITE_URL}/#organization` },
+                  potentialAction: {
+                    "@type": "SearchAction",
+                    target: {
+                      "@type": "EntryPoint",
+                      urlTemplate: `${SITE_URL}/products?search={search_term_string}`,
+                    },
+                    "query-input": "required name=search_term_string",
+                  },
+                },
+              ],
+            }),
+          }}
+        />
       </head>
       <body 
         className={`${inter.variable} ${playfair.variable} ${dmSerif.variable} font-body bg-mesh text-dark-900 dark:text-cream-50 antialiased selection:bg-gold-400 selection:text-white`}
