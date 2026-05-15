@@ -58,9 +58,14 @@ export default function SellerDashboard() {
               <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Live Store Performance</p>
            </div>
         </div>
-        <Link href="/seller/add-product" className="w-full md:w-auto h-14 md:h-16 px-8 md:px-10 bg-gold-400 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
-           <Package className="w-5 h-5" /> List New Item
-        </Link>
+        <div className="flex items-center gap-4 w-full md:w-auto">
+          <Link href="/products" className="flex-1 md:flex-none h-14 md:h-16 px-8 bg-white dark:bg-dark-800 border-2 border-gold-400/20 text-gold-500 rounded-2xl font-bold hover:bg-gold-400/5 transition-all flex items-center justify-center gap-3">
+             <ShoppingBag className="w-5 h-5" /> Explore Marketplace
+          </Link>
+          <Link href="/seller/add-product" className="flex-1 md:flex-none h-14 md:h-16 px-8 md:px-10 bg-gold-400 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3">
+             <Package className="w-5 h-5" /> List New Item
+          </Link>
+        </div>
       </div>
 
       {/* STATS BENTO GRID - 2 columns on mobile */}
@@ -123,10 +128,11 @@ export default function SellerDashboard() {
                 action="Details"
                 link="/seller/earnings"
               />
-              <div className="p-8 glass-ultra crystal-border rounded-[32px] bg-gold-400 text-white space-y-4">
-                 <Sparkles className="w-8 h-8" />
-                 <h3 className="text-xl font-bold font-display">Seller Tip</h3>
-                 <p className="text-xs leading-relaxed opacity-90">Adding a "Seller Honesty Note" increases conversion by 40% on preloved items.</p>
+              <div className="p-8 rounded-[32px] bg-gold-400 text-white space-y-4 shadow-gold relative overflow-hidden">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-3xl" />
+                 <Sparkles className="w-8 h-8 relative z-10" />
+                 <h3 className="text-xl font-bold font-display relative z-10">Seller Tip</h3>
+                 <p className="text-xs leading-relaxed opacity-95 relative z-10 font-medium">Adding a "Seller Honesty Note" increases conversion by 40% on preloved items.</p>
               </div>
            </div>
         </div>

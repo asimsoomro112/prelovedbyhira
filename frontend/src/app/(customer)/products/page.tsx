@@ -8,7 +8,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 
 const CATEGORIES = ['Dresses', 'Bags', 'Shoes', 'Jewelry', 'Tops', 'More'];
-const CONDITIONS = ['EXCELLENT', 'GOOD', 'FAIR', 'POOR'];
+const CONDITIONS = ['NEW', 'EXCELLENT', 'GOOD', 'FAIR', 'POOR'];
 const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
 
 export default function ProductListingPage() {
@@ -54,6 +54,23 @@ export default function ProductListingPage() {
     getNextPageParam: (lastPage) => lastPage.pagination.page < lastPage.pagination.totalPages ? lastPage.pagination.page + 1 : undefined,
     initialPageParam: 1,
   });
+
+  // Infinite Scroll Logic
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    const target = document.querySelector('#load-more-trigger');
+    if (target) observer.observe(target);
+
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const toggleFilter = (type: 'category' | 'condition' | 'size', value: string) => {
     setFilters(prev => {
@@ -155,7 +172,7 @@ export default function ProductListingPage() {
           <div className="flex items-center gap-2">
             <h1 className="text-xl md:text-3xl font-display font-bold">Browse</h1>
             <span className="text-xs text-gray-400 font-medium hidden md:inline">
-              {data?.pages[0]?.pagination?.totalProducts || 0} products
+              {data?.pages[0]?.pagination?.total || 0} products
             </span>
           </div>
           
@@ -243,7 +260,10 @@ export default function ProductListingPage() {
             )}
           </div>
 
-          {/* ✅ LOAD MORE — large tap target */}
+          {/* ✅ INFINITE SCROLL OBSERVER */}
+          <div id="load-more-trigger" className="h-10 w-full" />
+
+          {/* ✅ LOAD MORE — fallback button */}
           {hasNextPage && (
             <div className="flex justify-center pt-6 pb-4">
               <button 
@@ -251,7 +271,7 @@ export default function ProductListingPage() {
                 disabled={isFetchingNextPage}
                 className="w-full md:w-auto px-12 py-4 bg-gold-400/10 text-gold-400 rounded-2xl font-bold hover:bg-gold-400 hover:text-white active:scale-95 transition-all disabled:opacity-50 min-h-[52px]"
               >
-                {isFetchingNextPage ? "Loading More..." : "Load More Style"}
+                {isFetchingNextPage ? "Loading More..." : "Load more items"}
               </button>
             </div>
           )}

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useRouter } from "next/navigation";
+import NotificationBell from "./NotificationBell";
 
 export default function DesktopNavbar() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -108,9 +109,7 @@ export default function DesktopNavbar() {
           <Link href="/customer/wishlist">
             <NavAction icon={<Heart />} label="Wishlist" count={0} />
           </Link>
-          <Link href="/notifications">
-            <NavAction icon={<Bell />} label="Notifs" count={3} hasPulse />
-          </Link>
+          <NotificationBell />
           
           <Link href="/cart" className="relative group">
             <div className="w-12 h-12 rounded-2xl glass-crystal crystal-border flex items-center justify-center hover:bg-gold-400 hover:text-white transition-all duration-500">

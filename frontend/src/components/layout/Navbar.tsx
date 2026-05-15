@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { 
   Search, 
@@ -26,6 +27,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { theme, setTheme } = useTheme();
   const { user, logout } = useAuthStore();
   const { itemCount, fetchCart } = useCartStore();
@@ -38,6 +40,21 @@ export default function Navbar() {
 
   const isSeller = user?.role === "SELLER";
   const isAdmin = user?.role === "ADMIN";
+  
+  // Click outside listener
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.user-menu-container')) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    if (isMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isMenuOpen]);
 
   return (
     <nav className="sticky top-0 z-[100] w-full bg-white/80 dark:bg-dark-950/80 backdrop-blur-xl border-b border-gold-400/10">
@@ -128,42 +145,61 @@ export default function Navbar() {
                 <div className="h-6 w-px bg-gold-400/20 hidden lg:block" />
 
                 {/* User Menu */}
-                <div className="relative group">
-                  <button className="flex items-center gap-3 p-1 pr-3 bg-gold-400/10 rounded-full hover:bg-gold-400/20 transition-all border border-gold-400/5">
-                    <div className="w-8 h-8 rounded-full bg-gold-400 text-white flex items-center justify-center font-bold">
-                      {user.name[0]}
+                <div className="relative h-fit user-menu-container">
+                  <button 
+                    onClick={() => setIsMenuOpen(!isMenuOpen)}
+                    className="flex items-center gap-3 p-1 pr-3 bg-gold-400/10 rounded-full hover:bg-gold-400/20 transition-all border border-gold-400/5 active:scale-95"
+                  >
+                    <div className="w-8 h-8 rounded-full bg-gold-400 text-white flex items-center justify-center font-bold overflow-hidden relative">
+                      {user.avatar ? (
+                        <Image src={user.avatar} alt={user.name} fill className="object-cover" />
+                      ) : (
+                        user.name[0]
+                      )}
                     </div>
                     <span className="hidden lg:block text-sm font-bold text-gray-700 dark:text-cream-50">{user.name.split(' ')[0]}</span>
                   </button>
 
-                  <div className="absolute right-0 top-full mt-4 w-64 bg-white dark:bg-dark-900 rounded-[32px] shadow-card border border-gold-400/10 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 p-3 z-50">
-                    <div className="p-4 border-b border-gold-400/5 mb-2">
-                       <p className="text-[10px] font-bold text-gold-400 uppercase tracking-widest">{user.role}</p>
-                       <p className="text-sm font-bold text-dark-900 dark:text-cream-50 truncate">{user.email}</p>
-                    </div>
-                    {isSeller && (
-                      <Link href="/seller/dashboard" className="flex items-center gap-3 p-4 rounded-2xl hover:bg-gold-400/5 text-sm font-bold transition-all">
-                        <LayoutDashboard className="w-5 h-5 text-gold-400" /> Seller Dashboard
-                      </Link>
+                  <AnimatePresence>
+                    {isMenuOpen && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                        transition={{ duration: 0.2 }}
+                        className="absolute right-0 top-full pt-2 w-64 z-50"
+                      >
+                        <div className="bg-white dark:bg-dark-900 rounded-[32px] shadow-card border border-gold-400/10 p-3">
+                          <div className="p-4 border-b border-gold-400/5 mb-2">
+                           <p className="text-[10px] font-bold text-gold-400 uppercase tracking-widest">{user.role}</p>
+                           <p className="text-sm font-bold text-dark-900 dark:text-cream-50 truncate">{user.email}</p>
+                        </div>
+                        {isSeller && (
+                          <Link href="/seller/dashboard" className="flex items-center gap-3 p-4 rounded-2xl hover:bg-gold-400/5 text-sm font-bold transition-all">
+                            <LayoutDashboard className="w-5 h-5 text-gold-400" /> Seller Dashboard
+                          </Link>
+                        )}
+                        {isAdmin && (
+                          <Link href="/admin/dashboard" className="flex items-center gap-3 p-4 rounded-2xl hover:bg-gold-400/5 text-sm font-bold transition-all">
+                            <LayoutDashboard className="w-5 h-5 text-gold-400" /> Admin Panel
+                          </Link>
+                        )}
+                        <Link href="/customer/profile" className="flex items-center gap-3 p-4 rounded-2xl hover:bg-gold-400/5 text-sm font-bold transition-all">
+                          <User className="w-5 h-5 text-gold-400" /> My Profile
+                        </Link>
+                        <Link href="/customer/orders" className="flex items-center gap-3 p-4 rounded-2xl hover:bg-gold-400/5 text-sm font-bold transition-all">
+                          <ShoppingBag className="w-5 h-5 text-gold-400" /> Order History
+                        </Link>
+                        <button 
+                          onClick={() => { logout(); router.push('/login'); }}
+                          className="w-full flex items-center gap-3 p-4 rounded-2xl hover:bg-red-500/5 text-red-500 text-sm font-bold transition-all mt-2 border-t border-gold-400/5"
+                        >
+                          <LogOut className="w-5 h-5" /> Logout
+                        </button>
+                        </div>
+                      </motion.div>
                     )}
-                    {isAdmin && (
-                      <Link href="/admin/dashboard" className="flex items-center gap-3 p-4 rounded-2xl hover:bg-gold-400/5 text-sm font-bold transition-all">
-                        <LayoutDashboard className="w-5 h-5 text-gold-400" /> Admin Panel
-                      </Link>
-                    )}
-                    <Link href="/customer/profile" className="flex items-center gap-3 p-4 rounded-2xl hover:bg-gold-400/5 text-sm font-bold transition-all">
-                      <User className="w-5 h-5 text-gold-400" /> My Profile
-                    </Link>
-                    <Link href="/customer/orders" className="flex items-center gap-3 p-4 rounded-2xl hover:bg-gold-400/5 text-sm font-bold transition-all">
-                      <ShoppingBag className="w-5 h-5 text-gold-400" /> Order History
-                    </Link>
-                    <button 
-                      onClick={() => { logout(); router.push('/login'); }}
-                      className="w-full flex items-center gap-3 p-4 rounded-2xl hover:bg-red-500/5 text-red-500 text-sm font-bold transition-all mt-2 border-t border-gold-400/5"
-                    >
-                      <LogOut className="w-5 h-5" /> Logout
-                    </button>
-                  </div>
+                  </AnimatePresence>
                 </div>
               </>
             ) : (
@@ -190,12 +226,20 @@ export default function Navbar() {
           <>
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsMobileMenuOpen(false)} className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[110]" />
             <motion.div 
-              initial={{ x: "100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "100%" }}
-              transition={{ type: "spring", damping: 30, stiffness: 300 }}
-              className="fixed top-0 right-0 bottom-0 w-[85%] bg-white dark:bg-dark-900 z-[120] p-8 shadow-2xl"
+              initial={{ x: "100%", opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="fixed top-0 right-0 bottom-0 w-[90%] bg-white/70 dark:bg-dark-900/70 backdrop-blur-3xl z-[120] p-8 shadow-2xl overflow-hidden"
+              style={{ 
+                clipPath: "polygon(100% 0, 100% 100%, 0% 100%, 15% 50%, 0% 0%)",
+                borderLeft: "1px solid rgba(196, 163, 90, 0.2)"
+              }}
             >
+              {/* Sail Decorative Curve Overlay */}
+              <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-10">
+                <div className="absolute top-[-20%] left-[-20%] w-[150%] h-[150%] border-[40px] border-gold-400 rounded-full" />
+              </div>
               <div className="flex items-center justify-between mb-12">
                  <Link href="/" className="font-display italic text-2xl">Preloved<span className="text-gold-400">ByHira</span></Link>
                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-3 bg-gold-400/10 text-gold-400 rounded-2xl"><X className="w-6 h-6" /></button>

@@ -31,6 +31,7 @@ import Image from "next/image";
 import api from "@/lib/api";
 
 const menuItems = [
+  { icon: Home, label: "Explore Shop", href: "/products" },
   { icon: LayoutDashboard, label: "Dashboard", href: "/seller/dashboard" },
   { icon: Package, label: "My Products", href: "/seller/products" },
   { icon: PlusCircle, label: "Add Product", href: "/seller/add-product" },
@@ -92,16 +93,24 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
               className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] lg:hidden"
             />
             <motion.aside 
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
+              initial={{ x: "-100%", opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: "-100%", opacity: 0 }}
               transition={{ 
-                type: "tween", 
-                ease: "easeOut",
-                duration: 0.3
+                type: "spring", 
+                damping: 25, 
+                stiffness: 200
               }}
-              className="fixed left-0 top-0 bottom-0 w-[280px] bg-white/90 dark:bg-dark-950/90 backdrop-blur-xl z-[110] p-6 lg:hidden flex flex-col shadow-2xl border-r border-gold-400/10 will-change-transform"
+              className="fixed left-0 top-0 bottom-0 w-[280px] bg-white/70 dark:bg-dark-950/70 backdrop-blur-3xl z-[110] p-6 lg:hidden flex flex-col shadow-2xl overflow-hidden"
+              style={{ 
+                clipPath: "polygon(0 0, 85% 0, 100% 50%, 85% 100%, 0 100%)",
+                borderRight: "1px solid rgba(193, 155, 90, 0.2)"
+              }}
             >
+              {/* Sail Decorative Curve Overlay */}
+              <div className="absolute top-0 right-0 w-full h-full pointer-events-none opacity-10">
+                <div className="absolute top-[-20%] right-[-20%] w-[150%] h-[150%] border-[40px] border-gold-400 rounded-full" />
+              </div>
                <div className="flex items-center justify-between mb-10">
                   <span className="font-display italic text-2xl tracking-tight">
                     Seller<span className="font-bold not-italic text-gold-400">Portal</span>

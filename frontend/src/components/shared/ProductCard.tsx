@@ -47,13 +47,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     >
       {/* ✅ IMAGE — entire card is tappable, square aspect ratio, lazy loaded */}
       <Link href={`/product/${product.id}`} className="block">
-        <div className="relative aspect-square overflow-hidden bg-gold-400/5">
+        <div className="relative aspect-[3/4] overflow-hidden bg-gold-400/5">
           <Image 
             src={product.images[0] || "/placeholder.jpg"} 
             alt={product.title}
             fill
             sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-            className="object-cover group-hover:scale-105 transition-transform duration-500"
+            className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
             decoding="async"
           />

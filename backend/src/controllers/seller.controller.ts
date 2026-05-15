@@ -276,12 +276,10 @@ export const getSellerProfile = async (req: AuthRequest, res: Response, next: Ne
     const sellerId = req.user!.id;
     let sellerDoc = await db.collection('sellers').doc(sellerId).get();
     
-    // Auto-create seller profile if it's missing but user is a SELLER
+    // Auto-create seller profile if it's missing
     if (!sellerDoc.exists) {
-      if (req.user!.role !== 'SELLER' && req.user!.role !== 'ADMIN') {
-        throw new AppError('Only sellers can access the identity vault', 403);
-      }
-
+      // We allow anyone who is authenticated to see their own potential seller profile
+      // which triggers the creation of the REQUIRED state.
       const newSeller = {
         userId: sellerId,
         isVerified: false,

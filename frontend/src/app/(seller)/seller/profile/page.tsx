@@ -40,9 +40,7 @@ export default function SellerProfilePage() {
   });
 
   // Image states
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string>("");
-  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [coverPreview, setCoverPreview] = useState<string>("");
 
   useEffect(() => {
@@ -60,8 +58,9 @@ export default function SellerProfilePage() {
       });
       setAvatarPreview(data.avatar || "");
       setCoverPreview(data.coverImage || "");
-    } catch (error) {
-      toast.error("Failed to load seller identity.");
+    } catch (error: any) {
+      const msg = error.response?.data?.error || error.response?.data?.message || "Failed to load identity vault.";
+      toast.error(msg);
     } finally {
       setIsLoading(false);
     }
@@ -76,20 +75,11 @@ export default function SellerProfilePage() {
       formData.append("phone", editData.phone || "");
       formData.append("city", editData.city || "");
       
-      if (avatarFile) formData.append("avatar", avatarFile);
-      if (coverFile) formData.append("coverImage", coverFile);
-
-      const { data } = await api.put("/seller/profile", formData);
+      await api.put("/seller/profile", formData);
 
       toast.success("Identity Vault updated! ✨");
       
-      if (data.avatar) {
-        setUser({ ...user!, avatar: data.avatar });
-      }
-
       setIsEditModalOpen(false);
-      setAvatarFile(null);
-      setCoverFile(null);
       fetchProfile();
     } catch (error: any) {
       console.error("Profile Update Error:", error);
@@ -100,17 +90,37 @@ export default function SellerProfilePage() {
     }
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'cover') => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>, type: 'avatar' | 'cover') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     const preview = URL.createObjectURL(file);
     if (type === 'avatar') {
-      setAvatarFile(file);
       setAvatarPreview(preview);
     } else {
-      setCoverFile(file);
       setCoverPreview(preview);
+    }
+
+    // Auto-upload for better UX
+    const toastId = toast.loading(`Uploading ${type}...`);
+    try {
+      const formData = new FormData();
+      if (type === 'avatar') formData.append("avatar", file);
+      else formData.append("coverImage", file);
+
+      const { data } = await api.put("/seller/profile", formData);
+      
+      if (type === 'avatar' && data.avatar) {
+        setUser({ ...user!, avatar: data.avatar });
+      }
+      
+      toast.success(`${type === 'avatar' ? 'Profile' : 'Cover'} picture updated! ✨`, { id: toastId });
+      fetchProfile();
+    } catch (error) {
+      console.error(`Upload error:`, error);
+      toast.error(`Failed to upload ${type}.`, { id: toastId });
+      // Revert preview on failure
+      fetchProfile();
     }
   };
 
@@ -177,12 +187,12 @@ export default function SellerProfilePage() {
            <div className="flex-1 pb-4 space-y-2">
               <div className="flex items-center gap-3">
                  <h1 className="text-4xl font-display font-bold text-dark-900 dark:text-cream-50">{profile?.name || user?.name}</h1>
-                 {profile?.verificationStatus === 'ACTIVE' || profile?.verificationStatus === 'APPROVED' && (
-                   <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-pill text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 border border-emerald-500/20">
-                      <ShieldCheck className="w-3 h-3" />
-                      Verified Boutique
-                   </div>
-                 )}
+                  {(profile?.verificationStatus === 'ACTIVE' || profile?.verificationStatus === 'APPROVED') && (
+                    <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-pill text-[10px] font-bold uppercase tracking-widest flex items-center gap-1.5 border border-emerald-500/20">
+                       <ShieldCheck className="w-3 h-3" />
+                       Verified Boutique
+                    </div>
+                  )}
               </div>
               <p className="text-gray-500 font-medium">Boutique Member since {profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Joining Process'}</p>
            </div>
@@ -265,6 +275,7 @@ export default function SellerProfilePage() {
                         <p className={`text-lg font-bold ${profile?.verificationStatus === 'REJECTED' ? 'text-red-500' : ''}`}>
                           {profile?.verificationStatus === 'APPROVED' ? 'Identity Verified' : 
                            profile?.verificationStatus === 'REJECTED' ? 'Verification Rejected' : 
+                           profile?.verificationStatus === 'REQUIRED' ? 'Verification Required' :
                            'Verification In Progress'}
                         </p>
                         <p className="text-sm text-gray-500 max-w-md">
@@ -272,15 +283,17 @@ export default function SellerProfilePage() {
                             ? 'Your CNIC and Payout accounts have been successfully vetted.' 
                             : profile?.verificationStatus === 'REJECTED'
                             ? `Rejected: ${profile.rejectionReason || "Please re-upload clear documents."}`
+                            : profile?.verificationStatus === 'REQUIRED'
+                            ? 'Please submit your identity documents to start selling on the marketplace.'
                             : 'Our team is currently reviewing your uploaded identity documents.'}
                         </p>
                      </div>
                   </div>
                   {profile?.verificationStatus === 'APPROVED' ? (
                     <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                  ) : profile?.verificationStatus === 'REJECTED' ? (
-                    <Link href="/seller/verification" className="px-6 py-2 bg-red-500 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-red-600 transition-all">
-                       Fix Now
+                  ) : (profile?.verificationStatus === 'REJECTED' || profile?.verificationStatus === 'REQUIRED') ? (
+                    <Link href="/seller/verification" className="px-6 py-2 bg-gold-400 text-white rounded-xl text-xs font-bold shadow-lg hover:bg-gold-500 transition-all">
+                       {profile?.verificationStatus === 'REJECTED' ? 'Fix Now' : 'Verify Now'}
                     </Link>
                   ) : null}
                </div>

@@ -53,9 +53,15 @@ export const createProduct = async (req: AuthRequest, res: Response, next: NextF
     
     if (!req.user) throw new AppError('Unauthorized', 401);
 
-    const files = req.files as Express.Multer.File[];
-    const uploadResults = await Promise.all((files || []).map(file => uploadToCloudinary(file.buffer, 'products')));
-    const imageUrls = uploadResults.map(r => r.url);
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] };
+    const imageFiles = files['images'] || [];
+    const videoFiles = files['video'] || [];
+
+    const imageUploadResults = await Promise.all(imageFiles.map(file => uploadToCloudinary(file.buffer, 'products', false)));
+    const videoUploadResults = await Promise.all(videoFiles.map(file => uploadToCloudinary(file.buffer, 'products', true)));
+
+    const imageUrls = imageUploadResults.map(r => r.url);
+    const videoUrl = videoUploadResults.length > 0 ? videoUploadResults[0].url : null;
 
     const productData = {
       sellerId: req.user.id,
@@ -73,6 +79,7 @@ export const createProduct = async (req: AuthRequest, res: Response, next: NextF
       originalPacking: originalPacking === 'true' || originalPacking === true,
       invoiceAvailable: invoiceAvailable === 'true' || invoiceAvailable === true,
       images: imageUrls,
+      videoUrl: videoUrl,
       status: 'PENDING',
       views: 0,
       createdAt: new Date().toISOString(),

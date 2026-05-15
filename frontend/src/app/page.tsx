@@ -1,493 +1,680 @@
 "use client";
+
 import Link from 'next/link';
 import Image from 'next/image';
-import { 
-  ArrowRight, 
-  ShieldCheck, 
-  Truck, 
-  RefreshCw, 
-  Sparkles, 
-  TrendingUp, 
-  Star,
-  ShoppingBag,
-  Zap,
-  CheckCircle2,
-  Gem,
-  LayoutDashboard,
-  Coins,
-  MessageSquareOff,
-  UserCheck,
-  PackageCheck,
-  Cpu,
-  Plus,
-  Leaf,
-  Globe,
-  Award,
-  ZapIcon
+import {
+  ArrowRight, ShieldCheck, Sparkles, Star, Zap, CheckCircle2,
+  Heart, Quote, TrendingUp, Lock, Timer, Award, BadgeCheck,
+  RefreshCw, Sun, Moon, Package, Users, Gem, Wind
 } from 'lucide-react';
-import { motion, useScroll, useSpring } from "framer-motion";
-
-const categories = [
-  { name: "Shadi & Formal Suits", slug: 'SHADI-WEAR', icon: <Gem className="w-8 h-8" />, count: 320 },
-  { name: "Luxury Bridal", slug: 'BRIDAL', icon: <Sparkles className="w-8 h-8" />, count: 45 },
-  { name: "Kurtas & Shirts", slug: 'KURTAS', icon: <TrendingUp className="w-8 h-8" />, count: 540 },
-  { name: "Designer Shoes", slug: 'SHOES', icon: <Zap className="w-8 h-8" />, count: 210 },
-  { name: "Premium Watches", slug: 'WATCHES', icon: <Star className="w-8 h-8" />, count: 125 },
-  { name: "Bags & Accessories", slug: 'BAGS', icon: <ShoppingBag className="w-8 h-8" />, count: 430 },
-];
-
+import {
+  motion, useTransform, useSpring, useMotionValue, AnimatePresence, useInView
+} from "framer-motion";
+import { useQuery } from "@tanstack/react-query";
+import api from "@/lib/api";
 import { useAuthStore } from '@/store/useAuthStore';
 import { CustomerHome, SellerHome } from '@/components/home/PersonalizedHome';
+import { useTheme } from "next-themes";
+import { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 
+// Register GSAP Plugin
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
+
+// ─── TOKENS ───────────────────────────────────────────────────────────────────
+const T = {
+  dark: {
+    bg:         '#06060A',
+    surface:    '#0E0E16',
+    surfaceAlt: '#13131E',
+    border:     'rgba(255,255,255,0.07)',
+    borderHover:'rgba(255,255,255,0.16)',
+    text:       '#F2EDE4',
+    textMuted:  'rgba(242,237,228,0.45)',
+    textDim:    'rgba(242,237,228,0.22)',
+    gold:       '#C9A227',
+    goldLight:  '#F0D060',
+    goldGlow:   'rgba(201,162,39,0.18)',
+    accent:     '#8B5CF6',
+    accentPink: '#EC4899',
+    green:      '#10B981',
+    red:        '#EF4444',
+    dressStroke:'#C9A227',
+    dressSleeve:'#A78BFA',
+    dressNeck:  '#F472B6',
+    dressPleat: 'rgba(201,162,39,0.35)',
+    dressFill:  'rgba(139,92,246,0.09)',
+  },
+  light: {
+    bg:         '#FAF8F4',
+    surface:    '#FFFFFF',
+    surfaceAlt: '#F3EFE8',
+    border:     'rgba(0,0,0,0.08)',
+    borderHover:'rgba(0,0,0,0.18)',
+    text:       '#1A1624',
+    textMuted:  'rgba(26,22,36,0.5)',
+    textDim:    'rgba(26,22,36,0.25)',
+    gold:       '#A37118',
+    goldLight:  '#C9940A',
+    goldGlow:   'rgba(163,113,24,0.12)',
+    accent:     '#7C3AED',
+    accentPink: '#DB2777',
+    green:      '#059669',
+    red:        '#DC2626',
+    dressStroke:'#7C3AED',
+    dressSleeve:'#9333EA',
+    dressNeck:  '#DB2777',
+    dressPleat: 'rgba(124,58,237,0.25)',
+    dressFill:  'rgba(124,58,237,0.06)',
+  }
+};
+
+// ─── DATA ──────────────────────────────────────────────────────────────────────
+const categories = [
+  { name: "Bridal",      emoji: "👰", slug: 'BRIDAL',     count: "120+" },
+  { name: "Formal",      emoji: "👗", slug: 'SHADI-WEAR', count: "450+" },
+  { name: "Kurtas",      emoji: "👘", slug: 'KURTAS',     count: "890+" },
+  { name: "Shoes",       emoji: "👠", slug: 'SHOES',      count: "230+" },
+  { name: "Bags",        emoji: "👜", slug: 'BAGS',       count: "150+" },
+  { name: "Watches",     emoji: "⌚", slug: 'WATCHES',    count: "85+"  },
+];
+
+const reviews = [
+  { name: "Ayesha Khan",   item: "Elan Formal",     text: "Quality was exactly as described. The escrow payment made me feel so safe. Highly recommended!", stars: 5 },
+  { name: "Zainab Malik",  item: "LV Bag",          text: "The vault curation helped me pick the perfect match. Fast delivery and authentic piece.", stars: 5 },
+  { name: "Sara Ahmed",    item: "Bridal Lehenga",  text: "Saved 60% vs buying new. Incredible initiative for sustainable fashion in Pakistan.", stars: 5 },
+];
+
+
+const protocolCards = [
+  { icon: Lock,       title: "Buyer Vault Escrow",    desc: "Payment held in our secure vault. Funds released only after you confirm the item's perfection.", badge: "Security",   color: "green"  },
+  { icon: BadgeCheck, title: "Admin Authentication", desc: "Every piece is verified online through a strict Seller KYC process and AI authenticity checks.", badge: "Trust",     color: "gold"   },
+  { icon: Timer,      title: "Insured Dispatch",      desc: "Once an order is placed, items are tracked and shipped via our premium, insured logistics partners.", badge: "Speed",     color: "blue"   },
+  { icon: RefreshCw,  title: "Buyer Protection",      desc: "Not as described? Open a dispute within 7 days for a full refund via our 'Secure Dispute' protocol.", badge: "Protection",color: "red"    },
+];
+
+// ─── DRESS SVG PATHS ─────
+const D = {
+  outline: "M200 58C186 51 172 55 163 66C154 74 145 84 140 93C131 102 120 116 109 132L97 182C105 187 115 190 128 190C139 210 142 232 144 252C112 345 52 470 6 655Q200 682 394 655C348 470 288 345 256 252C258 232 261 210 272 190C285 190 295 187 303 182L291 132C280 116 269 102 260 93C255 84 246 74 237 66C228 55 214 51 200 58Z",
+  neckArc: "M163 66Q182 48 200 54Q218 48 237 66",
+  sleeveL: "M140 93C128 106 116 122 109 140L97 182L128 190C122 172 117 152 120 134C124 118 132 106 138 98",
+  sleeveR: "M260 93C272 106 284 122 291 140L303 182L272 190C278 172 283 152 280 134C276 118 268 106 262 98",
+  waist: "M144 252Q200 268 256 252Q200 260 144 252",
+  pleat1: "M152 258C116 358 66 478 18 640",
+  pleat2: "M170 255C147 348 112 465 72 630",
+  pleat3: "M188 253C174 340 152 458 122 620",
+  pleat4: "M212 253C226 340 248 458 278 620",
+  pleat5: "M230 255C253 348 288 465 328 630",
+  pleat6: "M248 258C284 358 334 478 382 640",
+  neckEmb: "M168 69Q180 59 190 66Q196 58 200 56Q204 58 210 66Q220 59 232 69M174 74L178 67M226 74L222 67M184 70Q192 63 200 66Q208 63 216 70",
+  bodiceMotif: "M195 116Q200 106 205 116Q212 127 205 136Q200 142 195 136Q188 127 195 116M200 142L200 172M193 140Q196 150 200 152Q204 150 207 140M196 106L200 98L204 106",
+  hemL: "M6 655Q50 668 100 663Q150 674 200 670",
+  hemR: "M200 670Q250 674 300 663Q350 668 394 655",
+  dupatta: "M109 132C72 152 50 192 36 234C20 276 12 328 16 378C20 416 42 448 32 492",
+  dupattaEnd: "M32 492Q16 524 20 554Q10 576 6 604M16 378Q4 410 8 442",
+};
+
+const THREADS = Array.from({ length: 32 }, (_, i) => ({
+  id: i,
+  x:  Number((160 + Math.sin(i * 0.77) * 155).toFixed(2)),
+  y:  Number((180 + Math.cos(i * 0.61) * 220).toFixed(2)),
+  len: 16 + (i % 6) * 9,
+  ang: Number((i * 41.2).toFixed(2)),
+  del: i * 0.065,
+}));
+
+// ─── UTILS ────────────────────────────────────────────────────────────────────
+function useMouseTilt(strength = 18) {
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [strength, -strength]), { stiffness: 300, damping: 30 });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-strength, strength]), { stiffness: 300, damping: 30 });
+
+  const onMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    x.set((e.clientX - rect.left) / rect.width - 0.5);
+    y.set((e.clientY - rect.top)  / rect.height - 0.5);
+  }, [x, y]);
+
+  const onLeave = useCallback(() => { x.set(0); y.set(0); }, [x, y]);
+  return { rotateX, rotateY, onMove, onLeave };
+}
+
+function Counter({ value, c }: { value: string; c: typeof T.dark }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true });
+  return (
+    <motion.span
+      ref={ref}
+      initial={{ opacity: 0, y: 20 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      style={{ color: c.gold, fontFamily: "'Cormorant Garamond', serif", fontStyle: 'italic' }}
+      className="text-4xl md:text-5xl font-bold"
+    >
+      {value}
+    </motion.span>
+  );
+}
+
+function TiltCard({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
+  const { rotateX, rotateY, onMove, onLeave } = useMouseTilt(12);
+  return (
+    <motion.div
+      onMouseMove={onMove}
+      onMouseLeave={onLeave}
+      style={{ rotateX, rotateY, transformPerspective: 1200, ...style }}
+      whileHover={{ scale: 1.03, z: 20 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+function ProtocolCard({ icon: Icon, title, desc, badge, color, c, i }:
+  { icon: any; title: string; desc: string; badge: string; color: string; c: typeof T.dark; i: number }) {
+
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-80px" });
+  const accentMap: Record<string, string> = {
+    green: c.green, gold: c.gold, blue: '#60A5FA', red: c.red
+  };
+  const accent = accentMap[color] ?? c.gold;
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 40 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ delay: i * 0.1, duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <TiltCard
+        style={{ background: c.surface, borderRadius: 32, border: `1px solid ${c.border}`, padding: '2.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', cursor: 'default' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ width: 56, height: 56, borderRadius: 16, background: `${accent}18`, border: `1px solid ${accent}30`, display: 'flex', alignItems: 'center', justifyContent: 'center', color: accent }}>
+            <Icon size={24} />
+          </div>
+          <span style={{ padding: '5px 14px', borderRadius: 100, fontSize: 10, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', background: `${accent}14`, border: `1px solid ${accent}28`, color: accent }}>
+            {badge}
+          </span>
+        </div>
+        <div>
+          <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.5rem', fontWeight: 700, color: c.text, marginBottom: '0.5rem', lineHeight: 1.2 }}>{title}</h3>
+          <p style={{ fontSize: '0.88rem', lineHeight: 1.7, color: c.textMuted }}>{desc}</p>
+        </div>
+      </TiltCard>
+    </motion.div>
+  );
+}
+
+function ProductCard({ item, highlight, c }: { item: any; highlight?: boolean; c: typeof T.dark }) {
+  const { rotateX, rotateY, onMove, onLeave } = useMouseTilt(8);
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, scale: 0.94 }}
+      animate={inView ? { opacity: 1, scale: 1 } : {}}
+      transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+    >
+      <motion.div
+        onMouseMove={onMove}
+        onMouseLeave={onLeave}
+        style={{ rotateX, rotateY, transformPerspective: 1000 }}
+        className={`group relative rounded-[40px] overflow-hidden cursor-pointer ${highlight ? 'h-[560px]' : 'aspect-[3/4]'}`}
+        onClick={() => window.location.href = `/product/${item.id}`}
+        whileHover={{ scale: 1.02 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="absolute inset-0 z-0">
+          <Image
+            src={item.images?.[0] || "https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=600"}
+            alt={item.title}
+            fill
+            className="object-cover transition-transform duration-1000 group-hover:scale-110"
+          />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(6,6,10,0.95) 0%, rgba(6,6,10,0.3) 50%, transparent 100%)' }} />
+        </div>
+
+        <div className="absolute top-5 left-5 z-10 flex flex-col gap-2">
+          <span style={{ padding: '5px 14px', borderRadius: 100, fontSize: 9, fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', border: `1px solid ${c.border}`, color: c.gold }}>
+            {item.condition}
+          </span>
+          {highlight && (
+            <span style={{ padding: '5px 14px', borderRadius: 100, fontSize: 9, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', background: 'rgba(239,68,68,0.7)', color: '#fff', display: 'flex', alignItems: 'center', gap: 5 }}>
+              <TrendingUp size={10} /> Most Wanted
+            </span>
+          )}
+        </div>
+
+        <motion.button
+          whileHover={{ scale: 1.15 }}
+          whileTap={{ scale: 0.9 }}
+          className="absolute top-5 right-5 z-10 w-10 h-10 rounded-2xl flex items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(12px)', border: `1px solid ${c.border}` }}
+        >
+          <Heart size={16} className="text-white" />
+        </motion.button>
+
+        <div className="absolute bottom-0 inset-x-0 p-7 z-10 space-y-3">
+          <div>
+            <p style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.35em', textTransform: 'uppercase', color: c.gold, marginBottom: 4 }}>{item.brand || 'Premium Brand'}</p>
+            <h3 style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '1.6rem', fontWeight: 700, color: '#fff', lineHeight: 1.15 }}>{item.title}</h3>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between' }}>
+            <div>
+              <p style={{ fontFamily: "'Cormorant Garamond', serif", fontSize: '2rem', fontWeight: 700, color: c.gold, lineHeight: 1 }}>Rs. {item.sellingPrice?.toLocaleString()}</p>
+              {item.originalPrice > item.sellingPrice && (
+                <p style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', textDecoration: 'line-through', marginTop: 2 }}>Rs. {item.originalPrice?.toLocaleString()}</p>
+              )}
+            </div>
+            <motion.div
+              whileHover={{ scale: 1.15, rotate: -12 }}
+              className="w-11 h-11 rounded-2xl flex items-center justify-center"
+              style={{ background: c.gold, color: '#000' }}
+            >
+              <ArrowRight size={18} />
+            </motion.div>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
+// ─── MAIN HOME PAGE ──────────────────────────────────────────────────────────
 export default function HomePage() {
   const { user } = useAuthStore();
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  
+  // Normalize theme to 'dark' | 'light' (Default to dark during SSR)
+  const theme = (!mounted || resolvedTheme !== 'light' ? 'dark' : 'light') as 'dark' | 'light';
+  const c = theme === 'dark' ? T.dark : T.light;
+
+  const sectionRef = useRef<HTMLElement>(null);
+  
+  // Motion Values for GSAP Sync
+  const scrollYProgress = useMotionValue(0);
+  const smoothProgress = useSpring(scrollYProgress, { stiffness: 60, damping: 25 });
+
+  // GSAP Pinning
+  useLayoutEffect(() => {
+    const ctx = gsap.context(() => {
+      ScrollTrigger.create({
+        trigger: sectionRef.current,
+        start: "top top",
+        end: "+=350%",
+        pin: true,
+        scrub: 1,
+        onUpdate: (self) => {
+          scrollYProgress.set(self.progress);
+        }
+      });
+    });
+    return () => ctx.revert();
+  }, [scrollYProgress]);
+
+  // Animation Mappings
+  const mk = (a: number, b: number) => useTransform(smoothProgress, [a, b], [0, 1]);
+
+  const pOutline   = mk(0.03, 0.28);
+  const pSleeves   = mk(0.08, 0.33);
+  const pNeckArc   = mk(0.12, 0.36);
+  const pWaist     = mk(0.16, 0.40);
+  const pPleats    = mk(0.20, 0.50);
+  const pNeckEmb   = mk(0.30, 0.55);
+  const pBodice    = mk(0.35, 0.60);
+  const pDupatta   = mk(0.42, 0.68);
+  const pHem       = mk(0.52, 0.78);
+
+  const threadAlpha = useTransform(smoothProgress, [0, 0.06, 0.22], [1, 1, 0]);
+  const dressFill   = useTransform(smoothProgress, [0.52, 0.82], [0, 1]);
+  const glowScale   = useTransform(smoothProgress, [0.2, 0.8], [0.5, 1.4]);
+  const glowAlpha   = useTransform(smoothProgress, [0.2, 0.7], [0, 0.6]);
+  const heroFade    = useTransform(smoothProgress, [0.96, 1.0], [1, 0]);
+  const heroScale   = useTransform(smoothProgress, [0.96, 1.0], [1, 0.95]);
+
+  // Data queries
+  const { data: trending = [], isLoading: loadingTrending } = useQuery({
+    queryKey: ["trending-products"],
+    queryFn: async () => { const { data } = await api.get("/products?limit=3&sortBy=popular"); return data.products; },
+  });
+  const { data: arrivalsData, isLoading: loadingArrivals } = useQuery({
+    queryKey: ["fresh-arrivals"],
+    queryFn: async () => { const { data } = await api.get("/products?limit=6&sortBy=createdAt"); return data; },
+  });
+
+  const productCount = arrivalsData?.pagination?.total || 1200;
+  const arrivals = arrivalsData?.products || [];
+
+  const stats = [
+    { value: `${productCount.toLocaleString()}+`, label: "Verified Pieces",   icon: Package  },
+    { value: "1,000+",  label: "Happy Customers",   icon: Users    },
+    { value: "98.7%",   label: "Auth Rate",          icon: BadgeCheck },
+    { value: "24hr",    label: "Avg Dispatch",       icon: Timer    },
+  ];
+
+  if (user?.role === 'SELLER') return <SellerHome user={user} />;
+  if (user?.role === 'CUSTOMER') return <CustomerHome user={user} />;
 
   return (
-    <div className="min-h-screen selection:bg-gold-400 selection:text-white">
-      {/* 🔮 CONDITIONAL ROLE-BASED VIEWPORT */}
-      {user?.role === 'SELLER' ? (
-        <SellerHome user={user} />
-      ) : user?.role === 'CUSTOMER' ? (
-        <CustomerHome user={user} />
-      ) : (
-        <>
-          {/* 🚀 ORIGINAL 2026 LANDING PAGE CONTENT */}
-      {/* 🚀 2026 HERO SECTION */}
-      <section className="relative min-h-[80vh] md:min-h-screen flex items-center overflow-hidden">
-        {/* Animated Background Mesh */}
-        <div className="absolute inset-0 bg-mesh opacity-50" />
-        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-gold-400/20 to-transparent" />
+    <div style={{ background: c.bg, color: c.text, overflowX: 'hidden', transition: 'background 0.5s, color 0.5s' }}
+         className="min-h-screen selection:bg-amber-400/30">
+
+      {/* ══════════════════════════════════════════════════════════════
+          SECTION 1: THE MASTERPIECE ASSEMBLY (GSAP PINNED)
+          ══════════════════════════════════════════════════════════════ */}
+      <section ref={sectionRef} className="w-full h-screen overflow-hidden relative" style={{ background: c.bg }}>
         
-        <div className="relative max-w-7xl mx-auto px-4 md:px-6 lg:px-8 pt-8 md:pt-20 pb-16 md:pb-32 grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
+        {/* Ambient Background & Glow */}
+        <div style={{ position: 'absolute', inset: 0, background: theme === 'dark'
+          ? 'radial-gradient(ellipse 80% 60% at 50% 0%, #1a0a2e 0%, #06060A 65%)'
+          : 'radial-gradient(ellipse 80% 60% at 50% 0%, #ede8ff 0%, #FAF8F4 65%)' }} />
+
+        <div className="absolute inset-0 opacity-[0.025]" style={{
+          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+          backgroundRepeat: 'repeat', backgroundSize: '128px',
+        }} />
+
+        <motion.div style={{ position: 'absolute', top: '15%', left: '50%', translateX: '-50%', width: 500, height: 500, borderRadius: '50%',
+          background: theme === 'dark' ? 'radial-gradient(circle, rgba(139,92,246,0.18) 0%, transparent 70%)' : 'radial-gradient(circle, rgba(124,58,237,0.12) 0%, transparent 70%)',
+          filter: 'blur(60px)', scale: glowScale, opacity: glowAlpha, pointerEvents: 'none' }} />
+
+        {/* Content Container (Vertical Stack) */}
+        <div className="w-full h-full flex flex-col items-center justify-between py-12 md:py-24 relative">
+          
+          {/* Hero Text */}
           <motion.div 
-            initial={{ opacity: 0, x: -50 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-            className="space-y-6 md:space-y-12"
+            style={{ opacity: heroFade, scale: heroScale }}
+            className="relative z-10 max-w-4xl text-center space-y-6 md:space-y-8 px-6"
           >
-            <div className="inline-flex items-center gap-2 px-6 py-2.5 glass-ultra crystal-border rounded-full shadow-gold-3d">
-              <Cpu className="w-4 h-4 text-gold-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-gold-400 uppercase tracking-[0.3em]">Next-Gen Preloved Ecosystem</span>
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-ultra"
+              style={{ border: `1px solid ${c.gold}40`, background: `${c.gold}12` }}>
+              <motion.div animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 2 }}
+                style={{ width: 6, height: 6, borderRadius: '50%', background: c.gold }} />
+              <span className="text-[9px] font-black uppercase tracking-[0.4em] text-gold-500">Pakistan's #1 Luxury Resale</span>
             </div>
 
-            <h1 className="text-fluid-hero font-display font-bold leading-[1] text-dark-900 dark:text-cream-50 tracking-tighter">
-              The Future of <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-gold-400 via-gold-300 to-gold-600 italic">Fashion Trade.</span>
+            <h1 className="text-[clamp(3.2rem,9vw,8.5rem)] leading-[0.88] font-bold tracking-tighter" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+              Wear Art.<br />
+              <em style={{
+                backgroundImage: theme === 'dark'
+                  ? 'linear-gradient(90deg, #C9A227, #F0D060, #C9A227)'
+                  : 'linear-gradient(90deg, #7C3AED, #DB2777, #A37118)',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                display: 'inline-block'
+              }}>Own Legacy.</em>
             </h1>
 
-            <p className="text-base md:text-xl text-dark-700/80 dark:text-cream-50/70 max-w-xl leading-relaxed font-medium">
-              A high-tech marketplace for Pakistan's elite fashion circle. Verified luxury, automated selling, and 2026-grade security.
+            <p className="text-[clamp(1rem,2vw,1.25rem)] text-dark-400 max-w-lg mx-auto font-light leading-relaxed">
+              The digital flagship for preloved Pakistani luxury.<br />AI-curated, KYC-verified, and escrow-protected.
             </p>
 
-            {/* ✅ CTAs stack vertically on mobile, side-by-side on tablet+ */}
-            <div className="flex flex-col md:flex-row gap-4 md:gap-6">
-              <Link href="/products" className="w-full md:w-auto px-8 md:px-12 py-4 md:py-6 bg-gradient-to-br from-gold-400 to-gold-600 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 group min-h-[52px]">
-                Shop Collection <ArrowRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+            <div className="flex flex-wrap items-center justify-center gap-4 md:gap-6 pt-4">
+              <Link href="/products" className="group relative px-10 py-5 bg-gold-500 text-white rounded-2xl font-bold overflow-hidden transition-all hover:scale-105 active:scale-95 flex items-center gap-2">
+                Shop Collection <ArrowRight size={18} />
+                <motion.div animate={{ x: ['-100%', '200%'] }} transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut', repeatDelay: 1 }}
+                  style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)', transform: 'skewX(-20deg)' }} />
               </Link>
-              <Link href="/seller/dashboard" className="w-full md:w-auto px-8 md:px-12 py-4 md:py-6 glass-ultra crystal-border text-dark-900 dark:text-cream-50 rounded-2xl font-bold hover:bg-gold-400/5 active:scale-95 transition-all text-center min-h-[52px] flex items-center justify-center">
-                List Your Item
+              <Link href="/register" className="px-10 py-5 rounded-2xl border border-white/10 font-bold hover:bg-white/5 transition-all flex items-center gap-2 backdrop-blur-md">
+                Start Selling <Zap size={15} />
               </Link>
-            </div>
-
-            <div className="pt-6 md:pt-12 grid grid-cols-3 gap-4 md:gap-8 border-t border-gold-400/10">
-               <StatItem label="Members" value="25k+" />
-               <StatItem label="Items" value="18k+" />
-               <StatItem label="Success" value="99.2%" />
             </div>
           </motion.div>
 
-          {/* 3D Visual Concept */}
+          {/* Assembly Scene (Bottom half) */}
           <motion.div 
-            initial={{ opacity: 0, scale: 0.8, rotateY: 20 }}
-            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-            transition={{ duration: 1.2, ease: "easeOut" }}
-            className="relative hidden lg:block perspective-1000"
+            style={{ opacity: heroFade, scale: heroScale }}
+            className="relative w-full h-[50vh] flex items-center justify-center pointer-events-none translate-y-12"
           >
-            <div className="relative z-10 w-full aspect-[4/5] glass-ultra crystal-border rounded-[80px] p-4 shadow-gold-3d preserve-3d">
-               <div className="relative w-full h-full rounded-[60px] overflow-hidden group">
-                  <Image 
-                    src="https://images.unsplash.com/photo-1549062572-544a64fb0c56?auto=format&fit=crop&q=80&w=1000" 
-                    alt="Hero Visual" 
-                    fill
-                    className="object-cover group-hover:scale-110 transition-transform duration-[3s]"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-dark-950 via-transparent to-transparent opacity-60" />
-                  
-                  {/* Floating Tech Labels */}
-                  <div className="absolute bottom-10 left-10 right-10 flex flex-col gap-4">
-                     <div className="glass-ultra crystal-border p-5 rounded-3xl backdrop-blur-3xl">
-                        <div className="flex items-center gap-3 mb-2">
-                           <div className="w-8 h-8 rounded-full bg-gold-400 flex items-center justify-center">
-                              <Star className="w-4 h-4 text-white fill-white" />
-                           </div>
-                           <p className="text-white font-bold text-sm">Verified Premium Item</p>
-                        </div>
-                        <div className="h-1 w-full bg-white/10 rounded-full overflow-hidden">
-                           <motion.div 
-                             animate={{ x: ["-100%", "100%"] }} 
-                             transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-                             className="w-1/3 h-full bg-gold-400" 
-                           />
-                        </div>
-                     </div>
-                  </div>
-               </div>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.svg viewBox="0 0 400 700" className="w-auto h-[75vh] max-h-[550px] overflow-visible">
+                <defs>
+                  <filter id="glow" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2.5" result="b" /><feMerge><feMergeNode in="b" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+                  <linearGradient id="fillGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%"   stopColor={theme === 'dark' ? '#8B5CF6' : '#7C3AED'} stopOpacity="0.7" />
+                    <stop offset="45%"  stopColor={theme === 'dark' ? '#EC4899' : '#DB2777'} stopOpacity="0.4" />
+                    <stop offset="100%" stopColor={theme === 'dark' ? '#C9A227' : '#A37118'} stopOpacity="0.5" />
+                  </linearGradient>
+                  <linearGradient id="threadGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%"   stopColor={c.gold}       stopOpacity="0.9" />
+                    <stop offset="100%" stopColor={c.dressSleeve} stopOpacity="0.6" />
+                  </linearGradient>
+                </defs>
+
+                <motion.g style={{ opacity: threadAlpha }}>
+                  {THREADS.map(t => (
+                    <motion.line key={t.id} x1={t.x} y1={t.y}
+                      x2={Number((t.x + Math.cos(t.ang * Math.PI/180)*t.len).toFixed(2))}
+                      y2={Number((t.y + Math.sin(t.ang * Math.PI/180)*t.len).toFixed(2))}
+                      stroke="url(#threadGrad)" strokeWidth="1.4" strokeLinecap="round"
+                      animate={{ opacity: [0, 0.7, 0.4], x: [0, Math.sin(t.id)*6, 0], y: [0, Math.cos(t.id)*6, 0] }}
+                      transition={{ delay: t.del, duration: 2.8, repeat: Infinity, repeatType: 'reverse' }}
+                    />
+                  ))}
+                </motion.g>
+
+                <motion.path d={D.outline} fill="url(#fillGrad)" style={{ fillOpacity: dressFill }} />
+                <motion.path d={D.outline} fill="none" stroke={c.dressStroke} strokeWidth="2.2" filter="url(#glow)" style={{ pathLength: pOutline }} />
+                {[D.sleeveL, D.sleeveR].map((p, i) => (<motion.path key={i} d={p} fill="none" stroke={c.dressSleeve} strokeWidth="1.6" style={{ pathLength: pSleeves }} />))}
+                <motion.path d={D.neckArc} fill="none" stroke={c.dressNeck} strokeWidth="1.8" style={{ pathLength: pNeckArc }} />
+                <motion.path d={D.waist} fill="none" stroke={c.dressStroke} strokeWidth="2.4" style={{ pathLength: pWaist }} />
+                {[D.pleat1, D.pleat2, D.pleat3, D.pleat4, D.pleat5, D.pleat6].map((p, i) => (<motion.path key={i} d={p} fill="none" stroke={c.dressPleat} strokeWidth="0.9" style={{ pathLength: pPleats }} />))}
+                <motion.path d={D.neckEmb} fill="none" stroke={c.dressNeck} strokeWidth="1" style={{ pathLength: pNeckEmb }} />
+                <motion.path d={D.bodiceMotif} fill="none" stroke={c.dressStroke} strokeWidth="1.1" style={{ pathLength: pBodice }} />
+                <motion.path d={D.dupatta} fill="none" stroke={c.dressSleeve} strokeWidth="1.8" strokeDasharray="5 8" style={{ pathLength: pDupatta }} />
+                {[D.hemL, D.hemR].map((p, i) => (<motion.path key={i} d={p} fill="none" stroke={c.dressStroke} strokeWidth="1.6" style={{ pathLength: pHem }} />))}
+              </motion.svg>
             </div>
-            {/* Background Glows */}
-            <div className="absolute -top-20 -right-20 w-80 h-80 bg-gold-400/20 rounded-full blur-[100px] animate-glow" />
-            <div className="absolute -bottom-20 -left-20 w-60 h-60 bg-gold-400/10 rounded-full blur-[80px] animate-glow" style={{ animationDelay: '2s' }} />
           </motion.div>
         </div>
       </section>
 
-      {/* 🏛️ VERIFIED AUTHORITY MARQUEE */}
-      <section className="py-10 border-y border-gold-400/10 bg-white dark:bg-dark-950/50 overflow-hidden relative">
-         <div className="absolute inset-y-0 left-0 w-32 bg-gradient-to-r from-white dark:from-dark-950 to-transparent z-10" />
-         <div className="absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-white dark:from-dark-950 to-transparent z-10" />
-         <div className="flex items-center gap-16 animate-marquee whitespace-nowrap px-8">
-            {['LOUIS VUITTON', 'GUCCI', 'CHANEL', 'PRADA', 'HERMÈS', 'DIOR', 'ZARA LUXE', 'SANA SAFINAZ', 'ELAN'].map((brand) => (
-               <span key={brand} className="text-2xl font-display font-bold text-dark-900/10 dark:text-cream-50/10 italic tracking-widest">{brand}</span>
-            ))}
-            {/* Duplicate for infinite loop */}
-            {['LOUIS VUITTON', 'GUCCI', 'CHANEL', 'PRADA', 'HERMÈS', 'DIOR', 'ZARA LUXE', 'SANA SAFINAZ', 'ELAN'].map((brand, idx) => (
-               <span key={`${brand}-dup-${idx}`} className="text-2xl font-display font-bold text-dark-900/10 dark:text-cream-50/10 italic tracking-widest">{brand}</span>
-            ))}
-         </div>
+      {/* ── STATS BAR ── */}
+      <section style={{ background: c.surface, borderTop: `1px solid ${c.border}`, borderBottom: `1px solid ${c.border}`, padding: '2.5rem 1.5rem' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '2rem' }}>
+          {stats.map(({ value, label, icon: Icon }, i) => (
+            <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1, duration: 0.6 }} viewport={{ once: true }}
+              className="flex flex-col items-center gap-6 text-center">
+              <Icon size={18} className="text-gold-500 mb-1" />
+              <Counter value={value} c={c} />
+              <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-dark-500">{label}</p>
+            </motion.div>
+          ))}
+        </div>
       </section>
 
-      {/* 🌍 2026 SUSTAINABILITY IMPACT (DIGITAL PASSPORT) */}
-      <section className="py-16 md:py-32 relative overflow-hidden bg-emerald-950/5 dark:bg-emerald-950/10 border-b border-gold-400/10">
-         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-               <div className="relative">
-                  <div className="absolute -top-10 -left-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl animate-pulse" />
-                  <div className="glass-ultra crystal-border rounded-[48px] p-8 space-y-6 relative z-10 shadow-emerald-500/10">
-                     <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center text-emerald-500">
-                              <Leaf className="w-5 h-5" />
-                           </div>
-                           <h4 className="font-bold dark:text-cream-50">Impact Passport</h4>
-                        </div>
-                        <span className="px-3 py-1 bg-emerald-500/20 text-emerald-500 text-[10px] font-bold rounded-full">ID: #PRE-2026</span>
-                     </div>
-                     <div className="space-y-4">
-                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex justify-between items-center">
-                           <span className="text-xs text-dark-500 dark:text-gray-400">Carbon Offset</span>
-                           <span className="font-bold text-emerald-500">-12.4kg CO2</span>
-                        </div>
-                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex justify-between items-center">
-                           <span className="text-xs text-dark-500 dark:text-gray-400">Water Saved</span>
-                           <span className="font-bold text-blue-400">2,500 Liters</span>
-                        </div>
-                        <div className="p-4 bg-white/5 rounded-2xl border border-white/10 flex justify-between items-center">
-                           <span className="text-xs text-dark-500 dark:text-gray-400">Authenticity Score</span>
-                           <span className="font-bold text-gold-400">99.8% A+</span>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               <div className="space-y-8">
-                  <div className="w-12 h-12 bg-emerald-500/10 rounded-2xl flex items-center justify-center text-emerald-500">
-                     <Globe className="w-6 h-6" />
-                  </div>
-                  <h2 className="text-fluid-section font-display font-bold text-dark-900 dark:text-cream-50">
-                     The Era of <br />
-                     <span className="text-emerald-500 italic">Conscious Luxury.</span>
-                  </h2>
-                  <p className="text-lg text-dark-700/60 dark:text-cream-50/50 leading-relaxed">
-                     In 2026, status isn't just about what you wear—it's about how you bought it. Every item on PrelovedByHira comes with a **Digital Impact Passport**, tracking the carbon you've saved by choosing preloved.
-                  </p>
-                  <div className="flex gap-4 pt-4">
-                     <div className="glass-ultra crystal-border px-6 py-4 rounded-2xl flex items-center gap-3">
-                        <Award className="w-5 h-5 text-gold-400" />
-                        <span className="text-xs font-bold dark:text-cream-50">Verified Ethical</span>
-                     </div>
-                     <div className="glass-ultra crystal-border px-6 py-4 rounded-2xl flex items-center gap-3">
-                        <ZapIcon className="w-5 h-5 text-emerald-500" />
-                        <span className="text-xs font-bold dark:text-cream-50">Zero-Waste Trade</span>
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </div>
+      {/* ── THE PROTOCOL ── */}
+      <section style={{ padding: '8rem 1.5rem' }}>
+        <div className="max-w-7xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} viewport={{ once: true }} className="text-center mb-20">
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gold-500 mb-4">Built on Trust</p>
+            <h2 className="text-[clamp(2.5rem,5vw,5rem)] font-bold tracking-tight leading-[1.05]" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+              The <span className="italic text-gold-500">Preloved</span> Protocol.
+            </h2>
+            <p className="mt-4 text-dark-400 font-light">Direct from trusted merchants, secured by our digital verification vault.</p>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {protocolCards.map((card, i) => (<ProtocolCard key={i} {...card} c={c} i={i} />))}
+          </div>
+        </div>
       </section>
 
-      {/* 💰 SELLER PITCH: "NO HAGGLING / AUTOMATIC SELLING" */}
-      <section className="py-16 md:py-32 relative overflow-hidden">
-         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            <div className="glass-ultra crystal-border rounded-3xl md:rounded-[64px] p-6 md:p-12 lg:p-24 shadow-gold-3d relative overflow-hidden">
-               <div className="absolute top-0 right-0 w-1/3 h-full bg-gold-400/5 blur-[120px]" />
-               
-               <div className="grid lg:grid-cols-2 gap-10 lg:gap-20 items-center">
-                  <div className="space-y-8">
-                     <div className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gold-400 text-white font-bold text-[10px] uppercase tracking-widest shadow-gold">
-                        For Sellers
-                     </div>
-                     <h2 className="text-fluid-section font-display font-bold text-dark-900 dark:text-cream-50 leading-[1.1]">
-                        List once. <br />
-                        <span className="text-gold-400 italic">Sell Automatically.</span>
-                     </h2>
-                     <p className="text-lg text-dark-700/70 dark:text-cream-50/60 leading-relaxed">
-                        Stop wasting time with endless bargaining on WhatsApp. List your item, set your price, and our system handles the rest. No bhes, no hassles.
-                     </p>
-                     
-                     <div className="space-y-6">
-                        <FeaturePoint icon={<MessageSquareOff />} title="Zero Bargaining" desc="Buyers pay the listed price or they don't. No more low-balling." />
-                        <FeaturePoint icon={<LayoutDashboard />} title="Automated Management" desc="Track sales, orders, and payouts from your high-tech dashboard." />
-                        <FeaturePoint icon={<Coins />} title="Direct Payouts" desc="Receive funds directly to your wallet after delivery is confirmed." />
-                     </div>
-
-                     <Link href="/seller/dashboard" className="inline-flex h-14 px-8 md:px-10 items-center bg-gold-400 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all min-h-[52px]">
-                        Start Selling Now
-                     </Link>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-6">
-                     <div className="space-y-6 mt-12">
-                        <TechCard icon={<TrendingUp />} label="Market Demand" value="High" color="bg-emerald-500/10 text-emerald-500" />
-                        <TechCard icon={<Star />} label="Seller Rating" value="4.9" color="bg-gold-400/10 text-gold-400" />
-                     </div>
-                     <div className="space-y-6">
-                        <TechCard icon={<ShoppingBag />} label="Total Sales" value="84" color="bg-blue-500/10 text-blue-500" />
-                        <TechCard icon={<CheckCircle2 />} label="Verified" value="Identity" color="bg-purple-500/10 text-purple-500" />
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </div>
-      </section>
-
-      {/* 💎 BENTO DISCOVERY */}
-      <section className="py-16 md:py-32 bg-mesh/10">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-           <div className="flex flex-col md:flex-row items-start md:items-end justify-between mb-10 md:mb-20 gap-4 md:gap-8">
-              <div className="space-y-4">
-                 <h2 className="text-fluid-section font-display font-bold text-dark-900 dark:text-cream-50">Discovery <span className="italic text-gold-400">Hub.</span></h2>
-                 <p className="text-dark-700/60 dark:text-cream-50/50 max-w-md">Every category is a curated portal to premium preloved luxury.</p>
+      {/* ── TRENDING ── */}
+      <section style={{ padding: '8rem 1.5rem', background: c.surfaceAlt }}>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex flex-col md:flex-row items-end justify-between gap-8 mb-20">
+            <motion.div initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} transition={{ duration: 0.7 }} viewport={{ once: true }}>
+              <div className="flex items-center gap-2 mb-3">
+                <motion.div animate={{ scale: [1, 1.3, 1], opacity: [1, 0.5, 1] }} transition={{ repeat: Infinity, duration: 1 }} className="w-2 h-2 rounded-full bg-red-500" />
+                <span className="text-[9px] font-black uppercase tracking-[0.4em] text-red-500">Live Market Hits</span>
               </div>
-              <Link href="/products" className="group flex items-center gap-3 text-gold-400 font-bold hover:gap-5 transition-all">
-                 Explore All Categories <ArrowRight className="w-5 h-5" />
-              </Link>
-           </div>
+              <h2 className="text-[clamp(2.5rem,5vw,5rem)] font-bold tracking-tight leading-[1.05]" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+                Most <span className="italic text-gold-500">Wanted.</span>
+              </h2>
+            </motion.div>
+            <Link href="/products" className="px-7 py-3 border border-white/10 rounded-xl text-[11px] font-bold uppercase tracking-widest hover:bg-white/5 transition-all flex items-center gap-2">
+              Explore Vault <ArrowRight size={14} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {loadingTrending ? [...Array(3)].map((_, i) => <div key={i} className="h-[560px] rounded-[40px] bg-white/5 animate-pulse" />) : trending.map((item: any) => <ProductCard key={item.id} item={item} highlight c={c} />)}
+          </div>
+        </div>
+      </section>
 
-           {/* ✅ Horizontal scrollable on mobile, grid on desktop */}
-           <div className="flex md:grid md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6 overflow-x-auto scroll-hide pb-4 md:pb-0 -mx-4 px-4 md:mx-0 md:px-0 snap-x snap-mandatory">
-             {categories.map((cat, i) => (
-               <Link 
-                 key={cat.slug} 
-                 href={`/products?category=${cat.slug}`}
-                 className="group relative h-44 md:h-56 min-w-[140px] md:min-w-0 w-[140px] md:w-auto glass-ultra crystal-border rounded-3xl md:rounded-[40px] p-6 md:p-8 hover:bg-gold-400/5 active:bg-gold-400/10 transition-all overflow-hidden text-center flex flex-col items-center justify-center gap-3 md:gap-4 snap-start shrink-0 md:shrink"
-               >
-                 <div className="text-gold-400 group-hover:scale-125 group-hover:-rotate-12 transition-transform duration-500">
-                   {cat.icon}
-                 </div>
-                 <h3 className="font-bold text-sm text-dark-900 dark:text-cream-50 leading-tight">{cat.name}</h3>
-                 <p className="text-[10px] font-bold text-gold-400 uppercase tracking-widest">{cat.count}+ Items</p>
-                 <div className="absolute -right-4 -bottom-4 w-20 h-20 bg-gold-400/5 rounded-full group-hover:scale-150 transition-transform duration-700" />
+      {/* ── FRESH ARRIVALS ── */}
+      <section style={{ padding: '8rem 1.5rem' }}>
+        <div className="max-w-7xl mx-auto">
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }} viewport={{ once: true }} className="mb-16">
+            <h2 className="text-[clamp(2rem,4.5vw,4.5rem)] font-bold tracking-tight" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+              Fresh <span className="italic text-gold-500">Vaults.</span>
+            </h2>
+            <div className="mt-4 h-1 w-16 bg-gradient-to-r from-gold-500 to-transparent rounded-full" />
+          </motion.div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {loadingArrivals ? [...Array(6)].map((_, i) => <div key={i} className="aspect-[3/4] rounded-[36px] bg-white/5 animate-pulse" />) : arrivals.map((item: any) => <ProductCard key={item.id} item={item} c={c} />)}
+          </div>
+        </div>
+      </section>
+
+      {/* ── CATEGORIES ── */}
+      <section style={{ padding: '8rem 1.5rem', background: c.surfaceAlt }}>
+        <div className="max-w-7xl mx-auto text-center">
+          <h2 className="text-[clamp(2rem,4vw,4rem)] font-bold mb-16" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+            Explore by <span className="italic text-gold-500">Category.</span>
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {categories.map((cat, i) => (
+              <motion.div key={cat.slug} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.05 }} viewport={{ once: true }}>
+                <Link href={`/products?category=${cat.slug}`}>
+                  <motion.div whileHover={{ y: -6, borderColor: `${c.gold}60`, background: `${c.gold}08` }} className="h-52 rounded-[32px] border border-white/5 bg-surface flex flex-col items-center justify-center gap-5 cursor-pointer transition-all">
+                    <span className="text-5xl">{cat.emoji}</span>
+                    <div className="text-center">
+                      <p className="text-[11px] font-black uppercase tracking-widest">{cat.name}</p>
+                      <p className="text-[10px] font-bold text-gold-500 mt-1 uppercase">{cat.count} Pieces</p>
+                    </div>
+                  </motion.div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ── MERCHANT INTELLIGENCE ── */}
+      <section style={{ padding: '8rem 1.5rem', background: c.surface }}>
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center gap-20">
+          <motion.div initial={{ opacity: 0, x: -50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="flex-1">
+            <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gold-500 mb-4">Seller Advantage</p>
+            <h2 className="text-[clamp(2.5rem,5vw,5rem)] font-bold tracking-tight leading-[1.05] mb-8" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+              Merchant <span className="italic text-gold-500">Intelligence.</span>
+            </h2>
+            <p className="text-dark-400 text-lg font-light mb-8 leading-relaxed">
+              Monetize your luxury wardrobe with Pakistan's most sophisticated resale engine. We handle the digital KYC, AI-assisted pricing, and insured logistics while you curate your legacy.
+            </p>
+            <div className="grid grid-cols-2 gap-6">
+              {[
+                { title: "Neural Pricing", desc: "AI-driven market data for optimal value." },
+                { title: "Identity Vault", desc: "KYC-verified status for instant trust." },
+                { title: "Doorstep Pickup", desc: "Insured logistics from your home." },
+                { title: "Fast Payouts", desc: "Secure transfers in under 24 hours." }
+              ].map((item, i) => (
+                <div key={i} className="space-y-2">
+                  <h4 className="font-bold text-gold-500 text-sm">{item.title}</h4>
+                  <p className="text-xs text-dark-500 leading-relaxed">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+            <div className="pt-10">
+               <Link href="/register" className="px-8 py-4 bg-gold-500 text-white rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-gold inline-flex items-center gap-3">
+                  Become a Merchant <ArrowRight size={14} />
                </Link>
-             ))}
-           </div>
+            </div>
+          </motion.div>
+          <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="flex-1 relative h-[500px] w-full rounded-[48px] overflow-hidden glass-ultra border border-white/5">
+             <Image 
+               src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&q=80&w=1000" 
+               alt="Merchant Dashboard"
+               fill
+               className="object-cover opacity-50"
+             />
+             <div className="absolute inset-0 bg-gradient-to-t from-dark-950 to-transparent" />
+             <div className="absolute bottom-10 left-10 right-10 p-8 glass-crystal border border-white/10 rounded-3xl">
+                <div className="flex items-center gap-4 mb-4">
+                   <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                      <TrendingUp size={20} className="text-emerald-500" />
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Global Status</p>
+                      <p className="text-sm font-bold text-emerald-500">Shop Health: Elite 99.8%</p>
+                   </div>
+                </div>
+                <p className="text-xs text-gray-300 leading-relaxed italic">"The AI pricing suggested 15% higher than I expected, and it sold in 2 hours. Truly next-level." — Verified Merchant</p>
+             </div>
+          </motion.div>
         </div>
       </section>
 
-      {/* 🛠️ HOW IT WORKS (THE ROADMAP) */}
-      <section className="py-16 md:py-32 border-y border-gold-400/10 bg-white dark:bg-dark-950 relative overflow-hidden transition-colors duration-500">
-         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
-         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8 text-center space-y-10 md:space-y-20 relative z-10">
-            <div className="space-y-4">
-               <h2 className="text-fluid-section font-display font-bold text-dark-900 dark:text-white">How It <span className="italic text-gold-400">Works.</span></h2>
-               <p className="text-dark-700/60 dark:text-cream-50/40 max-w-xl mx-auto">Zero Hassle. Maximum Trust. We've automated the hard parts so you can enjoy the fashion.</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-8 md:gap-12">
-               <StepItem 
-                 step="01" 
-                 title="List Your Item" 
-                 desc="Snap some clear photos, note the original price, and set your selling price. It only takes 2 minutes."
-                 icon={<Plus />}
-               />
-               <StepItem 
-                 step="02" 
-                 title="Safe Escrow Wait" 
-                 desc="When a buyer pays, the funds enter our highly secure Escrow vault. Your money is completely guaranteed."
-                 icon={<ShieldCheck />}
-               />
-               <StepItem 
-                 step="03" 
-                 title="Ship & Earn 80%" 
-                 desc="Ship the item. Once approved, 80% of the sale price instantly lands in your wallet. We handle the rest."
-                 icon={<Coins />}
-               />
-            </div>
-         </div>
-      </section>
-
-      {/* 🎭 THE DUALITY: BUYERS vs SELLERS */}
-      <section className="py-16 md:py-32 relative">
-         <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-            <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
-               {/* BUYERS SIDE */}
-               <div className="glass-ultra crystal-border rounded-3xl md:rounded-[48px] p-6 md:p-12 space-y-6 md:space-y-10 group hover:shadow-gold-3d transition-all">
-                  <div className="flex items-center gap-4">
-                     <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400">
-                        <ShoppingBag className="w-8 h-8" />
-                     </div>
-                     <h3 className="text-3xl font-display font-bold text-dark-900 dark:text-cream-50">For <span className="italic">Buyers</span></h3>
+      {/* ── TESTIMONIALS ── */}
+      <section style={{ padding: '8rem 1.5rem' }}>
+        <div className="max-w-7xl mx-auto text-center">
+          <p className="text-[9px] font-black uppercase tracking-[0.4em] text-gold-500 mb-4">Collector Stories</p>
+          <h2 className="text-[clamp(2.5rem,5vw,5rem)] font-bold tracking-tight leading-[1.05] mb-20" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+            Voices of <span className="italic text-gold-500">Trust.</span>
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {reviews.map((rev, i) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 40 }} whileInView={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }} viewport={{ once: true }}>
+                <TiltCard className="h-full bg-surface border border-white/5 rounded-[36px] p-10 relative text-left">
+                  <Quote size={48} className="absolute top-8 right-8 text-white/5" />
+                  <div className="flex gap-1 mb-6">
+                    {[...Array(5)].map((_, j) => <Star key={j} size={14} className="fill-gold-500 text-gold-500" />)}
                   </div>
-                  
-                  <div className="space-y-8">
-                     <BenefitItem 
-                        title="100% Escrow Protection" 
-                        desc="Your money is held safely in our vault. The seller only gets paid after you receive and confirm the item." 
-                     />
-                     <BenefitItem 
-                        title="Premium Quality Assurance" 
-                        desc="We strictly enforce condition grading. What you see is exactly what you get, or your money back." 
-                     />
-                     <BenefitItem 
-                        title="Seamless Secure Checkout" 
-                        desc="Pay with your preferred methods instantly. No more shady bank transfers or sharing personal details." 
-                     />
+                  <p className="text-xl italic font-light leading-relaxed mb-8" style={{ fontFamily: "'Cormorant Garamond', serif" }}>"{rev.text}"</p>
+                  <div className="flex items-center gap-4 pt-6 border-t border-white/5">
+                    <div className="w-12 h-12 rounded-xl bg-gold-500/10 border border-gold-500/20 flex items-center justify-center text-xl font-bold text-gold-500" style={{ fontFamily: "'Cormorant Garamond', serif" }}>{rev.name[0]}</div>
+                    <div>
+                      <p className="font-bold text-sm">{rev.name}</p>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gold-500">Verified Buyer of {rev.item}</p>
+                    </div>
                   </div>
-               </div>
-
-               {/* SELLERS SIDE */}
-               <div className="glass-ultra crystal-border rounded-3xl md:rounded-[48px] p-6 md:p-12 space-y-6 md:space-y-10 group hover:shadow-gold-3d transition-all border-gold-400/20">
-                  <div className="flex items-center gap-4">
-                     <div className="w-16 h-16 rounded-2xl bg-gold-400/10 flex items-center justify-center text-gold-400">
-                        <Coins className="w-8 h-8" />
-                     </div>
-                     <h3 className="text-3xl font-display font-bold text-dark-900 dark:text-cream-50">For <span className="italic text-gold-400">Sellers</span></h3>
-                  </div>
-
-                  <div className="space-y-8">
-                     <BenefitItem 
-                        title="Zero Haggling. Period." 
-                        desc="Tired of lowballers? Set your price and we handle the sale. No direct messaging or endless price negotiations." 
-                     />
-                     <BenefitItem 
-                        title="Automated Dashboard & Orders" 
-                        desc="Manage inventory, track shipments, and view earnings all from a specialized seller dashboard." 
-                     />
-                     <BenefitItem 
-                        title="Guaranteed Payouts" 
-                        desc="If you ship an accurate item, your money is guaranteed. We instantly release 80% to you via your preferred method." 
-                     />
-                  </div>
-               </div>
-            </div>
-         </div>
-      </section>
-
-      {/* 🏁 FINAL CALL TO ACTION */}
-      <section className="py-16 md:py-40">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
-           <div className="relative rounded-3xl md:rounded-[80px] bg-dark-950 p-8 md:p-16 lg:p-32 overflow-hidden text-center group crystal-border">
-              <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1490481651871-ab68de25d43d?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-30 group-hover:scale-110 transition-transform duration-[4s]" />
-              <div className="absolute inset-0 bg-gradient-to-b from-dark-950/20 to-dark-950" />
-              
-              <div className="relative z-10 space-y-12 max-w-3xl mx-auto">
-                 <div className="w-20 h-20 bg-gold-400 rounded-[32px] mx-auto flex items-center justify-center shadow-gold rotate-12 group-hover:rotate-0 transition-transform duration-700">
-                    <Sparkles className="w-10 h-10 text-white" />
-                 </div>
-                 <h2 className="text-fluid-hero font-display font-bold text-white leading-[1] tracking-tighter">
-                   Elevate Your <br />
-                   <span className="italic text-gold-400">Wardrobe.</span>
-                 </h2>
-                 <p className="text-cream-50/60 text-base md:text-xl leading-relaxed">Join the revolution of sustainable luxury. Whether buying or selling, we've got the tech to keep it premium.</p>
-                 {/* ✅ Stack vertically on mobile */}
-                 <div className="flex flex-col md:flex-row justify-center gap-4 md:gap-6 pt-4 md:pt-6">
-                    <Link href="/register" className="w-full md:w-auto px-10 md:px-14 py-4 md:py-6 bg-gold-400 text-white rounded-2xl font-bold shadow-gold hover:scale-105 active:scale-95 transition-all text-base md:text-lg text-center min-h-[52px] flex items-center justify-center">
-                       Get Started Free
-                    </Link>
-                    <Link href="/products" className="w-full md:w-auto px-10 md:px-14 py-4 md:py-6 glass-ultra crystal-border text-white rounded-2xl font-bold hover:bg-white/5 active:scale-95 transition-all text-base md:text-lg text-center min-h-[52px] flex items-center justify-center">
-                       Explore Market
-                    </Link>
-                 </div>
-              </div>
-           </div>
+                </TiltCard>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
-        </>
-      )}
-    </div>
-  );
-}
 
-function StatItem({ label, value }: any) {
-  return (
-    <div className="space-y-1 md:space-y-2">
-      <p className="text-2xl md:text-4xl font-display font-bold text-gold-400 leading-none">{value}</p>
-      <p className="text-[9px] md:text-[10px] font-bold text-dark-500 dark:text-cream-50/40 uppercase tracking-widest">{label}</p>
-    </div>
-  );
-}
-
-function TrustBadge({ icon, label }: any) {
-  return (
-    <div className="flex items-center gap-3 text-dark-900 dark:text-cream-50">
-       <span className="w-6 h-6 text-gold-400">{icon}</span>
-       <span className="text-xs font-bold uppercase tracking-widest">{label}</span>
-    </div>
-  );
-}
-
-function FeaturePoint({ icon, title, desc }: any) {
-  return (
-    <div className="flex gap-5">
-       <div className="w-12 h-12 rounded-2xl glass-ultra crystal-border flex items-center justify-center text-gold-400 shrink-0">
-          {icon}
-       </div>
-       <div className="space-y-1">
-          <h4 className="font-bold text-dark-900 dark:text-cream-50">{title}</h4>
-          <p className="text-sm text-dark-700/60 dark:text-cream-50/40 leading-relaxed">{desc}</p>
-       </div>
-    </div>
-  );
-}
-
-function TechCard({ icon, label, value, color }: any) {
-  return (
-    <div className="glass-ultra crystal-border p-8 rounded-[40px] space-y-4 hover:scale-105 transition-all group">
-       <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color}`}>
-          {icon}
-       </div>
-       <div>
-          <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">{label}</p>
-          <p className="text-2xl font-display font-bold text-dark-900 dark:text-cream-50">{value}</p>
-       </div>
-    </div>
-  );
-}
-
-function StepItem({ step, title, desc, icon }: any) {
-  return (
-    <div className="space-y-10 group text-center md:text-left">
-       <div className="relative inline-block">
-          <div className="w-24 h-24 glass-ultra crystal-border rounded-[32px] flex items-center justify-center text-gold-400 shadow-gold-3d group-hover:scale-110 group-hover:rotate-6 transition-all duration-500">
-             <div className="w-10 h-10">{icon}</div>
+      {/* ── FINAL CTA ── */}
+      <section style={{ padding: '8rem 1.5rem', background: c.surfaceAlt }}>
+        <div className="max-w-3xl mx-auto text-center">
+          <Gem size={40} className="text-gold-500 mx-auto mb-8" />
+          <h2 className="text-[clamp(2.5rem,6vw,6rem)] font-bold tracking-tighter leading-[0.95] mb-8" style={{ fontFamily: "'Cormorant Garamond', serif" }}>
+            Your next<br /><span className="italic text-gold-500">treasure awaits.</span>
+          </h2>
+          <p className="text-dark-400 text-lg font-light mb-12 max-w-lg mx-auto">Join thousands of collectors who trust the Vault. Buy, sell, and curate luxury fashion — sustainably.</p>
+          <div className="flex flex-wrap justify-center gap-4">
+            <Link href="/products" className="px-12 py-5 bg-gold-500 text-white rounded-2xl font-bold uppercase tracking-widest text-sm hover:scale-105 transition-all shadow-2xl">Explore the Vault</Link>
+            <Link href="/auth/register" className="px-12 py-5 border border-white/10 rounded-2xl font-bold text-sm hover:bg-white/5 transition-all">Join for Free</Link>
           </div>
-          <div className="absolute -top-4 -right-4 w-12 h-12 glass-ultra crystal-border rounded-2xl flex items-center justify-center text-xl font-display font-bold text-gold-400 shadow-lg">
-             {step}
-          </div>
-       </div>
-       <div className="space-y-4">
-          <h3 className="text-2xl font-display font-bold text-dark-900 dark:text-cream-50">{title}</h3>
-          <p className="text-sm text-dark-700/60 dark:text-cream-50/50 leading-relaxed">{desc}</p>
-       </div>
-    </div>
-  );
-}
+        </div>
+      </section>
 
-function BenefitItem({ title, desc }: any) {
-  return (
-    <div className="flex gap-4 group">
-       <div className="mt-1.5 w-2 h-2 rounded-full bg-gold-400 shrink-0 group-hover:scale-150 transition-transform" />
-       <div className="space-y-2">
-          <h4 className="text-lg font-bold text-dark-900 dark:text-cream-50 leading-tight">{title}</h4>
-          <p className="text-sm text-dark-700/60 dark:text-cream-50/40 leading-relaxed">{desc}</p>
-       </div>
     </div>
   );
 }

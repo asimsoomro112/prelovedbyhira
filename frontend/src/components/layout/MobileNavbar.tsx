@@ -8,6 +8,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
+import { toast } from "sonner";
 
 export default function MobileNavbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -198,7 +199,23 @@ export default function MobileNavbar() {
                 <MobileLink icon={<Home className="w-5 h-5" />} label="Home" href="/" />
                 <MobileLink icon={<Grid className="w-5 h-5" />} label="Marketplace" href="/products" />
                 <MobileLink icon={<Heart className="w-5 h-5" />} label="Wishlist" href="/customer/wishlist" />
-                <MobileLink icon={<Bell className="w-5 h-5" />} label="Notifications" href="/notifications" />
+                <MobileLink 
+                  icon={<Bell className="w-5 h-5" />} 
+                  label="Notifications" 
+                  href="/notifications" 
+                  onClick={(e) => {
+                    if (!user) {
+                      e.preventDefault();
+                      toast.info("Sign in Required", {
+                        description: "Please connect your account to view your notifications.",
+                        action: {
+                          label: "Login",
+                          onClick: () => router.push("/login")
+                        }
+                      });
+                    }
+                  }}
+                />
 
                 <div className="pt-6">
                   <p className="text-[10px] font-bold text-dark-400 dark:text-gray-500 uppercase tracking-[4px] px-4 mb-3">Account</p>
@@ -241,11 +258,11 @@ export default function MobileNavbar() {
 }
 
 /* ✅ Mobile navigation link — minimum 48px touch target */
-function MobileLink({ icon, label, href, highlight }: { icon: React.ReactNode; label: string; href: string; highlight?: boolean; }) {
+function MobileLink({ icon, label, href, highlight, onClick }: { icon: React.ReactNode; label: string; href: string; highlight?: boolean; onClick?: (e: any) => void; }) {
   return (
     <Link 
       href={href} 
-      className={`
+      onClick={onClick}      className={`
         flex items-center justify-between p-4 rounded-2xl transition-all group min-h-[48px]
         ${highlight ? "bg-gold-400 text-white shadow-gold" : "hover:bg-gold-400/10 active:bg-gold-400/15 text-dark-600 dark:text-gray-400 hover:text-gold-400"}
       `}

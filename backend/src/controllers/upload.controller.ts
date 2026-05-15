@@ -7,9 +7,9 @@ export const uploadSingle = async (req: AuthRequest, res: Response, next: NextFu
   try {
     if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
     const folder = (req.query.folder as string) || 'prelovebyhira';
-    // Use buffer from memory storage (not file path)
-    const result = await uploadToCloudinary(req.file.buffer, folder);
-    res.json({ url: result.url, publicId: result.publicId });
+    const isVideo = req.file.mimetype.startsWith('video/');
+    const result = await uploadToCloudinary(req.file.buffer, folder, isVideo);
+    res.json({ url: result.url, publicId: result.publicId, resourceType: isVideo ? 'video' : 'image' });
   } catch (error) { next(error); }
 };
 
@@ -18,9 +18,19 @@ export const uploadMultiple = async (req: AuthRequest, res: Response, next: Next
     if (!req.files || (req.files as Express.Multer.File[]).length === 0) { res.status(400).json({ error: 'No files uploaded' }); return; }
     const files = req.files as Express.Multer.File[];
     const folder = (req.query.folder as string) || 'prelovebyhira/products';
-    // Use buffer from memory storage (not file path)
-    const results = await Promise.all(files.map(f => uploadToCloudinary(f.buffer, folder)));
-    res.json({ images: results.map(res => ({ url: res.url, publicId: res.publicId })) });
+    
+    const results = await Promise.all(files.map(f => {
+      const isVideo = f.mimetype.startsWith('video/');
+      return uploadToCloudinary(f.buffer, folder, isVideo);
+    }));
+    
+    res.json({ 
+      images: results.map((res, i) => ({ 
+        url: res.url, 
+        publicId: res.publicId,
+        resourceType: files[i].mimetype.startsWith('video/') ? 'video' : 'image'
+      })) 
+    });
   } catch (error) { next(error); }
 };
 

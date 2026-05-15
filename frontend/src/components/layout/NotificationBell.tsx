@@ -5,19 +5,38 @@ import { Bell, Check, ShoppingBag, Truck, AlertCircle, Info } from "lucide-react
 import { motion, AnimatePresence } from "framer-motion";
 import { useNotifications } from "@/hooks/useNotifications";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
+import { toast } from "sonner";
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
   const { notifications, unreadCount, markAllRead } = useNotifications();
+  const { isAuthenticated } = useAuthStore();
+  const router = useRouter();
+
+  const handleToggle = () => {
+    if (!isAuthenticated) {
+      toast.info("Sign in Required", {
+        description: "Please connect your account to view your notifications.",
+        action: {
+          label: "Login",
+          onClick: () => router.push("/login")
+        }
+      });
+      return;
+    }
+    setIsOpen(!isOpen);
+  };
 
   return (
     <div className="relative">
       <button 
-        onClick={() => setIsOpen(!isOpen)}
-        className="p-2 relative hover:bg-gold-400/10 rounded-full transition-all"
+        onClick={handleToggle}
+        className="p-2 relative hover:bg-gold-400/10 rounded-full transition-all group"
       >
-        <Bell className="w-6 h-6 text-gray-600 dark:text-gray-300" />
-        {unreadCount > 0 && (
+        <Bell className="w-6 h-6 text-gray-600 dark:text-gray-300 group-hover:text-gold-400 transition-colors" />
+        {unreadCount > 0 && isAuthenticated && (
           <span className="absolute top-1.5 right-1.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-white dark:ring-dark-900">
             {unreadCount}
           </span>

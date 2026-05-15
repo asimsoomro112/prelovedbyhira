@@ -65,22 +65,93 @@ export const sendOTPEmail = async (email: string, otp: string) => {
   });
 };
 
-export const sendOrderConfirmation = async (email: string, orderData: any) => {
+export const sendWelcomeEmail = async (email: string, name: string) => {
   const content = `
-    <span class="h2">Order Confirmed</span>
-    <p class="text">Your luxury acquisition is officially secured. Funds are currently locked in our <b>Escrow Protected Vault</b> until you verify the item.</p>
+    <span class="h2">Vault Access Granted</span>
+    <h1 class="h1" style="font-size: 28px; margin: 20px 0;">Welcome, <span>${name}</span></h1>
+    <p class="text">Your digital identity has been synchronized with the Hira Luxury Vault. You now have exclusive access to Pakistan's most curated preloved marketplace.</p>
     <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
-        <p style="color: ${GOLD}; font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 15px;">Order Details</p>
-        <p style="margin: 5px 0; font-size: 14px;">Order ID: <b>#ORD-${orderData.id}</b></p>
-        <p style="margin: 5px 0; font-size: 14px;">Amount: <b>Rs. ${orderData.total.toLocaleString()}</b></p>
+        <p style="color: ${GOLD}; font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 10px;">Membership Benefits</p>
+        <ul style="margin: 0; padding-left: 20px; color: rgba(255,255,255,0.7); font-size: 14px;">
+            <li>Escrow-Protected Transactions</li>
+            <li>AI-Verified Luxury Authentication</li>
+            <li>Global Designer Network Access</li>
+        </ul>
     </div>
-    <a href="https://prelovedbyhira.com/customer/dashboard" class="btn">Track in Vault</a>
+    <a href="https://prelovedbyhira.com/products" class="btn">Start Exploring</a>
   `;
 
   await transporter.sendMail({
     from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: `✨ Order Secured: #ORD-${orderData.id}`,
+    subject: `🥂 Welcome to the Inner Circle, ${name}`,
+    html: baseTemplate(content),
+  });
+};
+
+export const sendForgotPasswordCode = async (email: string, code: string) => {
+  const content = `
+    <span class="h2">Account Recovery</span>
+    <p class="text">We received a request to unlock your vault access. Use the recovery code below to reset your password.</p>
+    <div class="otp">${code}</div>
+    <p class="text" style="font-size: 12px;">This code is valid for 15 minutes. If you did not initiate this request, your account is still secure, but we recommend monitoring your activity.</p>
+  `;
+
+  await transporter.sendMail({
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `🛡️ ${code} is your Recovery Code`,
+    html: baseTemplate(content),
+  });
+};
+
+export const sendOrderConfirmation = async (email: string, orderData: any) => {
+  const content = `
+    <span class="h2">Order Confirmation</span>
+    <h1 class="h1" style="font-size: 28px; margin: 20px 0;">Acquisition <span>Secured.</span></h1>
+    <p class="text">Dear <b>${orderData.customerName}</b>, your request has been synchronized with the Hira Neural Vault. Your funds are protected by our Escrow-Secured protocol.</p>
+    
+    <div style="background: rgba(255, 255, 255, 0.03); border-radius: 32px; border: 1px solid rgba(212, 175, 55, 0.1); overflow: hidden; margin: 40px 0;">
+        <div style="padding: 30px; background: rgba(212, 175, 55, 0.05); border-bottom: 1px solid rgba(212, 175, 55, 0.1); text-align: left;">
+            <p style="color: ${GOLD}; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin: 0 0 10px 0;">Order Information</p>
+            <p style="margin: 0; font-size: 18px; font-weight: 700;">#ORD-${orderData.id.slice(-8).toUpperCase()}</p>
+        </div>
+        <div style="padding: 30px; text-align: left;">
+            <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
+                <tr>
+                    <td style="padding-bottom: 10px; color: rgba(255,255,255,0.4); font-size: 12px; text-transform: uppercase;">Item Description</td>
+                    <td align="right" style="padding-bottom: 10px; color: rgba(255,255,255,0.4); font-size: 12px; text-transform: uppercase;">Amount</td>
+                </tr>
+                <tr>
+                    <td style="padding: 15px 0; border-top: 1px solid rgba(212, 175, 55, 0.1);">
+                        <p style="margin: 0; font-weight: 700; font-size: 14px;">${orderData.productName}</p>
+                        <p style="margin: 5px 0 0 0; font-size: 12px; color: rgba(255,255,255,0.5);">Verified Merchant: ${orderData.sellerName}</p>
+                    </td>
+                    <td align="right" style="padding: 15px 0; border-top: 1px solid rgba(212, 175, 55, 0.1); font-weight: 700;">Rs. ${orderData.total.toLocaleString()}</td>
+                </tr>
+            </table>
+            
+            <div style="display: flex; gap: 40px; border-top: 1px solid rgba(212, 175, 55, 0.1); padding-top: 30px;">
+                <div style="flex: 1;">
+                    <p style="color: ${GOLD}; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;">Payment Method</p>
+                    <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.8);">${orderData.paymentMethod}</p>
+                </div>
+                <div style="flex: 1;">
+                    <p style="color: ${GOLD}; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;">Shipping To</p>
+                    <p style="margin: 0; font-size: 13px; color: rgba(255,255,255,0.8);">${orderData.shippingAddress.address}, ${orderData.shippingAddress.city}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <a href="https://prelovedbyhira.com/customer/dashboard" class="btn">Track Order in Vault</a>
+    <p style="margin-top: 30px; font-size: 12px; color: rgba(255,255,255,0.3);">Need assistance? Contact our 24/7 Concierge.</p>
+  `;
+
+  await transporter.sendMail({
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `🥂 Confirmation: Your luxury acquisition #ORD-${orderData.id.slice(-8).toUpperCase()} is secured`,
     html: baseTemplate(content),
   });
 };
@@ -88,19 +159,24 @@ export const sendOrderConfirmation = async (email: string, orderData: any) => {
 export const sendSellerNotification = async (email: string, orderData: any) => {
   const content = `
     <span class="h2">New Sale Alert</span>
-    <p class="text">Congratulations! A customer has secured your listing. Please prepare for shipment within 24 hours to maintain your Elite Seller status.</p>
+    <h1 class="h1" style="font-size: 28px; margin: 20px 0;">Inventory <span>Secured.</span></h1>
+    <p class="text">Congratulations! <b>${orderData.customerName}</b> has just purchased your listing. This trade is currently protected by our neural escrow system.</p>
+    
     <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
-        <p style="color: ${GOLD}; font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 15px;">Sale Details</p>
-        <p style="margin: 5px 0; font-size: 14px;">Item: <b>${orderData.itemName}</b></p>
-        <p style="margin: 5px 0; font-size: 14px;">Your Earnings: <b>Rs. ${orderData.earnings.toLocaleString()}</b></p>
+        <p style="color: ${GOLD}; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">Trade Summary</p>
+        <p style="margin: 8px 0; font-size: 14px;">Item: <b style="color: #fff;">${orderData.itemName}</b></p>
+        <p style="margin: 8px 0; font-size: 14px;">Earnings: <b style="color: ${GOLD};">Rs. ${orderData.earnings.toLocaleString()}</b></p>
+        <p style="margin: 8px 0; font-size: 14px;">Order ID: <b style="color: rgba(255,255,255,0.5);">#ORD-${orderData.id.slice(-8).toUpperCase()}</b></p>
     </div>
-    <a href="https://prelovedbyhira.com/seller/dashboard" class="btn">Go to Dashboard</a>
+    
+    <p class="text" style="font-size: 14px;">Funds will be released to your balance once the customer confirms delivery. Please ensure item is ready for dispatch.</p>
+    <a href="https://prelovedbyhira.com/seller/dashboard" class="btn">Manage My Sales</a>
   `;
 
   await transporter.sendMail({
     from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: `💰 You just made a sale! Item: ${orderData.itemName}`,
+    subject: `💰 Sale Confirmed! You just sold: ${orderData.itemName}`,
     html: baseTemplate(content),
   });
 };
@@ -161,6 +237,28 @@ export const sendPaymentRejectedEmail = async (email: string, orderId: string, r
   });
 };
 
+export const sendSellerPaymentConfirmedEmail = async (email: string, orderData: any) => {
+  const content = `
+    <span class="h2">Payment Confirmed — Ready to Ship</span>
+    <p class="text">Great news! Hira Vault has verified the customer's payment for your listing. You are now authorized to ship the item.</p>
+    <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
+        <p style="color: ${GOLD}; font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 15px;">Next Steps</p>
+        <p style="margin: 5px 0; font-size: 14px;">1. Pack the item securely.</p>
+        <p style="margin: 5px 0; font-size: 14px;">2. Ship to the customer's provided address.</p>
+        <p style="margin: 5px 0; font-size: 14px;">3. Update tracking number in your dashboard.</p>
+        <p style="margin: 15px 0 5px 0; font-size: 14px;">Order ID: <b>#ORD-${orderData.id.slice(-8).toUpperCase()}</b></p>
+    </div>
+    <a href="https://prelovedbyhira.com/seller/dashboard" class="btn">View Shipping Address</a>
+  `;
+
+  await transporter.sendMail({
+    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `📦 Payment Confirmed: Ship your item (#ORD-${orderData.id.slice(-8).toUpperCase()})`,
+    html: baseTemplate(content),
+  });
+};
+
 export const sendOrderStatusUpdate = async (email: string, orderId: string, status: string, itemName: string) => {
   const statusIcons: any = {
     'PAID': '💰',
@@ -170,27 +268,37 @@ export const sendOrderStatusUpdate = async (email: string, orderId: string, stat
   };
 
   const statusMessages: any = {
-    'PAID': 'Payment verified. Seller is preparing your item.',
-    'SHIPPED': 'Exciting news! Your item is on its way.',
-    'DELIVERED': 'Your luxury item has arrived at your location.',
-    'CONFIRMED': 'Trade completed. Thank you for using Hira Vault.'
+    'PAID': 'Your payment has been successfully synchronized and verified. The merchant has been notified to prepare your shipment.',
+    'SHIPPED': 'Exciting news! Your luxury acquisition is now in transit. You can track its progress via your dashboard.',
+    'DELIVERED': 'Mission accomplished. Your item has arrived. Please inspect it carefully before confirming delivery in the vault.',
+    'CONFIRMED': 'Trade finalized. The escrow funds have been released. Thank you for choosing PrelovedByHira.'
   };
 
   const content = `
-    <span class="h2">Order Status Update</span>
-    <h1 class="h1" style="font-size: 28px; margin: 20px 0;">${status}</h1>
-    <p class="text">${statusMessages[status] || 'Your order status has been updated.'}</p>
-    <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
-        <p style="margin: 5px 0; font-size: 14px;">Order: <b>#${orderId.slice(-8).toUpperCase()}</b></p>
-        <p style="margin: 5px 0; font-size: 14px;">Item: <b>${itemName}</b></p>
+    <span class="h2">Trade Status Update</span>
+    <h1 class="h1" style="font-size: 32px; margin: 20px 0;">Order ${status} <span>${statusIcons[status] || ''}</span></h1>
+    <p class="text">${statusMessages[status] || 'Your order status has been updated in the neural vault.'}</p>
+    
+    <div style="background: rgba(212, 175, 55, 0.05); padding: 40px; border-radius: 32px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 40px 0; text-align: left;">
+        <p style="color: ${GOLD}; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;">Tracking Summary</p>
+        <div style="margin-bottom: 15px;">
+            <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase;">Reference Number</p>
+            <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: 700; color: #fff;">#ORD-${orderId.slice(-8).toUpperCase()}</p>
+        </div>
+        <div>
+            <p style="margin: 0; font-size: 11px; color: rgba(255,255,255,0.4); text-transform: uppercase;">Product Detail</p>
+            <p style="margin: 5px 0 0 0; font-size: 16px; font-weight: 700; color: #fff;">${itemName}</p>
+        </div>
     </div>
-    <a href="https://prelovedbyhira.com/customer/orders" class="btn">View in Vault</a>
+    
+    <a href="https://prelovedbyhira.com/customer/orders" class="btn">View Live Status</a>
+    <p style="margin-top: 30px; font-size: 12px; color: rgba(255,255,255,0.3);">This is an official communication from the PrelovedByHira Luxury Vault.</p>
   `;
 
   await transporter.sendMail({
     from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: `${statusIcons[status] || '✨'} Order ${status}: ${itemName}`,
+    subject: `${statusIcons[status] || '✨'} Status Update: Order #${orderId.slice(-8).toUpperCase()} is ${status}`,
     html: baseTemplate(content),
   });
 };

@@ -30,7 +30,9 @@ app.use(helmet());
 app.use(cors({
   origin: [
     'http://localhost:3000', 
+    'http://localhost:3001',
     'http://192.168.100.72:3000',
+    'http://192.168.100.72:3001',
     process.env.FRONTEND_URL || 'http://localhost:3000'
   ],
   credentials: true,

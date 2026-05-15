@@ -18,7 +18,7 @@ import {
   CheckCircle2, AlertTriangle, X, Eye, Zap, Clock,
   TrendingUp, Flame, BadgeCheck, Phone, Lock, Award,
   Users, Timer, ZoomIn, RotateCcw, Package, Tag,
-  Check, Minus, Plus
+  Check, Minus, Plus, Upload, Play, Volume2, VolumeX, Pause
 } from "lucide-react";
 import api from "@/lib/api";
 import { useCartStore } from "@/store/useCartStore";
@@ -97,6 +97,15 @@ export default function ProductDetailPage() {
   const [showMobFomo, setShowMobFomo]   = useState(false);
   const [showDeskFomo, setShowDeskFomo] = useState(false);
 
+  const [isVideoModalOpen, setIsVideoModalOpen] = useState(false);
+  const [isVideoMuted, setIsVideoMuted]         = useState(true);
+  const [isVideoPlaying, setIsVideoPlaying]     = useState(true);
+  const [videoProgress, setVideoProgress]       = useState(0);
+  const [showSkipBtn, setShowSkipBtn]           = useState(false);
+  const [hasSeenVideo, setHasSeenVideo]         = useState(false);
+  const [urgencyCount]                          = useState(() => Math.floor(Math.random() * 3) + 1);
+
+  const videoRef = useRef<HTMLVideoElement>(null);
   const actionsRef = useInView(useCallback((v: boolean) => setSticky(!v), []), []);
 
   const { data: res, isLoading } = useQuery({
@@ -105,6 +114,11 @@ export default function ProductDetailPage() {
   });
 
   const product = res?.product;
+
+  const galleryItems = [
+    ...(product?.videoUrl ? [{ type: 'video', url: product.videoUrl }] : []),
+    ...(product?.images || []).map((url: string) => ({ type: 'image', url }))
+  ];
 
   useEffect(() => {
     const a = setTimeout(() => setShowMobFomo(true),  4500);
@@ -141,6 +155,45 @@ export default function ProductDetailPage() {
   const onShare = async () => {
     try { await navigator.share({ title: product?.title, url: window.location.href }); }
     catch { navigator.clipboard.writeText(window.location.href); toast.success("Link copied!"); }
+  };
+
+  useEffect(() => {
+    const seen = localStorage.getItem(`pdp_video_seen_${id}`);
+    if (seen) setHasSeenVideo(true);
+    
+    if (!seen && product?.videoUrl) {
+      const timer = setTimeout(() => openVideoModal(), 1500);
+      return () => clearTimeout(timer);
+    }
+  }, [id, product?.videoUrl]);
+
+  const openVideoModal = () => {
+    setIsVideoModalOpen(true);
+    setIsVideoPlaying(true);
+    setVideoProgress(0);
+    setShowSkipBtn(false);
+    setTimeout(() => setShowSkipBtn(true), 3000);
+    localStorage.setItem(`pdp_video_seen_${id}`, 'true');
+    setHasSeenVideo(true);
+  };
+
+  const closeVideoModal = () => {
+    setIsVideoModalOpen(false);
+    setIsVideoPlaying(false);
+  };
+
+  const togglePlay = () => {
+    if (!videoRef.current) return;
+    if (isVideoPlaying) videoRef.current.pause();
+    else videoRef.current.play();
+    setIsVideoPlaying(!isVideoPlaying);
+  };
+
+  const onVideoTimeUpdate = () => {
+    if (!videoRef.current) return;
+    const p = (videoRef.current.currentTime / videoRef.current.duration) * 100;
+    setVideoProgress(p);
+    if (p >= 100) closeVideoModal();
   };
 
   if (isLoading) return <Skeleton />;
@@ -240,7 +293,7 @@ export default function ProductDetailPage() {
               </div>
               <div className="flex items-center gap-3 shrink-0">
                 <div className="flex items-center gap-2 text-[10px] font-bold text-red-500">
-                  <Flame className="w-3.5 h-3.5 animate-pulse" /> {viewers} viewing · 1 left
+                  <Flame className="w-3.5 h-3.5 animate-pulse" /> {viewers} viewing · {urgencyCount} left
                 </div>
                 <button onClick={() => onAddBag(qty)} className="h-10 px-5 border-2 border-gold-400/40 text-gold-500 rounded-xl font-bold text-xs hover:border-gold-400 hover:bg-gold-400/5 transition-all flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4" /> Bag
@@ -271,7 +324,7 @@ export default function ProductDetailPage() {
           <div className="lg:hidden flex items-center justify-between mb-4 px-0.5">
             <div className="flex items-center gap-2">
               <span className="flex items-center gap-1.5 bg-red-500/10 border border-red-500/20 rounded-full px-3 py-1.5 text-[9px] font-black text-red-500 uppercase tracking-widest">
-                <Flame className="w-3 h-3 animate-pulse" /> 1 of 1 Left
+                <Flame className="w-3 h-3 animate-pulse" /> {urgencyCount} of {urgencyCount} Left
               </span>
               <span className="flex items-center gap-1.5 bg-white dark:bg-dark-900 border border-gold-400/15 rounded-full px-3 py-1.5 text-[9px] font-bold text-gray-500">
                 <Eye className="w-3 h-3 text-gold-400" /> {viewers} viewing
@@ -286,7 +339,7 @@ export default function ProductDetailPage() {
           <div className="hidden lg:flex items-center justify-between mb-8 px-6 py-4 bg-white dark:bg-dark-900 rounded-2xl border border-gold-400/10 shadow-sm">
             <div className="flex items-center gap-6">
               <span className="flex items-center gap-2 bg-red-500/8 border border-red-500/15 rounded-full px-4 py-2 text-[10px] font-black text-red-500 uppercase tracking-widest">
-                <Flame className="w-3.5 h-3.5 animate-pulse" /> Only 1 Remaining in Vault
+                <Flame className="w-3.5 h-3.5 animate-pulse" /> Only {urgencyCount} Remaining in Vault
               </span>
               <div className="flex items-center gap-2.5">
                 <div className="flex -space-x-2">
@@ -378,16 +431,16 @@ export default function ProductDetailPage() {
                 </div>
 
                 {/* Desktop nav arrows */}
-                {product.images?.length > 1 && (
+                {galleryItems.length > 1 && (
                   <div className="absolute inset-x-5 top-1/2 -translate-y-1/2 hidden lg:flex justify-between z-10 pointer-events-none">
                     <button
-                      onClick={e => { e.stopPropagation(); setImg(p => p > 0 ? p - 1 : product.images.length - 1); }}
+                      onClick={e => { e.stopPropagation(); setImg(p => p > 0 ? p - 1 : galleryItems.length - 1); }}
                       className="pointer-events-auto w-12 h-12 rounded-full bg-white/70 dark:bg-black/50 backdrop-blur-xl border border-white/20 flex items-center justify-center text-dark-900 dark:text-white hover:bg-gold-400 hover:text-white hover:border-transparent transition-all shadow-xl hover:scale-110 opacity-0 group-hover:opacity-100"
                     >
                       <ChevronLeft className="w-6 h-6" />
                     </button>
                     <button
-                      onClick={e => { e.stopPropagation(); setImg(p => p < product.images.length - 1 ? p + 1 : 0); }}
+                      onClick={e => { e.stopPropagation(); setImg(p => p < galleryItems.length - 1 ? p + 1 : 0); }}
                       className="pointer-events-auto w-12 h-12 rounded-full bg-white/70 dark:bg-black/50 backdrop-blur-xl border border-white/20 flex items-center justify-center text-dark-900 dark:text-white hover:bg-gold-400 hover:text-white hover:border-transparent transition-all shadow-xl hover:scale-110 opacity-0 group-hover:opacity-100"
                     >
                       <ChevronRight className="w-6 h-6" />
@@ -396,9 +449,9 @@ export default function ProductDetailPage() {
                 )}
 
                 {/* Mobile dots */}
-                {product.images?.length > 1 && (
+                {galleryItems.length > 1 && (
                   <div className="lg:hidden absolute bottom-4 inset-x-0 flex justify-center items-center gap-1.5 z-10">
-                    {product.images.map((_: string, i: number) => (
+                    {galleryItems.map((_: any, i: number) => (
                       <button key={i} onClick={e => { e.stopPropagation(); setImg(i); }}
                         className={`transition-all duration-300 rounded-full ${i === img ? "w-6 h-1.5 bg-gold-400" : "w-1.5 h-1.5 bg-white/50"}`}
                       />
@@ -409,11 +462,18 @@ export default function ProductDetailPage() {
 
               {/* Thumbnails — desktop */}
               <div className="hidden lg:flex gap-3">
-                {product.images?.map((src: string, i: number) => (
+                {galleryItems.map((item: any, i: number) => (
                   <button key={i} onClick={() => setImg(i)}
                     className={`relative w-[72px] h-24 rounded-2xl overflow-hidden shrink-0 transition-all duration-300 ${i === img ? "ring-2 ring-gold-400 ring-offset-[3px] dark:ring-offset-dark-950 scale-[0.93]" : "opacity-40 hover:opacity-80"}`}
                   >
-                    <Image src={src} alt="" fill sizes="72px" className="object-cover" />
+                    {item.type === 'video' ? (
+                       <div className="w-full h-full bg-dark-900 flex flex-col items-center justify-center text-gold-400">
+                          <Upload className="w-6 h-6" />
+                          <span className="text-[8px] font-black uppercase tracking-tighter mt-1">Video</span>
+                       </div>
+                    ) : (
+                      <Image src={item.url} alt="" fill sizes="72px" className="object-cover" />
+                    )}
                   </button>
                 ))}
               </div>
@@ -444,7 +504,7 @@ export default function ProductDetailPage() {
                     : "bg-red-500/8 text-red-600 dark:text-red-400 border-red-500/20"
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${(product.stock || 0) > 0 ? "bg-emerald-500" : "bg-red-500"}`} />
-                  {(product.stock || 0) > 0 ? `In Stock · ${product.stock} Left` : "Out of Stock"}
+                  {(product.stock || 0) > 0 ? `In Stock` : "Out of Stock"}
                 </span>
               </div>
 
@@ -538,9 +598,13 @@ export default function ProductDetailPage() {
                   <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
                     <Tag className="w-3 h-3 text-gold-400" /> Size · {product.category}
                   </p>
-                  <div className="flex items-center justify-between">
-                    <p className="text-3xl lg:text-4xl font-accent font-bold text-dark-900 dark:text-cream-50">{product.size || "M"}</p>
-                    <div className="text-right">
+                  <div className="flex items-center justify-between gap-2">
+                    <p className={`font-accent font-bold text-dark-900 dark:text-cream-50 truncate ${
+                      (product.size || "").length > 6 ? "text-xl lg:text-2xl" : "text-3xl lg:text-4xl"
+                    }`}>
+                      {product.size || "M"}
+                    </p>
+                    <div className="text-right shrink-0">
                       <p className="text-[9px] text-gray-400 font-medium">International</p>
                       <p className="text-[9px] text-gold-400 font-bold mt-0.5">Size Guide →</p>
                     </div>
@@ -604,6 +668,15 @@ export default function ProductDetailPage() {
                 >
                   <ShoppingBag className="w-5 h-5" /> {(product.stock || 0) > 0 ? "Add to Bag" : "Unavailable"}
                 </button>
+
+                {product.videoUrl && (
+                   <button
+                    onClick={openVideoModal}
+                    className="flex items-center justify-center gap-3 w-full h-[52px] bg-white dark:bg-dark-900 border border-gold-400/10 text-dark-900 dark:text-cream-50 rounded-2xl font-bold text-sm hover:border-gold-400/30 transition-all"
+                  >
+                    <Play className="w-4 h-4 fill-gold-400 text-gold-400" /> Watch product film
+                  </button>
+                )}
 
 
 
@@ -899,6 +972,114 @@ export default function ProductDetailPage() {
               ))}
             </div>
           </motion.div>
+        )}
+      </AnimatePresence>
+      {/* ── CINEMATIC VIDEO MODAL ────────────────────────────────────── */}
+      <AnimatePresence>
+        {isVideoModalOpen && (
+          <>
+            {/* Cinematic Letterbox Bars */}
+            <motion.div 
+              initial={{ height: 0 }} animate={{ height: "6vh" }} exit={{ height: 0 }}
+              className="fixed top-0 inset-x-0 z-[10000] bg-black pointer-events-none"
+            />
+            <motion.div 
+              initial={{ height: 0 }} animate={{ height: "6vh" }} exit={{ height: 0 }}
+              className="fixed bottom-0 inset-x-0 z-[10000] bg-black pointer-events-none"
+            />
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/90 backdrop-blur-3xl p-4 lg:p-8"
+              onClick={closeVideoModal}
+            >
+              <motion.div
+                initial={{ scale: 0.9, y: 40, opacity: 0 }}
+                animate={{ scale: 1, y: 0, opacity: 1 }}
+                exit={{ scale: 0.95, y: 20, opacity: 0 }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className="relative w-full max-w-5xl bg-dark-950 rounded-[32px] overflow-hidden border border-white/10 shadow-2xl"
+                onClick={e => e.stopPropagation()}
+              >
+                {/* Video Container */}
+                <div className="relative aspect-video bg-black group">
+                  <video
+                    ref={videoRef}
+                    src={product.videoUrl}
+                    autoPlay
+                    muted={isVideoMuted}
+                    playsInline
+                    onTimeUpdate={onVideoTimeUpdate}
+                    className="w-full h-full object-cover"
+                  />
+                  
+                  {/* Floating Label */}
+                  <div className="absolute top-6 left-6 px-4 py-2 bg-black/40 backdrop-blur-md border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.2em] text-white/60 pointer-events-none">
+                    {product.brand} — Cinematic Film
+                  </div>
+
+                  {/* Play/Pause Large Overlay */}
+                  <button 
+                    onClick={togglePlay}
+                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <div className="w-20 h-20 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center text-white scale-90 hover:scale-100 transition-transform">
+                      {isVideoPlaying ? <Pause className="w-8 h-8 fill-white" /> : <Play className="w-8 h-8 fill-white ml-1" />}
+                    </div>
+                  </button>
+
+                  {/* Sound Toggle */}
+                  <button
+                    onClick={() => setIsVideoMuted(!isVideoMuted)}
+                    className="absolute bottom-6 right-6 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/15 flex items-center justify-center text-white hover:bg-black/60 transition-all z-10"
+                  >
+                    {isVideoMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                  </button>
+
+                  {/* Progress Bar */}
+                  <div className="absolute bottom-0 inset-x-0 h-1 bg-white/10 overflow-hidden">
+                    <motion.div 
+                      className="h-full bg-gradient-to-r from-gold-400 to-gold-600 shadow-[0_0_8px_rgba(212,175,55,0.6)]"
+                      style={{ width: `${videoProgress}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="p-6 lg:p-8 bg-dark-900 flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-white/5">
+                  <div className="space-y-1 text-center sm:text-left">
+                    <h3 className="text-xl font-display font-bold text-cream-50 leading-tight">{product.title}</h3>
+                    <p className="text-xs text-gray-500 font-medium uppercase tracking-widest">
+                      Spatial Luxury · Vetted Condition · Rs. {product.sellingPrice?.toLocaleString()}
+                    </p>
+                  </div>
+                  
+                  <div className="flex items-center gap-4">
+                    <AnimatePresence>
+                      {showSkipBtn && (
+                        <motion.button
+                          initial={{ opacity: 0, x: 10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          onClick={closeVideoModal}
+                          className="h-10 px-6 bg-transparent border border-white/10 text-gray-400 rounded-xl text-xs font-bold hover:text-white hover:border-white/30 transition-all"
+                        >
+                          Skip film
+                        </motion.button>
+                      )}
+                    </AnimatePresence>
+                    <button
+                      onClick={closeVideoModal}
+                      className="w-10 h-10 rounded-xl bg-red-500/10 text-red-400 flex items-center justify-center border border-red-500/20 hover:bg-red-500 hover:text-white transition-all"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
     </>

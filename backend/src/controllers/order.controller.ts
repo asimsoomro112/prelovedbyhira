@@ -9,7 +9,7 @@ import * as EmailService from '../services/email.service';
 
 export const createOrder = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { productId, shippingAddress, shippingCost = 0, quantity = 1 } = req.body;
+    const { productId, shippingAddress, shippingCost = 0, quantity = 1, paymentMethod = 'Bank Transfer' } = req.body;
     const buyerId = req.user!.id;
     const qty = Math.max(1, parseInt(quantity));
 
@@ -49,6 +49,7 @@ export const createOrder = async (req: AuthRequest, res: Response, next: NextFun
         platformFee,
         netAmount,
         shippingCost: Number(shippingCost),
+        paymentMethod,
         status: 'AWAITING_PAYMENT',
         shippingAddress,
         paymentProofUrl: null,
@@ -74,14 +75,28 @@ export const createOrder = async (req: AuthRequest, res: Response, next: NextFun
 
     // 📧 Send Emails (Outside transaction for performance)
     const buyerDoc = await db.collection('users').doc(buyerId).get();
-    if (buyerDoc.exists) {
-      await EmailService.sendOrderConfirmation(buyerDoc.data()!.email, { id: result.id, total: result.totalPrice });
-    }
-
     const productDoc = await productRef.get();
     const sellerDoc = await db.collection('users').doc(result.sellerId).get();
+
+    if (buyerDoc.exists) {
+      await EmailService.sendOrderConfirmation(buyerDoc.data()!.email, { 
+        id: result.id, 
+        total: result.totalPrice,
+        customerName: buyerDoc.data()!.name,
+        productName: productDoc.data()?.title || 'Luxury Item',
+        sellerName: sellerDoc.data()?.name || 'Verified Merchant',
+        paymentMethod: result.paymentMethod,
+        shippingAddress: result.shippingAddress
+      });
+    }
+
     if (sellerDoc.exists) {
-      await EmailService.sendSellerNotification(sellerDoc.data()!.email, { itemName: productDoc.data()?.title || 'Item', earnings: result.netAmount, id: result.id });
+      await EmailService.sendSellerNotification(sellerDoc.data()!.email, { 
+        itemName: productDoc.data()?.title || 'Item', 
+        earnings: result.netAmount, 
+        id: result.id,
+        customerName: buyerDoc.data()!.name
+      });
     }
 
     res.status(201).json({ 
@@ -453,6 +468,12 @@ export const adminConfirmPayment = async (req: Request, res: Response, next: Nex
         message: "Payment received confirmed. Now send product for shipping to the customer provided address.",
         type: "ORDER_UPDATE"
       });
+
+      // 📧 Send Payment Confirmed Email to Seller
+      const sUserDoc = await db.collection('users').doc(sellerId).get();
+      if (sUserDoc.exists) {
+        await EmailService.sendSellerPaymentConfirmedEmail(sUserDoc.data()!.email, { id });
+      }
     }
 
     // 📧 Send Payment Confirmation Email to Buyer

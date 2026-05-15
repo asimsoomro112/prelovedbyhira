@@ -14,7 +14,7 @@ router.get('/:id', productController.getProductDetail);
 router.post('/', 
   authenticate, 
   authorize('SELLER', 'ADMIN'), 
-  upload.array('images', 8), 
+  upload.fields([{ name: 'images', maxCount: 8 }, { name: 'video', maxCount: 1 }]), 
   productController.createProduct
 );
 

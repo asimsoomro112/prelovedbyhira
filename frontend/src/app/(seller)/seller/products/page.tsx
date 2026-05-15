@@ -124,8 +124,8 @@ export default function SellerProductsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-dark-950 pt-24 pb-24 lg:pt-32">
-      <div className="max-w-7xl mx-auto px-4 md:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-950 pt-24 pb-24 lg:pt-32 overflow-x-hidden">
+      <div className="max-w-7xl mx-auto px-2 md:px-6 lg:px-8">
         
         {/* Header Section */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
@@ -165,8 +165,8 @@ export default function SellerProductsPage() {
               className="w-full h-14 pl-12 pr-4 bg-white dark:bg-dark-900 border border-gold-400/10 rounded-2xl outline-none focus:border-gold-400/40 transition-all text-sm font-medium shadow-sm"
             />
           </div>
-          <div className="flex gap-4">
-             <div className="h-14 px-5 bg-white dark:bg-dark-900 border border-gold-400/10 rounded-2xl flex items-center gap-3 shadow-sm">
+          <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none flex-nowrap lg:flex-wrap">
+             <div className="h-14 px-5 bg-white dark:bg-dark-900 border border-gold-400/10 rounded-2xl flex items-center gap-3 shadow-sm shrink-0 min-w-[140px]">
                 <div className="w-8 h-8 rounded-xl bg-gold-400/10 flex items-center justify-center text-gold-400">
                   <TrendingUp className="w-4 h-4" />
                 </div>
@@ -175,7 +175,7 @@ export default function SellerProductsPage() {
                    <p className="text-sm font-black text-dark-900 dark:text-cream-50">{products.filter(p => p.status === 'ACTIVE').length}</p>
                 </div>
              </div>
-             <div className="h-14 px-5 bg-white dark:bg-dark-900 border border-gold-400/10 rounded-2xl flex items-center gap-3 shadow-sm">
+             <div className="h-14 px-5 bg-white dark:bg-dark-900 border border-gold-400/10 rounded-2xl flex items-center gap-3 shadow-sm shrink-0 min-w-[140px]">
                 <div className="w-8 h-8 rounded-xl bg-amber-500/10 flex items-center justify-center text-amber-500">
                   <AlertCircle className="w-4 h-4" />
                 </div>
@@ -206,26 +206,26 @@ export default function SellerProductsPage() {
             )}
           </div>
         ) : (
-          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'space-y-4'}>
+          <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6' : 'w-full flex flex-col items-center space-y-4'}>
             {filteredProducts.map(p => (
               <motion.div 
                 layout
                 key={p.id} 
-                className={`bg-white dark:bg-dark-900 rounded-[32px] border border-gold-400/10 hover:border-gold-400/30 transition-all shadow-sm group overflow-hidden ${viewMode === 'list' ? 'flex flex-col md:flex-row items-center p-3 gap-6' : ''}`}
+                className={`w-full mx-auto bg-white dark:bg-dark-900 rounded-2xl md:rounded-[32px] border border-gold-400/10 hover:border-gold-400/30 transition-all shadow-sm group overflow-hidden ${viewMode === 'list' ? 'flex flex-row items-center p-2 md:p-3 gap-2 md:gap-6 text-left' : ''}`}
               >
                 {/* Image Container */}
-                <div className={`relative flex-shrink-0 bg-gray-50 dark:bg-dark-800 rounded-2xl overflow-hidden ${viewMode === 'list' ? 'w-24 h-24 md:w-32 md:h-32' : 'aspect-[4/3] w-full'}`}>
+                <div className={`relative flex-shrink-0 bg-gray-50 dark:bg-dark-800 rounded-xl overflow-hidden ${viewMode === 'list' ? 'w-24 aspect-[3/4] md:w-32 md:h-32' : 'aspect-[4/3] w-full'}`}>
                    {p.images?.[0] ? (
                      <div className="relative w-full h-full">
                        <Image src={p.images[0]} alt={p.title} fill className="object-cover group-hover:scale-110 transition-transform duration-[2s]" />
                      </div>
                    ) : (
                      <div className="w-full h-full flex items-center justify-center text-gold-400/20">
-                       <Package className="w-12 h-12" />
+                       <Package className="w-6 h-6" />
                      </div>
                    )}
-                   <div className="absolute top-3 left-3 flex flex-col gap-2">
-                      <span className={`px-2.5 py-1 rounded-full text-[8px] font-black uppercase tracking-widest backdrop-blur-md shadow-sm border ${
+                   <div className="absolute top-1 left-1 flex flex-col gap-1">
+                      <span className={`px-1.5 py-0.5 rounded-full text-[6px] font-black uppercase tracking-widest backdrop-blur-md shadow-sm border ${
                         p.status === 'ACTIVE' ? 'bg-emerald-500/80 text-white border-white/20' : 
                         p.status === 'PENDING' ? 'bg-amber-500/80 text-white border-white/20' : 
                         'bg-red-500/80 text-white border-white/20'
@@ -236,43 +236,33 @@ export default function SellerProductsPage() {
                 </div>
 
                 {/* Content Container */}
-                <div className={`flex-1 min-w-0 ${viewMode === 'list' ? 'pr-4' : 'p-6'}`}>
-                   <div className="flex items-start justify-between gap-4 mb-2">
-                      <div className="min-w-0">
-                         <p className="text-[10px] font-black text-gold-400 uppercase tracking-widest mb-1">{p.brand}</p>
-                         <h3 className="text-lg font-bold text-dark-900 dark:text-cream-50 truncate leading-tight group-hover:text-gold-400 transition-colors">{p.title}</h3>
+                <div className={`flex-1 min-w-0 w-full ${viewMode === 'list' ? 'px-2 md:px-0 md:pr-4' : 'p-6'}`}>
+                   <div className="flex flex-col gap-0.5">
+                      <h3 className="text-xs md:text-lg font-bold text-dark-900 dark:text-cream-50 truncate leading-tight group-hover:text-gold-400 transition-colors uppercase">{p.title}</h3>
+                      <div className="flex items-center gap-2">
+                        <p className="text-[8px] md:text-[10px] font-black text-gold-400 uppercase tracking-widest">{p.brand}</p>
+                        <span className="w-1 h-1 bg-gray-300 rounded-full" />
+                        <div className="flex items-center gap-1 text-[8px] text-gray-500 font-bold uppercase">
+                          {p.category}
+                        </div>
                       </div>
-                      <div className="text-right shrink-0">
-                         <p className="text-lg font-accent font-bold text-gold-400 leading-none mb-1">Rs. {p.sellingPrice.toLocaleString()}</p>
-                         <p className="text-[10px] text-gray-400 font-medium line-through">Rs. {p.originalPrice.toLocaleString()}</p>
-                      </div>
-                   </div>
-
-                   <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mt-4 pb-4 border-b border-gold-400/5">
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold">
-                        <Tag className="w-3.5 h-3.5 text-gold-400" /> {p.category}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold">
-                        <History className="w-3.5 h-3.5 text-gold-400" /> {p.condition}
-                      </div>
-                      <div className="flex items-center gap-1.5 text-xs text-gray-500 font-bold">
-                        <span className="w-1 h-1 bg-gold-400 rounded-full" /> Size {p.size}
+                      <div className="mt-0.5">
+                         <p className="text-xs md:text-lg font-accent font-bold text-gold-400 leading-none">Rs. {p.sellingPrice.toLocaleString()}</p>
                       </div>
                    </div>
 
                    {/* Stock Control & Actions */}
-                   <div className="flex items-center justify-between pt-4">
-                      <div className="flex items-center gap-3">
-                         <div className="flex items-center bg-gray-50 dark:bg-dark-800 rounded-xl border border-gold-400/10 p-1">
+                   <div className="flex flex-row items-center gap-1 mt-2 pt-2 border-t border-gold-400/5">
+                      <div className="flex items-center">
+                         <div className="flex items-center bg-gray-50 dark:bg-dark-800 rounded-xl border border-gold-400/10 p-0.5">
                             <button 
                               onClick={() => handleUpdateStock(p.id, p.stock, -1)}
-                              className="w-8 h-8 rounded-lg hover:bg-white dark:hover:bg-dark-700 text-gray-400 hover:text-red-500 transition-all flex items-center justify-center active:scale-90"
+                              className="w-7 h-7 rounded-lg hover:bg-white dark:hover:bg-dark-700 text-gray-400 hover:text-red-500 transition-all flex items-center justify-center active:scale-90"
                               title="Decrease Stock"
                             >
-                              <Minus className="w-3 h-3" />
+                              <Minus className="w-2.5 h-2.5" />
                             </button>
-                            <div className="px-2 flex flex-col items-center">
-                               <p className="text-[7px] font-bold text-gray-400 uppercase leading-none mb-1">Stock</p>
+                            <div className="px-1 flex flex-col items-center">
                                <input 
                                  type="number"
                                  min="0"
@@ -283,38 +273,38 @@ export default function SellerProductsPage() {
                                  }}
                                  onBlur={(e) => handleManualStockChange(p.id, e.target.value)}
                                  onKeyDown={(e) => e.key === 'Enter' && handleManualStockChange(p.id, (e.target as HTMLInputElement).value)}
-                                 className={`w-10 bg-transparent text-center text-sm font-black outline-none border-b border-transparent focus:border-gold-400/30 transition-all ${p.stock === 0 ? 'text-red-500' : 'text-dark-900 dark:text-cream-50'}`}
+                                 className={`w-10 bg-transparent text-center text-[10px] font-black outline-none border-b border-transparent focus:border-gold-400/30 transition-all ${p.stock === 0 ? 'text-red-500' : 'text-dark-900 dark:text-cream-50'}`}
                                  aria-label="Stock quantity"
                                />
                             </div>
                             <button 
                               onClick={() => handleUpdateStock(p.id, p.stock, 1)}
-                              className="w-8 h-8 rounded-lg hover:bg-white dark:hover:bg-dark-700 text-gray-400 hover:text-emerald-500 transition-all flex items-center justify-center active:scale-90"
+                              className="w-7 h-7 rounded-lg hover:bg-white dark:hover:bg-dark-700 text-gray-400 hover:text-emerald-500 transition-all flex items-center justify-center active:scale-90"
                               title="Increase Stock"
                             >
-                              <Plus className="w-3 h-3" />
+                              <Plus className="w-2.5 h-2.5" />
                             </button>
                          </div>
                       </div>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1">
                         <Link 
                           href={`/product/${p.id}`} 
-                          className="w-10 h-10 rounded-xl bg-gold-400/5 text-gray-400 hover:text-gold-400 hover:bg-gold-400/10 transition-all flex items-center justify-center active:scale-90"
+                          className="w-7 h-7 rounded-lg bg-gold-400/5 text-gray-400 hover:text-gold-400 hover:bg-gold-400/10 transition-all flex items-center justify-center active:scale-90"
                         >
-                          <Eye className="w-4 h-4" />
+                          <Eye className="w-3.5 h-3.5" />
                         </Link>
                         <button 
                           onClick={() => { setEditingProduct(p); setIsEditModalOpen(true); }}
-                          className="w-10 h-10 rounded-xl bg-gold-400/5 text-gray-400 hover:text-gold-400 hover:bg-gold-400/10 transition-all flex items-center justify-center active:scale-90"
+                          className="w-7 h-7 rounded-lg bg-gold-400/5 text-gray-400 hover:text-gold-400 hover:bg-gold-400/10 transition-all flex items-center justify-center active:scale-90"
                         >
-                          <Edit className="w-4 h-4" />
+                          <Edit className="w-3.5 h-3.5" />
                         </button>
                         <button 
                           onClick={() => handleDelete(p.id)}
-                          className="w-10 h-10 rounded-xl bg-red-500/5 text-red-400 hover:text-red-600 hover:bg-red-500/10 transition-all flex items-center justify-center active:scale-90"
+                          className="w-7 h-7 rounded-lg bg-red-500/5 text-red-400 hover:text-red-600 hover:bg-red-500/10 transition-all flex items-center justify-center active:scale-90"
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
                       </div>
                    </div>

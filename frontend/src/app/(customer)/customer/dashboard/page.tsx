@@ -1,4 +1,6 @@
 "use client";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 import { motion } from "framer-motion";
 import { 
@@ -31,7 +33,14 @@ import api from "@/lib/api";
 import Image from "next/image";
 
 export default function CustomerDashboard() {
-  const { user } = useAuthStore();
+  const { user, isAuthenticated } = useAuthStore();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isAuthenticated, router]);
 
   const { data: dashboardData, isLoading } = useQuery({
     queryKey: ["customer-dashboard-stats"],

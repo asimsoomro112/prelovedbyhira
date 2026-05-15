@@ -13,27 +13,34 @@ const storage = multer.memoryStorage();
 
 export const upload = multer({
   storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit for videos
   fileFilter: (req, file, cb) => {
-    if (file.mimetype.startsWith('image/')) {
+    if (file.mimetype.startsWith('image/') || file.mimetype.startsWith('video/')) {
       cb(null, true);
     } else {
-      cb(new AppError('Only images are allowed', 400));
+      cb(new AppError('Only images and videos are allowed', 400));
     }
   },
 });
 
-export const uploadToCloudinary = async (buffer: Buffer, folder: string): Promise<{ url: string; publicId: string }> => {
-  // Optimize with Sharp
-  const optimizedBuffer = await sharp(buffer)
-    .resize(800, 800, { fit: 'inside', withoutEnlargement: true })
-    .toFormat('webp')
-    .webp({ quality: 80 })
-    .toBuffer();
+export const uploadToCloudinary = async (buffer: Buffer, folder: string, isVideo: boolean = false): Promise<{ url: string; publicId: string }> => {
+  let finalBuffer = buffer;
+  
+  // Optimize ONLY if it's an image
+  if (!isVideo) {
+    finalBuffer = await sharp(buffer)
+      .resize(1200, 1200, { fit: 'inside', withoutEnlargement: true })
+      .toFormat('webp')
+      .webp({ quality: 85 })
+      .toBuffer();
+  }
 
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: `prelovedbyhira/${folder}` },
+      { 
+        folder: `prelovedbyhira/${folder}`,
+        resource_type: isVideo ? 'video' : 'image'
+      },
       (error, result) => {
         if (error) return reject(error);
         resolve({
@@ -42,6 +49,6 @@ export const uploadToCloudinary = async (buffer: Buffer, folder: string): Promis
         });
       }
     );
-    uploadStream.end(optimizedBuffer);
+    uploadStream.end(finalBuffer);
   });
 };

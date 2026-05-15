@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import { auth, db } from '../config/firebase.config';
 import { AppError } from '../middleware/errorHandler';
+import { sendWelcomeEmail, sendForgotPasswordCode } from '../services/email.service';
 
 const registerSchema = z.object({
   uid: z.string(),
@@ -70,6 +71,13 @@ export const syncUser = async (req: Request, res: Response, next: NextFunction) 
       }
     }
 
+    // 📧 Send Welcome Email for NEW users
+    try {
+      await sendWelcomeEmail(email, name);
+    } catch (emailError) {
+      console.warn(`[Vault Auth] Welcome email failed for ${email}:`, emailError);
+    }
+
     res.status(201).json({
       message: 'User synced with vault successfully',
       user: userData,
@@ -100,6 +108,66 @@ export const updateProfile = async (req: any, res: Response, next: NextFunction)
 
     await db.collection('users').doc(req.user.id).update(updateData);
     res.json({ message: 'Profile updated in vault' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email } = req.body;
+    if (!email) throw new AppError('Email is required', 400);
+
+    // Verify user exists in Firebase
+    try {
+      await auth.getUserByEmail(email);
+    } catch (e) {
+      // Don't reveal if user exists for security, but we need to stop
+      return res.json({ message: 'If an account exists, a recovery code has been sent.' });
+    }
+
+    // Generate 6-digit code
+    const code = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date();
+    expiry.setMinutes(expiry.getMinutes() + 15);
+
+    // Save to Firestore
+    await db.collection('password_resets').doc(email).set({
+      code,
+      expiry: expiry.toISOString(),
+      createdAt: new Date().toISOString()
+    });
+
+    // Send Email
+    await sendForgotPasswordCode(email, code);
+
+    res.json({ message: 'If an account exists, a recovery code has been sent.' });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { email, otp, newPassword } = req.body;
+    if (!email || !otp || !newPassword) throw new AppError('All fields are required', 400);
+
+    const resetDoc = await db.collection('password_resets').doc(email).get();
+    if (!resetDoc.exists) throw new AppError('Invalid or expired code', 400);
+
+    const { code, expiry } = resetDoc.data()!;
+    
+    if (code !== otp) throw new AppError('Incorrect recovery code', 400);
+    if (new Date() > new Date(expiry)) throw new AppError('Recovery code has expired', 400);
+
+    // Update Firebase Auth Password
+    const userRecord = await auth.getUserByEmail(email);
+    await auth.updateUser(userRecord.uid, { password: newPassword });
+
+    // Clean up
+    await db.collection('password_resets').doc(email).delete();
+
+    res.json({ message: 'Password reset successfully' });
   } catch (error) {
     next(error);
   }

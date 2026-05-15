@@ -52,6 +52,8 @@ export default function AddProductPage() {
   const [step, setStep] = useState(1);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
+  const [video, setVideo] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
   const [vStatus, setVStatus] = useState<string>("NONE");
@@ -138,9 +140,26 @@ export default function AddProductPage() {
     setPreviews(newPreviews);
   };
 
+  const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      if (file.size > 50 * 1024 * 1024) {
+        toast.error("Video size must be less than 50MB");
+        return;
+      }
+      setVideo(file);
+      setVideoPreview(URL.createObjectURL(file));
+    }
+  };
+
   const removeImage = (index: number) => {
     setImages(images.filter((_, i) => i !== index));
     setPreviews(previews.filter((_, i) => i !== index));
+  };
+
+  const removeVideo = () => {
+    setVideo(null);
+    setVideoPreview(null);
   };
 
   const onSubmit = async (values: ProductFormValues) => {
@@ -153,6 +172,9 @@ export default function AddProductPage() {
     try {
       const formData = new FormData();
       images.forEach(img => formData.append("images", img));
+      if (video) {
+        formData.append("video", video);
+      }
       
       Object.entries(values).forEach(([key, val]) => {
         if (val !== undefined && val !== null) {
@@ -236,6 +258,40 @@ export default function AddProductPage() {
                     </button>
                   </div>
                 ))}
+              </div>
+
+              {/* ✅ VIDEO UPLOAD SECTION */}
+              <div className="space-y-4 pt-4">
+                <h2 className="text-2xl font-display font-bold flex items-center gap-3">
+                  <Upload className="text-gold-400" /> Cinematic Preview (Video)
+                </h2>
+                <p className="text-gray-500 text-sm">Upload a short video (max 50MB) to show the luxury detail in motion.</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {!videoPreview ? (
+                    <label className="aspect-video rounded-[32px] border-2 border-dashed border-gold-400/30 flex flex-col items-center justify-center gap-3 cursor-pointer hover:bg-gold-400/5 hover:border-gold-400 transition-all group overflow-hidden">
+                      <input type="file" accept="video/*" onChange={handleVideoUpload} className="hidden" />
+                      <div className="w-14 h-14 rounded-full bg-gold-400/10 text-gold-400 flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <Upload className="w-7 h-7" />
+                      </div>
+                      <div className="text-center">
+                        <p className="text-sm font-bold text-gray-600 dark:text-gray-300">Upload Video</p>
+                        <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">MP4, MOV up to 50MB</p>
+                      </div>
+                    </label>
+                  ) : (
+                    <div className="relative aspect-video rounded-[32px] overflow-hidden border border-gold-400/20 group bg-black">
+                      <video src={videoPreview} className="w-full h-full object-cover" controls />
+                      <button 
+                        type="button" 
+                        onClick={removeVideo}
+                        className="absolute top-4 right-4 w-10 h-10 rounded-full bg-red-500 text-white flex items-center justify-center lg:opacity-0 group-hover:opacity-100 transition-all z-20 shadow-xl active:scale-90"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="flex justify-end pt-4">

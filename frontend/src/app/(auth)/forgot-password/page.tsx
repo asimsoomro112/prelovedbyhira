@@ -94,22 +94,35 @@ export default function ForgotPasswordPage() {
                 {[...Array(6)].map((_, i) => (
                   <input 
                     key={i}
+                    id={`otp-${i}`}
                     type="text"
                     maxLength={1}
                     className="w-12 h-14 bg-cream-50 dark:bg-dark-800 border-2 border-gold-400/20 rounded-xl text-center font-bold text-lg focus:border-gold-400 outline-none transition-all"
+                    onKeyUp={(e) => {
+                      if (e.key === 'Backspace' && i > 0 && !(e.target as HTMLInputElement).value) {
+                        (document.getElementById(`otp-${i-1}`) as HTMLInputElement)?.focus();
+                      }
+                    }}
                     onChange={(e) => {
                       const val = e.target.value;
                       if (val) {
-                        setOtp(prev => prev + val);
-                        if (i < 5) (e.target.nextSibling as HTMLInputElement)?.focus();
+                        if (i < 5) (document.getElementById(`otp-${i+1}`) as HTMLInputElement)?.focus();
                       }
+                      
+                      // Reconstruct full OTP
+                      const otpArray = [];
+                      for(let j=0; j<6; j++) {
+                        otpArray.push((document.getElementById(`otp-${j}`) as HTMLInputElement)?.value || "");
+                      }
+                      setOtp(otpArray.join(""));
                     }}
                   />
                 ))}
               </div>
               <button 
-                onClick={() => setStep(3)}
-                className="w-full bg-gold-400 text-white py-4 rounded-pill font-bold shadow-gold"
+                onClick={() => otp.length === 6 && setStep(3)}
+                disabled={otp.length !== 6}
+                className="w-full bg-gold-400 text-white py-4 rounded-pill font-bold shadow-gold disabled:opacity-50"
               >
                 Verify Code
               </button>

@@ -64,6 +64,28 @@ function CheckoutContent() {
   const [checkoutResult, setCheckoutResult] = useState<any>(null);
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
+  const BANK_ACCOUNTS = [
+    {
+      name: "Jazzcash",
+      holder: "Muhammad Asim",
+      number: "0303 3566436",
+    },
+    {
+      name: "Mashreq Bank",
+      holder: "Muhammad Asim",
+      number: "089120080838",
+      iban: "PK72MSHQ0000089120080838"
+    },
+    {
+      name: "Sadapay",
+      holder: "Muhammad Asim",
+      number: "03191278505",
+      iban: "PK53SADA0000003191278505"
+    }
+  ];
+
+  const [selectedBank, setSelectedBank] = useState(BANK_ACCOUNTS[0]);
+
   const subtotal = itemsToProcess.reduce((acc, item) => acc + ((item.product?.sellingPrice || 0) * item.quantity), 0);
   const uniqueSellers = Array.from(new Set(itemsToProcess.map(i => i.product?.sellerId).filter(Boolean)));
   const shippingCost = uniqueSellers.length * 300;
@@ -97,6 +119,7 @@ function CheckoutContent() {
           quantity: item.quantity,
           shippingAddress: shippingDetails,
           shippingCost: itemShippingCost,
+          paymentMethod: selectedBank.name
         });
       });
 
@@ -248,10 +271,30 @@ function CheckoutContent() {
                       <p className="text-gray-500 text-sm">Transfer Rs. {total.toLocaleString()} to the platform vault.</p>
                     </div>
 
-                    <div className="p-4 bg-white dark:bg-dark-900 rounded-2xl border border-gold-400/20 space-y-3">
-                      <BankDetail label="Bank Name" value="Meezan Bank" />
-                      <BankDetail label="Account Title" value="Preloved By Hira" />
-                      <BankDetail label="Account Number" value="0123-456789-0101" mono />
+                    <div className="space-y-3">
+                      <label className="text-xs font-bold text-gray-400 uppercase tracking-widest block">Select Bank Account</label>
+                      <select 
+                        className="w-full h-14 px-4 bg-white dark:bg-dark-900 border-2 border-gold-400/20 rounded-2xl outline-none focus:border-gold-400 transition-all font-bold text-sm appearance-none"
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23C4A35A' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 16px center', backgroundRepeat: 'no-repeat', backgroundSize: '20px' }}
+                        onChange={(e) => {
+                          const bank = BANK_ACCOUNTS.find(b => b.name === e.target.value);
+                          if (bank) setSelectedBank(bank);
+                        }}
+                      >
+                        {BANK_ACCOUNTS.map(bank => (
+                          <option key={bank.name} value={bank.name}>{bank.name}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="p-5 bg-white dark:bg-dark-900 rounded-2xl border border-gold-400/20 space-y-4 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 p-3 opacity-10">
+                         <CreditCard className="w-12 h-12 text-gold-400" />
+                      </div>
+                      <BankDetail label="Bank Name" value={selectedBank.name} />
+                      <BankDetail label="Account Title" value={selectedBank.holder} />
+                      <BankDetail label="Account Number" value={selectedBank.number} mono />
+                      {selectedBank.iban && <BankDetail label="IBAN" value={selectedBank.iban} mono />}
                     </div>
 
                     {/* ✅ Receipt upload — large tap target */}
