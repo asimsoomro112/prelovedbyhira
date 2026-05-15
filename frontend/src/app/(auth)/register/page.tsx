@@ -13,6 +13,7 @@ import { createUserWithEmailAndPassword, updateProfile, signInWithPopup } from "
 import { auth, googleProvider } from "@/lib/firebase";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useCartStore } from "@/store/useCartStore";
 
 const registerSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
@@ -37,6 +38,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const syncCart = useCartStore((state) => state.syncGuestCart);
 
   const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<RegisterFormValues>({
     resolver: zodResolver(registerSchema),
@@ -61,6 +63,7 @@ export default function RegisterPage() {
       });
 
       setAuth(data.user, token);
+      await syncCart(); // Sync guest items
 
       toast.success("Welcome to PrelovedByHira! ✨");
       // Redirect based on role: Sellers go to Vault, Customers go to Onboarding
@@ -101,6 +104,7 @@ export default function RegisterPage() {
       });
 
       setAuth(data.user, token);
+      await syncCart(); // Sync guest items
 
       toast.success("Welcome to PrelovedByHira! ✨");
       // Redirect based on role: Sellers go to Vault, Customers go to Onboarding

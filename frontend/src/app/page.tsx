@@ -238,13 +238,25 @@ function ProductCard({ item, highlight, c }: { item: any; highlight?: boolean; c
             src={item.images?.[0] || "https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=600"}
             alt={item.title}
             fill
-            className="object-cover transition-transform duration-1000 group-hover:scale-110"
+            className="object-contain transition-transform duration-1000 group-hover:scale-110"
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(6,6,10,0.95) 0%, rgba(6,6,10,0.3) 50%, transparent 100%)' }} />
         </div>
 
         <div className="absolute top-5 left-5 z-10 flex flex-col gap-2">
-          <span style={{ padding: '5px 14px', borderRadius: 100, fontSize: 9, fontWeight: 800, letterSpacing: '0.2em', textTransform: 'uppercase', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(8px)', border: `1px solid ${c.border}`, color: c.gold }}>
+          <span style={{ 
+            padding: '5px 14px', 
+            borderRadius: 100, 
+            fontSize: 9, 
+            fontWeight: 800, 
+            letterSpacing: '0.2em', 
+            textTransform: 'uppercase', 
+            background: item.condition === 'NEW' ? '#10B981' : 'rgba(0,0,0,0.5)', 
+            backdropFilter: 'blur(8px)', 
+            border: item.condition === 'NEW' ? '1px solid #34D399' : `1px solid ${c.border}`, 
+            color: item.condition === 'NEW' ? '#fff' : c.gold,
+            boxShadow: item.condition === 'NEW' ? '0 0 15px rgba(16, 185, 129, 0.4)' : 'none'
+          }}>
             {item.condition}
           </span>
           {highlight && (
@@ -566,7 +578,6 @@ export default function HomePage() {
                     <span className="text-5xl">{cat.emoji}</span>
                     <div className="text-center">
                       <p className="text-[11px] font-black uppercase tracking-widest">{cat.name}</p>
-                      <p className="text-[10px] font-bold text-gold-500 mt-1 uppercase">{cat.count} Pieces</p>
                     </div>
                   </motion.div>
                 </Link>

@@ -475,6 +475,44 @@ export const getDashboardStats = async (_req: express.Request, res: express.Resp
        };
     });
 
+    // 📈 Generate real Revenue Chart Data (Last 7 Days)
+    const chartData: { name: string; sales: number }[] = [];
+    try {
+      const sevenDaysAgo = new Date();
+      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+      
+      const dailyData: Record<string, number> = {};
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      
+      // Initialize last 7 days with 0
+      for (let i = 0; i < 7; i++) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        dailyData[days[d.getDay()]] = 0;
+      }
+      
+      ordersSnap.docs.forEach(doc => {
+        const order = doc.data();
+        const orderDate = new Date(order.createdAt);
+        if (orderDate >= sevenDaysAgo) {
+          const dayName = days[orderDate.getDay()];
+          if (dailyData[dayName] !== undefined) {
+            dailyData[dayName] += (order.totalPrice || 0);
+          }
+        }
+      });
+      
+      // Convert to ordered array for Recharts
+      const today = new Date().getDay();
+      for (let i = 6; i >= 0; i--) {
+        const dayIdx = (today - i + 7) % 7;
+        const name = days[dayIdx];
+        chartData.push({ name, sales: dailyData[name] || 0 });
+      }
+    } catch (chartError) {
+      console.error("Chart aggregation error:", chartError);
+    }
+
     res.json({
       stats: {
         users: userSnap.data().count,
@@ -482,6 +520,7 @@ export const getDashboardStats = async (_req: express.Request, res: express.Resp
         products: productSnap.data().count,
         sales: totalSales
       },
+      chartData,
       recentOrders,
       topSellers
     });

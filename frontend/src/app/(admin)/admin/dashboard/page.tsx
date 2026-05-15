@@ -26,15 +26,6 @@ import api from "@/lib/api";
 import Image from "next/image";
 import Link from "next/link";
 
-const MOCK_DATA = [
-  { name: 'Mon', sales: 4000 },
-  { name: 'Tue', sales: 3000 },
-  { name: 'Wed', sales: 2000 },
-  { name: 'Thu', sales: 2780 },
-  { name: 'Fri', sales: 1890 },
-  { name: 'Sat', sales: 2390 },
-  { name: 'Sun', sales: 3490 },
-];
 
 export default function AdminDashboard() {
   const { data: dashboardData, isLoading } = useQuery({
@@ -58,7 +49,7 @@ export default function AdminDashboard() {
     </div>
   );
 
-  const { stats, recentOrders, topSellers } = dashboardData || {};
+  const { stats, recentOrders, topSellers, chartData } = dashboardData || {};
 
   return (
     <div className="p-4 md:p-6 lg:p-8 space-y-8 md:space-y-10 pb-32 lg:pb-8">
@@ -96,7 +87,7 @@ export default function AdminDashboard() {
             </div>
             <div className="h-80 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={MOCK_DATA}>
+                <AreaChart data={chartData && chartData.length > 0 ? chartData : [{name: 'No Data', sales: 0}]}>
                   <defs>
                     <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#C4A35A" stopOpacity={0.3}/>

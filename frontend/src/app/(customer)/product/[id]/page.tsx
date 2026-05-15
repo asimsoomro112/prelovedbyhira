@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import api from "@/lib/api";
 import { useCartStore } from "@/store/useCartStore";
+import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -82,6 +83,7 @@ const CONDITION: Record<string, { grade: string; label: string; pct: number; des
 export default function ProductDetailPage() {
   const { id }      = useParams();
   const { addItem } = useCartStore();
+  const { isAuthenticated } = useAuthStore();
 
   const [img, setImg]               = useState(0);
   const [tab, setTab]               = useState("description");
@@ -148,7 +150,7 @@ export default function ProductDetailPage() {
   };
 
   const onAddBag = (quantity = 1) => {
-    addItem(product.id, quantity);
+    addItem(product, quantity);
     toast.success(`${quantity} item(s) added to your bag`);
   };
 
@@ -298,8 +300,14 @@ export default function ProductDetailPage() {
                 <button onClick={() => onAddBag(qty)} className="h-10 px-5 border-2 border-gold-400/40 text-gold-500 rounded-xl font-bold text-xs hover:border-gold-400 hover:bg-gold-400/5 transition-all flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4" /> Bag
                 </button>
-                <Link href={`/checkout?id=${product.id}&qty=${qty}`} className="h-10 px-6 bg-gradient-to-r from-gold-400 to-gold-600 text-white rounded-xl font-black text-xs shadow-gold hover:shadow-gold-lg active:scale-[0.95] transition-all flex items-center gap-2">
-                  <Zap className="w-3.5 h-3.5" /> Buy Now
+                <Link 
+                  href={isAuthenticated 
+                    ? `/checkout?id=${product.id}&qty=${qty}` 
+                    : `/login?redirect=/checkout?id=${product.id}&qty=${qty}`
+                  } 
+                  className="h-10 px-6 bg-gradient-to-r from-gold-400 to-gold-600 text-white rounded-xl font-black text-xs shadow-gold hover:shadow-gold-lg active:scale-[0.95] transition-all flex items-center gap-2"
+                >
+                  <Zap className="w-3.5 h-3.5" /> {isAuthenticated ? 'Buy Now' : 'Login to Checkout'}
                 </Link>
               </div>
             </div>
@@ -645,7 +653,10 @@ export default function ProductDetailPage() {
                 {/* Primary CTA */}
                 <motion.div animate={pulsed ? { scale: [1, 1.015, 1] } : {}} transition={{ repeat: 2, duration: 0.65 }}>
                   <Link
-                    href={(product.stock || 0) > 0 ? `/checkout?id=${product.id}&qty=${qty}` : "#"}
+                    href={(product.stock || 0) > 0 
+                      ? (isAuthenticated ? `/checkout?id=${product.id}&qty=${qty}` : `/login?redirect=/checkout?id=${product.id}&qty=${qty}`)
+                      : "#"
+                    }
                     onClick={e => (product.stock || 0) <= 0 && e.preventDefault()}
                     className={`group relative flex items-center justify-center gap-3 w-full h-[60px] lg:h-[68px] rounded-2xl font-black text-base lg:text-lg shadow-gold transition-all overflow-hidden ${
                       (product.stock || 0) > 0 
@@ -655,7 +666,10 @@ export default function ProductDetailPage() {
                   >
                     <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
                     <Zap className="w-5 h-5 shrink-0" />
-                    {(product.stock || 0) > 0 ? "Buy Now — Secure Checkout" : "Out of Stock"}
+                    {(product.stock || 0) > 0 
+                      ? (isAuthenticated ? "Buy Now — Secure Checkout" : "Login to Checkout")
+                      : "Out of Stock"
+                    }
                     <Lock className="w-4 h-4 shrink-0 opacity-70" />
                   </Link>
                 </motion.div>

@@ -13,6 +13,7 @@ import { signInWithEmailAndPassword, signInWithPopup } from "firebase/auth";
 import { auth, googleProvider } from "@/lib/firebase";
 import api from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useCartStore } from "@/store/useCartStore";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -26,6 +27,7 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const setAuth = useAuthStore((state) => state.setAuth);
+  const syncCart = useCartStore((state) => state.syncGuestCart);
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -47,6 +49,7 @@ export default function LoginPage() {
       });
 
       setAuth(data.user, token);
+      await syncCart(); // Sync guest items
       toast.success(`Access Granted! Welcome ${data.user.name} ✨`);
       
       // Role-based redirection for Google Login
@@ -83,6 +86,7 @@ export default function LoginPage() {
 
       // 3. Update Global State
       setAuth(data.user, token);
+      await syncCart(); // Sync guest items
       toast.success(`Welcome back! ✨`);
       
       // Role-based redirection

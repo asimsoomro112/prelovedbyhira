@@ -32,6 +32,7 @@ export default function ProductCard({ product }: ProductCardProps) {
   const discount = Math.round(((originalPrice - sellingPrice) / originalPrice) * 100);
 
   const conditionColors: Record<string, string> = {
+    NEW: "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.5)]",
     EXCELLENT: "bg-emerald-500",
     GOOD: "bg-amber-500",
     FAIR: "bg-orange-500",
@@ -53,7 +54,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             alt={product.title}
             fill
             sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-            className="object-cover object-top group-hover:scale-105 transition-transform duration-500"
+            className="object-contain group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
             decoding="async"
           />
@@ -127,7 +128,7 @@ export default function ProductCard({ product }: ProductCardProps) {
         <button 
           onClick={(e) => {
             e.stopPropagation();
-            addItem(product.id);
+            addItem(product);
             toast.success("Added to bag!");
           }}
           disabled={product.status === "SOLD"}
