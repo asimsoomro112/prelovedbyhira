@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://revault.pk';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://revaultx.vercel.app';
 
 type Props = {
   params: Promise<{ id: string }>;

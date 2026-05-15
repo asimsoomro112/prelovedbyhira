@@ -36,7 +36,7 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://revault.pk';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://revaultx.vercel.app';
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
