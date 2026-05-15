@@ -4,8 +4,9 @@ import { motion } from "framer-motion";
 import Link from "next/link";
 import Image from "next/image";
 import { Heart, Star, ShoppingBag } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useCartStore } from "@/store/useCartStore";
+import { useWishlistStore } from "@/store/useWishlistStore";
 import { toast } from "sonner";
 
 interface ProductCardProps {
@@ -24,8 +25,15 @@ interface ProductCardProps {
 }
 
 export default function ProductCard({ product }: ProductCardProps) {
-  const [isWishlisted, setIsWishlisted] = useState(false);
   const { addItem } = useCartStore();
+  const { toggleItem, isWishlisted } = useWishlistStore();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const wishlisted = mounted ? isWishlisted(product.id) : false;
   
   const sellingPrice = Number(product.sellingPrice);
   const originalPrice = Number(product.originalPrice);
@@ -54,7 +62,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             alt={product.title}
             fill
             sizes="(max-width: 480px) 45vw, (max-width: 768px) 33vw, (max-width: 1024px) 25vw, 20vw"
-            className="object-contain group-hover:scale-105 transition-transform duration-500"
+            className="object-cover group-hover:scale-105 transition-transform duration-500"
             loading="lazy"
             decoding="async"
           />
@@ -70,12 +78,19 @@ export default function ProductCard({ product }: ProductCardProps) {
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              setIsWishlisted(!isWishlisted);
+              toggleItem({
+                id: product.id,
+                title: product.title,
+                brand: product.brand,
+                sellingPrice: product.sellingPrice,
+                images: product.images
+              });
+              if (!wishlisted) toast.success("Added to wishlist");
             }}
-            className="absolute top-1.5 right-1.5 w-10 h-10 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center transition-all active:scale-90"
-            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
+            className="absolute top-2 right-2 w-11 h-11 rounded-full bg-black/20 backdrop-blur-sm flex items-center justify-center transition-all active:scale-90"
+            aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
           >
-            <Heart className={`w-5 h-5 transition-colors ${isWishlisted ? "fill-gold-400 text-gold-400" : "text-white"}`} />
+            <Heart className={`w-5 h-5 transition-colors ${wishlisted ? "fill-gold-400 text-gold-400" : "text-white"}`} />
           </button>
 
           {/* SOLD Overlay */}
@@ -132,7 +147,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             toast.success("Added to bag!");
           }}
           disabled={product.status === "SOLD"}
-          className="w-full py-2.5 bg-gold-400/10 text-gold-400 rounded-xl text-xs font-bold hover:bg-gold-400 hover:text-white active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]"
+          className="w-full py-2.5 bg-gold-400/10 text-gold-400 rounded-xl text-xs font-bold hover:bg-gold-400 hover:text-white active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed min-h-[48px]"
           aria-label={product.status === "SOLD" ? "Out of stock" : `Add ${product.title} to cart`}
         >
           <ShoppingBag className="w-4 h-4" />

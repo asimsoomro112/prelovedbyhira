@@ -15,7 +15,7 @@ export class AIService {
 
       const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       
-      const prompt = `You are the Hira AI Verification Agent. 
+      const prompt = `You are the ReVault AI Verification Agent. 
       Analyze this identification document and extract:
       1. Full Name
       2. ID Number (CNIC/Identity Number)
@@ -47,7 +47,7 @@ export class AIService {
       if (!cleanJson) throw new Error("AI returned an empty response");
       const extractedData = JSON.parse(cleanJson);
 
-      console.log(`[Hira AI] Neural Scan Complete for: ${extractedData.fullName}`);
+      console.log(`[ReVault AI] Neural Scan Complete for: ${extractedData.fullName}`);
       
       return { extractedData };
     } catch (error: any) {
@@ -78,7 +78,7 @@ export class AIService {
   }
 
   /**
-   * Neural Chat Assistant (Hira AI Concierge)
+   * Neural Chat Assistant (ReVault AI Concierge)
    * Supercharged with Real-time Store Context & Luxury Fashion Intelligence
    */
   static async getChatResponse(message: string, history: any[]) {
@@ -106,10 +106,10 @@ export class AIService {
           - ALWAYS WRITE URDU IN ROMAN SCRIPT (e.g., "Aapka order process ho raha hai").
           
           YOUR KNOWLEDGE BASE (THE VAULT):
-          - PLATFORM: 'PrelovedByHira' - Pakistan's #1 Luxury Preloved Marketplace.
+          - PLATFORM: 'ReVault' - Pakistan's #1 Luxury Preloved Marketplace.
           - FEE SYSTEM: 20% flat commission on every sale. (Example: If item sells for 10,000 PKR, seller gets 8,000 PKR).
-          - SELLER VERIFICATION: Sellers must upload CNIC/ID and address. Hira AI (you) verifies them within 24-48 hours.
-          - AUTHENTICITY: 100% Guaranteed. Every item is physically inspected by the Hira team before shipping to buyer.
+          - SELLER VERIFICATION: Sellers must upload CNIC/ID and address. ReVault AI (you) verifies them within 24-48 hours.
+          - AUTHENTICITY: 100% Guaranteed. Every item is physically inspected by the ReVault team before shipping to buyer.
           - CATEGORIES: Shadi Wear, Luxury Handbags (Zara, LV, Gucci), Designer Shoes, Jewelry.
           - SHIPPING: 3-5 working days across Pakistan.
           
@@ -176,14 +176,14 @@ export class AIService {
         2. Extract the Transaction ID (TRX ID).
         3. Extract the Receiver Account/Name.
         4. Match Amount with: Rs. ${orderDetails}
-        5. Match Receiver with: "Preloved By Hira" or "Meezan Bank" or "asimsoomro"
+        5. Match Receiver with: "ReVault" or "Meezan Bank" or "asimsoomro"
         
         Return ONLY a JSON object:
         {
           "amount": number,
           "trxId": "string",
           "receiver": "string",
-          "isMatch": true, (is amount correct AND receiver matches Preloved platform?)
+          "isMatch": true, (is amount correct AND receiver matches ReVault platform?)
           "reason": "short explanation of match/mismatch",
           "isLikelyFraud": false,
           "confidence": 0.95

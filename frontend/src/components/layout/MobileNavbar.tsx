@@ -8,6 +8,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
+import Image from "next/image";
 import { toast } from "sonner";
 
 export default function MobileNavbar() {
@@ -61,11 +62,15 @@ export default function MobileNavbar() {
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* ✅ Logo — max 140px on mobile */}
-          <Link href="/" className="flex items-center gap-2" style={{ maxWidth: 140 }}>
-            <span className="text-lg font-display font-bold text-dark-900 dark:text-cream-50 truncate">
-              Preloved<span className="text-gold-400 italic">ByHira</span>
-            </span>
+          <Link href="/" className="flex items-center">
+            <Image 
+              src="/logo-navbar.png" 
+              alt="ReVault" 
+              width={400} 
+              height={56} 
+              className="w-[168px] h-auto object-contain brightness-110"
+              priority
+            />
           </Link>
 
           {/* ✅ Action buttons with proper touch targets */}
@@ -150,7 +155,7 @@ export default function MobileNavbar() {
               animate={{ x: 0 }}
               exit={{ x: "-100%" }}
               transition={{ type: "spring", damping: 25, stiffness: 200 }}
-              className="fixed top-0 bottom-0 left-0 w-[85%] max-w-sm bg-white dark:bg-dark-950 z-[130] overflow-hidden flex flex-col shadow-2xl"
+              className="fixed top-0 bottom-0 left-0 w-[85%] max-w-sm bg-white dark:bg-dark-950 z-[130] overflow-y-auto flex flex-col shadow-2xl"
               role="dialog"
               aria-modal="true"
               aria-label="Navigation menu"
@@ -158,6 +163,14 @@ export default function MobileNavbar() {
               {/* Profile Header */}
               <div className="p-6 bg-gradient-to-br from-gold-400/20 to-transparent border-b border-white/10">
                 <div className="flex items-center justify-between mb-6">
+                  <div className="relative">
+                    <Image src="/logo-navbar.png" alt="ReVault" width={400} height={48} className="w-[156px] h-auto object-contain brightness-110" />
+                  </div>
+                  <button onClick={() => setIsOpen(false)} className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center min-w-[40px] min-h-[40px]" aria-label="Close menu">
+                    <X className="w-6 h-6" />
+                  </button>
+                </div>
+                <div className="flex items-center gap-4">
                    <div className="w-14 h-14 rounded-2xl bg-gold-400 text-white flex items-center justify-center font-bold shadow-gold overflow-hidden">
                      {user?.avatar ? (
                        <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
@@ -165,32 +178,11 @@ export default function MobileNavbar() {
                        <span className="text-xl uppercase">{user ? user.name[0] : <User className="w-6 h-6" />}</span>
                      )}
                    </div>
-                   {/* ✅ Close button — 48×48 tap target */}
-                   <button 
-                    onClick={() => setIsOpen(false)}
-                    className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-gray-400 hover:text-white transition-colors border border-white/10"
-                    aria-label="Close navigation menu"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
+                   <div className="min-w-0">
+                      <p className="text-sm font-bold text-dark-900 dark:text-white truncate">{user?.name || "Guest"}</p>
+                      <p className="text-[10px] font-bold text-gold-400 uppercase tracking-widest">{user?.role || "Luxury Member"}</p>
+                   </div>
                 </div>
-                {user ? (
-                  <div>
-                    <h3 className="text-xl font-display font-bold text-dark-900 dark:text-cream-50">{user.name}</h3>
-                    <p className="text-xs text-gold-600 dark:text-gold-400 font-bold uppercase tracking-[0.2em] mt-1">{user.role} MEMBER</p>
-                  </div>
-                ) : (
-                  <div>
-                    <h3 className="text-lg font-display font-bold text-dark-900 dark:text-cream-50">Welcome Guest</h3>
-                    <Link 
-                      href="/login" 
-                      onClick={() => setIsOpen(false)} 
-                      className="inline-flex items-center px-5 py-3 mt-4 bg-gradient-to-r from-gold-400 to-gold-600 text-white text-xs font-bold rounded-xl shadow-gold uppercase tracking-widest active:scale-95 transition-all min-h-[48px]"
-                    >
-                      Connect Account
-                    </Link>
-                  </div>
-                )}
               </div>
 
               {/* ✅ Navigation Links — all 48px+ touch targets */}

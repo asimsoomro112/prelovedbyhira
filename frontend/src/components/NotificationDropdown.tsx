@@ -171,7 +171,7 @@ export default function NotificationDropdown() {
                         <div className="flex-1 min-w-0 space-y-1">
                           <div className="flex items-center justify-between gap-2">
                              <p className={`text-sm font-bold truncate ${!n.isRead ? 'text-dark-900 dark:text-white' : 'text-gray-500'}`}>{n.title}</p>
-                             <span className="text-[8px] text-gray-400 font-bold uppercase shrink-0">
+                             <span className="text-[10px] text-gray-400 font-bold uppercase shrink-0">
                                 {new Date(n.createdAt).toLocaleDateString()}
                              </span>
                           </div>

@@ -1,6 +1,6 @@
 import { Response, NextFunction } from 'express';
 import { z } from 'zod';
-import { db } from '../config/firebase.config';
+import { auth, db } from '../config/firebase.config';
 import { AuthRequest } from '../middleware/auth';
 import { AppError } from '../middleware/errorHandler';
 import { uploadToCloudinary } from '../middleware/upload';
@@ -100,11 +100,23 @@ export const getDashboardStats = async (req: AuthRequest, res: Response, next: N
 export const deleteAccount = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     if (!req.user) throw new AppError('Unauthorized', 401);
+    const userId = req.user.id;
     
-    await db.collection('users').doc(req.user.id).update({
+    // 🛡️ SECURITY FIX H-05: Soft-delete in Firestore
+    await db.collection('users').doc(userId).update({
       isActive: false,
       deletedAt: new Date().toISOString(),
     });
+
+    // 🛡️ Disable Firebase Auth account so no new tokens can be issued
+    try {
+      await auth.updateUser(userId, { disabled: true });
+      // Revoke all existing refresh tokens so current sessions are invalidated
+      await auth.revokeRefreshTokens(userId);
+    } catch (authError: any) {
+      console.warn(`[Vault Security] Failed to disable Firebase Auth for ${userId}:`, authError.message);
+      // Don't block the response — Firestore deactivation is already done
+    }
 
     res.json({ message: 'Account deactivated in vault' });
   } catch (error) {

@@ -15,6 +15,6 @@ transporter.verify((error, success) => {
   if (error) {
     console.error('❌ Mail Server Error:', error);
   } else {
-    console.log('🚀 Mail Server is ready to secure Hira Vault');
+    console.log('🚀 Mail Server is ready to secure ReVault Vault');
   }
 });

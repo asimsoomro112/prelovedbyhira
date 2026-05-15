@@ -73,7 +73,7 @@ export const useCartStore = create<CartState>()(
             );
           } else {
             const newItem: CartItem = {
-              id: `guest_${Date.now()}`,
+              id: `guest_${crypto.randomUUID()}`,
               productId,
               quantity,
               product: product

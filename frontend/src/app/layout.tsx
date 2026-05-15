@@ -38,29 +38,29 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: {
-    default: "PrelovedByHira | Premium Fashion Marketplace",
-    template: "%s | PrelovedByHira"
+    default: "ReVault | Premium Fashion Marketplace",
+    template: "%s | ReVault"
   },
   description: "Experience premium preloved fashion with trusted quality. Buy and sell luxury dresses, bags, and jewelry in Pakistan.",
-  keywords: ["fashion", "preloved", "pakistan", "luxury", "sustainable fashion", "hira"],
+  keywords: ["fashion", "preloved", "pakistan", "luxury", "sustainable fashion", "revault"],
   openGraph: {
     type: "website",
     locale: "en_PK",
-    url: "https://prelovedbyhira.com",
-    siteName: "PrelovedByHira",
-    title: "PrelovedByHira | Premium Fashion Marketplace",
+    url: "https://revault.com",
+    siteName: "ReVault",
+    title: "ReVault | Premium Fashion Marketplace",
     description: "Preloved Fashion, Trusted by All ❤️",
-    images: [{ url: "/og-image.jpg" }],
+    images: [{ url: "/logo-social.jpg" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "PrelovedByHira",
+    title: "ReVault",
     description: "Premium Fashion Marketplace",
-    images: ["/og-image.jpg"],
+    images: ["/logo-social.jpg"],
   },
   icons: {
-    icon: "/favicon.ico",
-    apple: "/apple-touch-icon.png",
+    icon: "/favicon.jpg",
+    apple: "/favicon.jpg",
   },
   manifest: "/manifest.json",
 };
@@ -75,13 +75,16 @@ export default function RootLayout({
       <head>
         <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Jost:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
       </head>
-      <body className={`${inter.variable} ${playfair.variable} ${dmSerif.variable} font-body bg-mesh text-dark-900 dark:text-cream-50 antialiased selection:bg-gold-400 selection:text-white`}>
+      <body 
+        className={`${inter.variable} ${playfair.variable} ${dmSerif.variable} font-body bg-mesh text-dark-900 dark:text-cream-50 antialiased selection:bg-gold-400 selection:text-white`}
+        suppressHydrationWarning
+      >
         <Providers>
           <div className="flex flex-col min-h-screen min-h-[100dvh] relative overflow-x-hidden">
-             {/* Background Effects - Hidden on mobile for GPU performance */}
-             <div className="fixed inset-0 pointer-events-none z-0 hidden md:block">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gold-400/5 blur-[120px] rounded-full animate-glow" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gold-400/5 blur-[120px] rounded-full animate-glow" style={{ animationDelay: '2s' }} />
+             {/* Background Effects - Optimized for performance */}
+             <div className="fixed inset-0 pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-gold-400/10 md:bg-gold-400/5 blur-[80px] md:blur-[120px] rounded-full animate-glow opacity-50 md:opacity-100" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-gold-400/10 md:bg-gold-400/5 blur-[80px] md:blur-[120px] rounded-full animate-glow opacity-50 md:opacity-100" style={{ animationDelay: '2s' }} />
              </div>
 
              <div className="relative z-10 flex flex-col min-h-screen">

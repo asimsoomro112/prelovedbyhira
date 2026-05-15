@@ -40,7 +40,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   // 🛡️ SECURITY: Prevent non-admins from staying on this layout
   useEffect(() => {
     if (isAuthenticated && user?.role !== 'ADMIN') {
-      router.push('/dashboard');
+      router.push('/customer/dashboard');
     }
   }, [user, isAuthenticated, router]);
 
@@ -162,7 +162,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       {/* CONTENT AREA */}
       <main className="flex-1 flex flex-col gap-4 overflow-hidden min-h-screen lg:min-h-0">
         {/* Top Header */}
-        <header className="h-16 lg:h-20 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-3xl crystal-border rounded-none lg:rounded-[32px] flex items-center justify-between px-4 lg:px-8 shadow-xl transition-all shrink-0">
+        <header className="h-16 lg:h-20 bg-white/80 dark:bg-zinc-900/50 backdrop-blur-3xl crystal-border rounded-none lg:rounded-[32px] flex items-center justify-between px-4 lg:px-8 shadow-xl transition-all shrink-0 sticky top-0 z-20">
            <div className="flex items-center gap-4 flex-1">
               <button onClick={() => setIsMobileMenuOpen(true)} className="lg:hidden p-3 bg-gold-400/10 text-gold-400 rounded-xl min-w-[48px] min-h-[48px] flex items-center justify-center active:scale-90 transition-transform">
                  <Menu className="w-6 h-6" />

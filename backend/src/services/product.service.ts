@@ -13,10 +13,11 @@ export class ProductService {
     sortBy?: string;
     page?: number;
     limit?: number;
+    lastDocId?: string; // 🛡️ M-02: Cursor for efficient pagination
   }) {
     const { 
       category, minPrice, maxPrice, condition, 
-      size, sortBy, page = 1, limit = 12 
+      size, sortBy, page = 1, limit = 12, lastDocId 
     } = filters;
 
     // Normalize category filters to match DB Enums (UPPERCASE)
@@ -71,7 +72,7 @@ export class ProductService {
     const mapProductsWithSellers = async (docs: admin.firestore.QueryDocumentSnapshot[]) => {
       return Promise.all(docs.map(async (doc) => {
         const data = doc.data();
-        let seller: { name: string; avatar?: string } = { name: "Preloved Member" };
+        let seller: { name: string; avatar?: string } = { name: "ReVault Member" };
         
         if (data.sellerId) {
           try {
@@ -79,7 +80,7 @@ export class ProductService {
             if (userDoc.exists) {
               const userData = userDoc.data();
               seller = { 
-                name: userData?.name || "Preloved Member",
+                name: userData?.name || "ReVault Member",
                 avatar: userData?.avatar || ""
               };
             }
@@ -98,27 +99,52 @@ export class ProductService {
       }));
     };
 
+    /**
+     * 🛡️ PERFORMANCE FIX M-02: Cursor-based pagination
+     * Instead of .limit(limit * page).slice(), use startAfter() to skip
+     * to the correct position. This reads only `limit` docs per request
+     * instead of limit*page docs.
+     */
+    const applyPagination = async (query: admin.firestore.Query) => {
+      if (lastDocId) {
+        // Cursor-based: start after the last document from previous page
+        const lastDoc = await db.collection('products').doc(lastDocId).get();
+        if (lastDoc.exists) {
+          return query.startAfter(lastDoc).limit(limit).get();
+        }
+      }
+      
+      if (page > 1 && !lastDocId) {
+        // Offset fallback for legacy page-number navigation (less efficient)
+        const offsetSnapshot = await query.limit(limit * page).get();
+        return {
+          docs: offsetSnapshot.docs.slice((page - 1) * limit),
+          size: offsetSnapshot.docs.slice((page - 1) * limit).length,
+        } as any;
+      }
+      
+      // Page 1 — just limit
+      return query.limit(limit).get();
+    };
+
     try {
       // 1. Try Full Neural Query (Filters + Price + Sort)
       const query = buildQuery('complex');
-      const snapshot = await query.limit(limit * page).get();
-      const docs = snapshot.docs.slice((page - 1) * limit);
-      products = await mapProductsWithSellers(docs);
+      const snapshot = await applyPagination(query);
+      products = await mapProductsWithSellers(snapshot.docs);
     } catch (e1) {
       try {
         // 2. Fallback: Filtered Query (No Price/Sort)
-        console.warn("[Hira AI] Complex index missing, falling back to simple filtered search.");
+        console.warn("[ReVault AI] Complex index missing, falling back to simple filtered search.");
         const query = buildQuery('simple');
-        const snapshot = await query.limit(limit * page).get();
-        const docs = snapshot.docs.slice((page - 1) * limit);
-        products = await mapProductsWithSellers(docs);
+        const snapshot = await applyPagination(query);
+        products = await mapProductsWithSellers(snapshot.docs);
       } catch (e2) {
         // 3. Ultra-Safe: Just show active items
-        console.error("[Hira AI] Critical Query Failure, using ultra-safe mode.");
+        console.error("[ReVault AI] Critical Query Failure, using ultra-safe mode.");
         const query = buildQuery('ultra-safe');
-        const snapshot = await query.limit(limit * page).get();
-        const docs = snapshot.docs.slice((page - 1) * limit);
-        products = await mapProductsWithSellers(docs);
+        const snapshot = await applyPagination(query);
+        products = await mapProductsWithSellers(snapshot.docs);
       }
     }
 
@@ -131,6 +157,9 @@ export class ProductService {
       total = products.length;
     }
 
+    // Include last doc ID for cursor-based pagination
+    const lastProduct = products.length > 0 ? products[products.length - 1] : null;
+
     return {
       products,
       pagination: {
@@ -138,6 +167,7 @@ export class ProductService {
         page,
         limit,
         totalPages: Math.ceil(total / limit),
+        lastDocId: lastProduct?.id || null, // Cursor for next page
       },
     };
   }

@@ -75,12 +75,12 @@ export const getProductReviews = async (req: Request, res: Response, next: NextF
     const reviews = await Promise.all(snapshot.docs.map(async (doc) => {
       const data = doc.data();
       // Fetch buyer info
-      let buyerName = 'Preloved Member';
+      let buyerName = 'ReVault Member';
       let buyerAvatar = '';
       try {
         const buyerDoc = await db.collection('users').doc(data.buyerId).get();
         if (buyerDoc.exists) {
-          buyerName = buyerDoc.data()?.name || 'Preloved Member';
+          buyerName = buyerDoc.data()?.name || 'ReVault Member';
           buyerAvatar = buyerDoc.data()?.avatar || '';
         }
       } catch { /* silently fail */ }

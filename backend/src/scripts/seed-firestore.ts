@@ -7,8 +7,8 @@ async function seed() {
     // 1. Create a Seller
     const sellerId = 'test-seller-123';
     const sellerData = {
-      name: 'Hira Designer Wear',
-      email: 'seller@prelovedbyhira.com',
+      name: 'ReVault Designer Wear',
+      email: 'seller@revault.com',
       phone: '03001234567',
       role: 'SELLER',
       isVerified: true,
@@ -85,7 +85,7 @@ async function seed() {
     }
 
     console.log('✅ 3 Luxury items added to the vault');
-    console.log('✨ Seeding complete! You can now login as seller@prelovedbyhira.com (Use the Register page to create this user in Auth first if testing Login).');
+    console.log('✨ Seeding complete! You can now login as seller@revault.com (Use the Register page to create this user in Auth first if testing Login).');
 
   } catch (error) {
     console.error('❌ Seeding failed:', error);

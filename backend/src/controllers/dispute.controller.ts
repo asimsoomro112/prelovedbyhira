@@ -117,6 +117,13 @@ export const getDisputeDetail = async (req: AuthRequest, res: Response, next: Ne
 
     const data = disputeDoc.data()!;
 
+    // 🛡️ SECURITY FIX H-03: Only buyer, seller, or admin can view dispute details
+    const userId = req.user!.id;
+    const userRole = req.user!.role;
+    if (userRole !== 'ADMIN' && data.buyerId !== userId && data.sellerId !== userId) {
+      throw new AppError('You do not have permission to view this dispute', 403);
+    }
+
     // Fetch related data
     const [orderDoc, buyerDoc, sellerDoc] = await Promise.all([
       db.collection('orders').doc(data.orderId).get(),

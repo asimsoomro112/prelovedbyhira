@@ -97,12 +97,12 @@ export default function BottomNavbar() {
                 <div className="relative">
                   <Icon className={`w-5 h-5 ${isActive ? "fill-gold-400/20" : ""}`} />
                   {tab.id === 'cart' && items.length > 0 && (
-                    <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-gold-400 text-white text-[8px] font-bold rounded-full flex items-center justify-center shadow-gold">
+                    <span className="absolute -top-1.5 -right-2 w-4 h-4 bg-gold-400 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-gold">
                       {items.length > 9 ? '9+' : items.length}
                     </span>
                   )}
                 </div>
-                <span className="text-[8px] font-bold uppercase tracking-tighter">{tab.label}</span>
+                <span className="text-[10px] font-bold uppercase tracking-tighter">{tab.label}</span>
               </div>
             );
 

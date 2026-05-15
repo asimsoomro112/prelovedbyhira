@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Heart } from 'lucide-react';
 
 export function Footer() {
@@ -14,7 +15,7 @@ export function Footer() {
     ],
     company: [
       { label: 'About Us', href: '/about' },
-      { label: 'Sell on PrelovedByHira', href: '/seller/dashboard' },
+      { label: 'Sell on ReVault', href: '/seller/dashboard' },
       { label: 'Order History', href: '/customer/orders' },
       { label: 'My Profile', href: '/customer/profile' },
       { label: 'Contact', href: '/contact' },
@@ -51,14 +52,23 @@ export function Footer() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
           {/* Brand */}
           <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="inline-block">
-              <span className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Preloved<span className="text-brand-gold">ByHira</span></span>
+            <Link href="/" className="inline-block h-12 relative">
+               <Image 
+                 src="/logo-navbar.png" 
+                 alt="ReVault" 
+                 width={150} 
+                 height={40} 
+                 className="h-10 w-auto object-contain brightness-200" 
+               />
             </Link>
             <p className="text-sm text-gray-300 mt-3 leading-relaxed">Pakistan&apos;s premier preloved fashion marketplace. Sustainable style, affordable luxury.</p>
-            <div className="flex gap-3 mt-4">
-              {['facebook', 'instagram', 'twitter'].map((social) => (
-                <a key={social} href={`https://${social}.com`} target="_blank" rel="noopener noreferrer" className="w-11 h-11 rounded-full bg-white/10 flex items-center justify-center hover:bg-gold-400 transition-colors text-white text-xs uppercase font-bold min-w-[44px] min-h-[44px]" aria-label={`Visit our ${social}`}>
-                  {social[0].toUpperCase()}
+            <div className="flex gap-4 mt-6">
+              {['Instagram', 'Facebook', 'Twitter'].map((social) => (
+                <a key={social} href={`https://${social.toLowerCase()}.com`} target="_blank" rel="noopener noreferrer" className="relative group">
+                  <div className="w-12 h-12 rounded-2xl overflow-hidden border border-white/10 group-hover:border-gold-400 transition-all">
+                    <Image src="/logo-social.jpg" alt={social} fill className="object-cover group-hover:scale-110 transition-transform" />
+                  </div>
+                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-500 opacity-0 group-hover:opacity-100 transition-all uppercase tracking-widest">{social}</span>
                 </a>
               ))}
             </div>
@@ -83,7 +93,7 @@ export function Footer() {
       {/* Bottom */}
       <div className="border-t border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
-          <p className="text-xs text-gray-500">© {currentYear} PrelovedByHira. All rights reserved.</p>
+          <p className="text-xs text-gray-500">© {currentYear} ReVault. All rights reserved.</p>
           <p className="text-xs text-gray-500 flex items-center gap-1">
             Made with <Heart className="w-3 h-3 text-brand-gold fill-brand-gold" /> in Pakistan
           </p>

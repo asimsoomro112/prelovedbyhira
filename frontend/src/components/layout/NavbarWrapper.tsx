@@ -23,7 +23,7 @@ export default function NavbarWrapper({ children }: { children?: React.ReactNode
       <MobileNavbar />
       {/* ✅ Mobile: 72px top (14px header) + 64px bottom (bottom nav)
           Desktop: 100px top (desktop nav) + 40px bottom */}
-      <div className="pt-[72px] lg:pt-[100px] pb-[80px] lg:pb-10">
+      <div className="pt-[72px] lg:pt-[100px] pb-[120px] lg:pb-10">
         {children}
       </div>
       {!shouldHideBottom && <BottomNavbar />}

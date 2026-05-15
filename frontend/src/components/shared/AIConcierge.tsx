@@ -33,7 +33,7 @@ export default function AIConcierge() {
     { 
       id: '1', 
       role: 'assistant', 
-      content: "Assalam-o-Alaikum! I am Hira's AI Concierge. Main aapki kaise madad kar sakti hoon today?",
+      content: "Assalam-o-Alaikum! I am ReVault's AI Concierge. Main aapki kaise madad kar sakti hoon today?",
       type: 'text'
     }
   ]);
@@ -130,7 +130,7 @@ export default function AIConcierge() {
                       <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full border-2 border-white dark:border-dark-900" />
                    </div>
                    <div>
-                      <h3 className="text-lg sm:text-xl font-display font-bold text-dark-900 dark:text-cream-50">Hira AI <span className="italic text-gold-400">Concierge</span></h3>
+                      <h3 className="text-lg sm:text-xl font-display font-bold text-dark-900 dark:text-cream-50">ReVault AI <span className="italic text-gold-400">Concierge</span></h3>
                       <p className="text-[9px] font-bold text-gold-400 uppercase tracking-widest mt-1">2026 Neural Assistant</p>
                    </div>
                 </div>
@@ -196,7 +196,7 @@ export default function AIConcierge() {
                         value={input}
                         onChange={(e) => setInput(e.target.value)}
                         onKeyPress={(e) => e.key === 'Enter' && handleSend()}
-                        placeholder="Message Concierge..." 
+                        placeholder="Message ReVault..." 
                         className="bg-transparent border-none outline-none flex-1 text-sm font-bold text-dark-900 dark:text-cream-50 placeholder:text-gray-500"
                       />
                       <button 
@@ -212,7 +212,7 @@ export default function AIConcierge() {
               {/* TRUST FOOTER */}
               <div className="px-8 py-3 bg-dark-900 flex items-center justify-center gap-2">
                  <ShieldCheck className="w-3 h-3 text-gold-400" />
-                 <span className="text-[8px] font-bold text-white uppercase tracking-[0.4em]">Encrypted AI Exchange • 2026 Protocol</span>
+                 <span className="text-[10px] font-bold text-white uppercase tracking-[0.4em]">Encrypted AI Exchange • 2026 Protocol</span>
               </div>
             </motion.div>
           </div>

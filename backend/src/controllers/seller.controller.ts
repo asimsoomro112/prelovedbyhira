@@ -41,7 +41,7 @@ export const submitIdentity = async (req: AuthRequest, res: Response, next: Next
         success: false,
         message: "Name mismatch. CNIC name does not match your profile name.",
         extractedName: extractedData.fullName,
-        enteredName: fullNameEntered || req.user?.name || "Preloved Member"
+        enteredName: fullNameEntered || req.user?.name || "ReVault Member"
       });
     }
 
@@ -59,7 +59,7 @@ export const submitIdentity = async (req: AuthRequest, res: Response, next: Next
 
     res.json({ 
       success: true,
-      message: 'Identity verified successfully by Hira AI. Please proceed to upload your selfie.',
+      message: 'Identity verified successfully by ReVault AI. Please proceed to upload your selfie.',
       extracted: extractedData 
     });
   } catch (error) {
@@ -113,7 +113,7 @@ export const submitSelfie = async (req: AuthRequest, res: Response, next: NextFu
           userId: req.user!.id,
           type: payoutMethod, // JAZZCASH, EASYPAISA, BANK_TRANSFER
           details: detailsObj?.accountNumber || detailsObj?.iban || (typeof payoutDetails === 'string' ? payoutDetails : ""),
-          title: detailsObj?.accountName || req.user?.name || "Preloved Member",
+          title: detailsObj?.accountName || req.user?.name || "ReVault Member",
           bankName: detailsObj?.bankName || "",
           createdAt: new Date().toISOString()
         });
@@ -304,7 +304,7 @@ export const getSellerProfile = async (req: AuthRequest, res: Response, next: Ne
     }
 
     res.json({
-      name: req.user?.name || "Preloved Member",
+      name: req.user?.name || "ReVault Member",
       email: req.user?.email || "",
       avatar: req.user?.avatar || seller.avatar || "",
       ...seller,

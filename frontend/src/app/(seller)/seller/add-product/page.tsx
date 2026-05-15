@@ -103,7 +103,7 @@ export default function AddProductPage() {
           <p className="text-gray-500 leading-relaxed">
             {isPending 
               ? "Hamari team aapke documents review kar rahi hai. Verification complete hone ke baad aap products list kar saken gay." 
-              : "To maintain the exclusivity of PrelovedByHira, all sellers must verify their identity before listing items."}
+              : "To maintain the exclusivity of ReVault, all sellers must verify their identity before listing items."}
           </p>
         </div>
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
@@ -504,7 +504,7 @@ export default function AddProductPage() {
                          <span className="text-xs font-bold uppercase tracking-widest">Platform Fee</span>
                        </div>
                        <p className="text-xs text-gray-500 leading-relaxed">
-                         PrelovedByHira takes a 20% platform fee. You will receive <span className="font-bold text-gold-400">Rs. {Math.round(watch("sellingPrice") * 0.8)}</span> from this sale.
+                         ReVault takes a 20% platform fee. You will receive <span className="font-bold text-gold-400">Rs. {Math.round(watch("sellingPrice") * 0.8)}</span> from this sale.
                        </p>
                     </div>
                  </div>

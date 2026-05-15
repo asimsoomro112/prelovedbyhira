@@ -33,6 +33,8 @@ export function useNotifications() {
 
   useEffect(() => {
     if (token) {
+      const { connectSocket } = require("@/lib/socket");
+      connectSocket(token);
       const socket = getSocket(token);
       
       socket?.on("notification", (newNotification) => {

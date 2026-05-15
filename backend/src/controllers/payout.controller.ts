@@ -52,7 +52,7 @@ export const getPayoutHistory = async (req: AuthRequest, res: Response, next: Ne
     // 🛡️ DEDUPLICATION: We only show the detailed 'payout' record if it exists, 
     // to avoid showing both the ledger entry and the request record.
     const payoutIds = new Set(payouts.map(p => p.id));
-    const filteredTransactions = transactions.filter(t => !t.payoutId);
+    const filteredTransactions = transactions.filter((t: any) => !t.payoutId);
 
     const combined = [...filteredTransactions, ...payouts];
     
@@ -81,8 +81,9 @@ export const requestPayout = async (req: AuthRequest, res: Response, next: NextF
       
       const seller = sellerDoc.data()!;
       
-      // Fetch platform settings for min payout check
-      const settingsDoc = await db.collection('settings').doc('platform').get();
+      // 🛡️ DATA FIX H-09: Read settings inside transaction for consistency
+      const settingsRef = db.collection('settings').doc('platform');
+      const settingsDoc = await transaction.get(settingsRef);
       const minPayout = settingsDoc.data()?.minPayoutAmount || 0;
 
       if (amount < minPayout) {

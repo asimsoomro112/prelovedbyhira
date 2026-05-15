@@ -13,8 +13,10 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { useAuthStore } from '@/store/useAuthStore';
+import { useWishlistStore } from '@/store/useWishlistStore';
 import { CustomerHome, SellerHome } from '@/components/home/PersonalizedHome';
 import { useTheme } from "next-themes";
+import { useRouter } from "next/navigation";
 import { useRef, useState, useEffect, useCallback, useLayoutEffect } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -216,6 +218,13 @@ function ProductCard({ item, highlight, c }: { item: any; highlight?: boolean; c
   const { rotateX, rotateY, onMove, onLeave } = useMouseTilt(8);
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
+  const router = useRouter();
+  const { toggleItem, isWishlisted } = useWishlistStore();
+  const [mounted, setMounted] = useState(false);
+  
+  useEffect(() => { setMounted(true); }, []);
+
+  const wishlisted = mounted ? isWishlisted(item.id) : false;
 
   return (
     <motion.div
@@ -229,7 +238,7 @@ function ProductCard({ item, highlight, c }: { item: any; highlight?: boolean; c
         onMouseLeave={onLeave}
         style={{ rotateX, rotateY, transformPerspective: 1000 }}
         className={`group relative rounded-[40px] overflow-hidden cursor-pointer ${highlight ? 'h-[560px]' : 'aspect-[3/4]'}`}
-        onClick={() => window.location.href = `/product/${item.id}`}
+        onClick={() => router.push(`/product/${item.id}`)}
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.3 }}
       >
@@ -242,6 +251,23 @@ function ProductCard({ item, highlight, c }: { item: any; highlight?: boolean; c
           />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(6,6,10,0.95) 0%, rgba(6,6,10,0.3) 50%, transparent 100%)' }} />
         </div>
+
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleItem({
+              id: item.id,
+              title: item.title,
+              brand: item.brand,
+              sellingPrice: item.sellingPrice,
+              images: item.images
+            });
+          }}
+          className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center transition-all active:scale-90 hover:bg-white/20"
+          aria-label={wishlisted ? "Remove from wishlist" : "Add to wishlist"}
+        >
+          <Heart className={`w-6 h-6 transition-colors ${wishlisted ? "fill-gold-400 text-gold-400" : "text-white"}`} />
+        </button>
 
         <div className="absolute top-5 left-5 z-10 flex flex-col gap-2">
           <span style={{ 
@@ -496,6 +522,64 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* 🔮 THE REVAULT EXPERIENCE (Vault Door) */}
+      <section className="px-6 lg:px-8 py-20 overflow-hidden">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-24 items-center">
+            {/* Text Side */}
+            <motion.div 
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="space-y-8 order-2 lg:order-1 text-center lg:text-left"
+            >
+              <div className="space-y-4">
+                <p className="text-[10px] md:text-[12px] font-black uppercase tracking-[0.6em] text-gold-400">
+                  Authentic • Curated • Trusted • Timeless
+                </p>
+                <h3 className="text-4xl md:text-6xl font-display font-bold text-dark-900 dark:text-white leading-[1.1]">
+                  Welcome to the <br />
+                  <span className="italic text-gold-400">Digital Vault</span> of Luxury.
+                </h3>
+              </div>
+              <p className="text-dark-600 dark:text-gray-400 text-base md:text-lg max-w-xl mx-auto lg:mx-0 leading-relaxed">
+                Every masterpiece in our collection is AI-verified and physically authenticated, 
+                ensuring your investment remains timeless. Step into a world where quality is 
+                never compromised.
+              </p>
+              <div className="pt-4 flex flex-wrap gap-4 justify-center lg:justify-start">
+                <button className="px-8 py-4 bg-gold-400 text-black font-bold rounded-2xl hover:bg-gold-500 transition-all active:scale-95 shadow-lg shadow-gold-400/20">
+                  Enter The Vault
+                </button>
+              </div>
+            </motion.div>
+
+            {/* Image Side - No cropping */}
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, x: 30 }}
+              whileInView={{ opacity: 1, scale: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative order-1 lg:order-2"
+            >
+              <div className="relative aspect-square w-full max-w-[500px] mx-auto group">
+                {/* Decorative glow */}
+                <div className="absolute inset-0 bg-gold-400/10 dark:bg-gold-400/20 blur-[100px] rounded-full group-hover:bg-gold-400/30 transition-colors" />
+                
+                <div className="relative z-10 w-full h-full rounded-[48px] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] dark:shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] bg-black p-0 border-none">
+                  <Image 
+                    src="/hero-vault.png" 
+                    alt="The ReVault Door" 
+                    width={1000}
+                    height={1000}
+                    className="w-full h-full object-contain transition-transform duration-[10s] group-hover:scale-105"
+                  />
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ── STATS BAR ── */}
       <section style={{ background: c.surface, borderTop: `1px solid ${c.border}`, borderBottom: `1px solid ${c.border}`, padding: '2.5rem 1.5rem' }}>
         <div style={{ maxWidth: 1280, margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '2rem' }}>
@@ -681,7 +765,7 @@ export default function HomePage() {
           <p className="text-dark-400 text-lg font-light mb-12 max-w-lg mx-auto">Join thousands of collectors who trust the Vault. Buy, sell, and curate luxury fashion — sustainably.</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link href="/products" className="px-12 py-5 bg-gold-500 text-white rounded-2xl font-bold uppercase tracking-widest text-sm hover:scale-105 transition-all shadow-2xl">Explore the Vault</Link>
-            <Link href="/auth/register" className="px-12 py-5 border border-white/10 rounded-2xl font-bold text-sm hover:bg-white/5 transition-all">Join for Free</Link>
+            <Link href="/register" className="px-12 py-5 border border-white/10 rounded-2xl font-bold text-sm hover:bg-white/5 transition-all">Join for Free</Link>
           </div>
         </div>
       </section>

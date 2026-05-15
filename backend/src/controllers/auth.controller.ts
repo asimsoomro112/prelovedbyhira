@@ -1,8 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
+import crypto from 'crypto';
 import { auth, db } from '../config/firebase.config';
 import { AppError } from '../middleware/errorHandler';
 import { sendWelcomeEmail, sendForgotPasswordCode } from '../services/email.service';
+
+// 🛡️ SECURITY: Hash utility for OTP codes
+const hashOTP = (code: string): string => crypto.createHash('sha256').update(code).digest('hex');
 
 const registerSchema = z.object({
   uid: z.string(),
@@ -20,23 +24,8 @@ export const syncUser = async (req: Request, res: Response, next: NextFunction) 
     // Check if user already exists in Firestore
     const userDoc = await db.collection('users').doc(uid).get();
     if (userDoc.exists) {
-      // Even if user exists, ensure seller profile is correct if they are a seller
-      if (role === 'SELLER') {
-        const sellerRef = db.collection('sellers').doc(uid);
-        const sellerDoc = await sellerRef.get();
-        if (!sellerDoc.exists || (sellerDoc.data()?.verificationStatus === 'PENDING' && !sellerDoc.data()?.selfieUrl)) {
-          await sellerRef.set({
-            userId: uid,
-            isVerified: false,
-            verificationStatus: 'REQUIRED',
-            rating: 5.0,
-            totalSales: 0,
-            totalEarnings: 0,
-            pendingBalance: 0,
-            createdAt: new Date().toISOString(),
-          }, { merge: true });
-        }
-      }
+      // 🛡️ SECURITY: Ignore `role` from request body for existing users.
+      // Prevents privilege escalation (e.g., CUSTOMER sending role: 'SELLER').
       return res.status(200).json({ message: 'User already synced', user: userDoc.data() });
     }
 
@@ -131,10 +120,12 @@ export const forgotPassword = async (req: Request, res: Response, next: NextFunc
     const expiry = new Date();
     expiry.setMinutes(expiry.getMinutes() + 15);
 
-    // Save to Firestore
+    // 🛡️ SECURITY FIX C-06: Hash OTP before storing + add attempt tracking
     await db.collection('password_resets').doc(email).set({
-      code,
+      code: hashOTP(code),
       expiry: expiry.toISOString(),
+      attempts: 0,
+      maxAttempts: 5,
       createdAt: new Date().toISOString()
     });
 
@@ -152,20 +143,35 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
     const { email, otp, newPassword } = req.body;
     if (!email || !otp || !newPassword) throw new AppError('All fields are required', 400);
 
-    const resetDoc = await db.collection('password_resets').doc(email).get();
+    const resetRef = db.collection('password_resets').doc(email);
+    const resetDoc = await resetRef.get();
     if (!resetDoc.exists) throw new AppError('Invalid or expired code', 400);
 
-    const { code, expiry } = resetDoc.data()!;
+    const { code, expiry, attempts = 0, maxAttempts = 5 } = resetDoc.data()!;
+
+    // 🛡️ SECURITY FIX C-06: Brute-force protection — max 5 attempts
+    if (attempts >= maxAttempts) {
+      await resetRef.delete();
+      throw new AppError('Too many incorrect attempts. Please request a new code.', 429);
+    }
     
-    if (code !== otp) throw new AppError('Incorrect recovery code', 400);
-    if (new Date() > new Date(expiry)) throw new AppError('Recovery code has expired', 400);
+    if (new Date() > new Date(expiry)) {
+      await resetRef.delete();
+      throw new AppError('Recovery code has expired', 400);
+    }
+
+    // Compare hashed OTP
+    if (code !== hashOTP(otp)) {
+      await resetRef.update({ attempts: attempts + 1 });
+      throw new AppError(`Incorrect recovery code. ${maxAttempts - attempts - 1} attempts remaining.`, 400);
+    }
 
     // Update Firebase Auth Password
     const userRecord = await auth.getUserByEmail(email);
     await auth.updateUser(userRecord.uid, { password: newPassword });
 
     // Clean up
-    await db.collection('password_resets').doc(email).delete();
+    await resetRef.delete();
 
     res.json({ message: 'Password reset successfully' });
   } catch (error) {

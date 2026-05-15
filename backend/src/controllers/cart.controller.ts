@@ -34,7 +34,7 @@ export const getCart = async (req: AuthRequest, res: Response, next: NextFunctio
         product: {
           id: productDoc.id,
           ...productData,
-          seller: { user: { name: sellerDoc.exists ? sellerDoc.data()?.name : "Preloved Member" } }
+          seller: { user: { name: sellerDoc.exists ? sellerDoc.data()?.name : "ReVault Member" } }
         }
       };
     }));
@@ -45,7 +45,7 @@ export const getCart = async (req: AuthRequest, res: Response, next: NextFunctio
     res.json({ 
       items: filteredItems, 
       total, 
-      itemCount: filteredItems.length 
+      itemCount: filteredItems.reduce((sum: number, item: any) => sum + (item.quantity || 1), 0)
     });
   } catch (error) {
     next(error);

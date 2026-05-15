@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import SellerBottomNavbar from "@/components/layout/SellerBottomNavbar";
 import { 
   LayoutDashboard, 
@@ -21,7 +21,8 @@ import {
   Bell,
   Search,
   Settings,
-  Sparkles
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -45,10 +46,28 @@ const menuItems = [
 
 export default function SellerLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { user, logout } = useAuthStore();
+  const router = useRouter();
+  const { user, logout, isAuthenticated } = useAuthStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [verificationStatus, setVerificationStatus] = useState<string>("REQUIRED");
+  const [isChecking, setIsChecking] = useState(true);
+
+  // 🛡️ SECURITY FIX C-02: Auth + Role guard for seller section
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!isAuthenticated) {
+        router.push("/login");
+      } else if (user?.role !== 'SELLER' && user?.role !== 'ADMIN') {
+        // Non-sellers/admins cannot access seller pages
+        router.push("/customer/dashboard");
+      } else {
+        setIsChecking(false);
+      }
+    }, 100); // Small delay for Zustand hydration
+
+    return () => clearTimeout(timer);
+  }, [isAuthenticated, router, user]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
@@ -57,7 +76,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
   }, []);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user || isChecking) return;
 
     const fetchStatus = async () => {
       try {
@@ -71,12 +90,23 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       }
     };
     fetchStatus();
-  }, [user]);
+  }, [user, isChecking]);
 
   const handleLogout = () => {
     logout();
     window.location.href = "/login";
   };
+
+  // 🛡️ Show secure loading state while verifying credentials
+  if (isChecking) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center space-y-4 bg-cream-50 dark:bg-black">
+        <Loader2 className="w-12 h-12 text-gold-400 animate-spin" />
+        <p className="font-display text-gold-400 font-bold uppercase tracking-[0.2em] text-xs">Verifying Merchant Credentials...</p>
+      </div>
+    );
+  }
+
 
   return (
     <div className="flex min-h-screen bg-cream-50 dark:bg-black text-dark-900 dark:text-white selection:bg-gold-400 selection:text-white transition-colors duration-500">
@@ -112,9 +142,16 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
                 <div className="absolute top-[-20%] right-[-20%] w-[150%] h-[150%] border-[40px] border-gold-400 rounded-full" />
               </div>
                <div className="flex items-center justify-between mb-10">
-                  <span className="font-display italic text-2xl tracking-tight">
-                    Seller<span className="font-bold not-italic text-gold-400">Portal</span>
-                  </span>
+                  <Link href="/" className="flex items-center">
+                    <Image 
+                      src="/logo-navbar.png" 
+                      alt="ReVault" 
+                      width={400} 
+                      height={56} 
+                      className="w-[156px] h-auto object-contain brightness-110"
+                      priority
+                    />
+                  </Link>
                   <button onClick={() => setIsMobileMenuOpen(false)} className="p-2 bg-gold-400/10 rounded-xl text-gold-400">
                     <X className="w-5 h-5" />
                   </button>
@@ -200,9 +237,16 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
       {/* LUXURY SIDEBAR (Desktop) */}
       <aside className="hidden lg:flex w-72 flex-col fixed inset-y-0 bg-white dark:bg-dark-950 border-r border-gold-400/10 z-[60] transition-colors duration-500">
-        <div className="p-10">
-          <Link href="/" className="font-display italic text-2xl tracking-tighter group">
-            Preloved<span className="font-bold not-italic text-gold-400 group-hover:text-gold-500 transition-colors">ByHira</span>
+        <div className="px-10 py-8">
+          <Link href="/" className="flex items-center group">
+            <Image 
+              src="/logo-navbar.png" 
+              alt="ReVault Luxury" 
+              width={500} 
+              height={80}
+              className="w-[180px] h-auto object-contain brightness-110 group-hover:scale-[1.02] transition-transform"
+              priority
+            />
           </Link>
         </div>
 
@@ -307,9 +351,16 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
             {/* Mobile Logo Center */}
             <div className="lg:hidden absolute left-1/2 -translate-x-1/2">
-               <span className="font-display italic text-xl tracking-tight">
-                  Preloved<span className="font-bold not-italic text-gold-400">Vault</span>
-               </span>
+               <Link href="/" className="flex items-center">
+                  <Image 
+                    src="/logo-navbar.png" 
+                    alt="ReVault" 
+                    width={400} 
+                    height={56} 
+                    className="w-[140px] h-auto object-contain brightness-110"
+                    priority
+                  />
+               </Link>
             </div>
 
             <div className="flex items-center gap-4 lg:gap-6">
@@ -331,7 +382,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
 
          {/* Footer Subtle Stats */}
          <footer className="p-4 md:p-8 border-t border-gold-400/5 opacity-50 flex flex-col md:flex-row items-center justify-between gap-3 text-center">
-            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">© 2026 PrelovedByHira • Merchant Vault</p>
+            <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">© 2026 ReVault • Merchant Vault</p>
             <div className="flex items-center gap-8">
                <div className="flex items-center gap-2">
                   <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />

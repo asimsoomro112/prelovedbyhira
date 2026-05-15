@@ -162,7 +162,7 @@ export default function CustomerDashboard() {
                   <Sparkles className="w-6 h-6" />
                </div>
                <h3 className="text-2xl font-display font-bold leading-tight">Neural <br />Concierge</h3>
-               <p className="text-xs opacity-80 leading-relaxed">Ask Hira AI about your orders, product authenticity, or styling advice.</p>
+               <p className="text-xs opacity-80 leading-relaxed">Ask ReVault AI about your orders, product authenticity, or styling advice.</p>
             </div>
             <Link href="/chat" className="h-14 bg-white text-gold-400 rounded-2xl flex items-center justify-center gap-3 font-bold hover:bg-cream-50 transition-all">
                <MessageSquare className="w-4 h-4" /> Start Neural Chat

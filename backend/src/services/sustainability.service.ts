@@ -6,7 +6,7 @@ export interface SustainabilityImpact {
 
 export class SustainabilityService {
   /**
-   * Calculates the environmental impact of purchasing a preloved item.
+   * Calculates the environmental impact of purchasing a ReVault item.
    * Based on 2026 Global Circular Fashion Data.
    */
   static calculateImpact(category: string, price: number): SustainabilityImpact {

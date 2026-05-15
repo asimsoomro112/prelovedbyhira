@@ -108,7 +108,7 @@ export default function SellerVerificationPage() {
 
       if (data.success) {
         setAiResult(data.extracted);
-        toast.success("Identity Verified by Hira AI!");
+        toast.success("Identity Verified by ReVault AI!");
         setStep(3);
       }
     } catch (error: any) {
@@ -221,7 +221,7 @@ export default function SellerVerificationPage() {
               <motion.div key="s2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
                 <div className="text-center space-y-2">
                    <h3 className="text-2xl font-display font-bold">Scan Identity Document</h3>
-                   <p className="text-sm text-gray-500">Upload your original CNIC. Hira AI will extract your data instantly.</p>
+                   <p className="text-sm text-gray-500">Upload your original CNIC. ReVault AI will extract your data instantly.</p>
                 </div>
                 <div className="grid md:grid-cols-2 gap-8">
                    <DocUpload label="CNIC Front Side" file={cnicFront} setFile={setCnicFront} icon={<Scan className="w-6 h-6" />} />
@@ -236,7 +236,7 @@ export default function SellerVerificationPage() {
                       </>
                     ) : (
                       <>
-                        Verify with Hira AI <ArrowRight className="w-5 h-5" />
+                        Verify with ReVault AI <ArrowRight className="w-5 h-5" />
                       </>
                     )}
                   </button>
@@ -252,7 +252,7 @@ export default function SellerVerificationPage() {
                    </div>
                    <div>
                       <p className="text-emerald-500 font-bold text-lg">Identity Verified!</p>
-                      <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70 font-medium">Hira AI matched your CNIC with your profile. CNIC Number: {aiResult?.cnicNumber}</p>
+                      <p className="text-xs text-emerald-700/70 dark:text-emerald-400/70 font-medium">ReVault AI matched your CNIC with your profile. CNIC Number: {aiResult?.cnicNumber}</p>
                    </div>
                 </div>
 
@@ -335,7 +335,7 @@ export default function SellerVerificationPage() {
                        <p className="text-zinc-500 dark:text-gray-400 font-medium">
                          {vStatus === 'APPROVED' || vStatus === 'ACTIVE' 
                            ? "Congratulations! Your merchant identity has been fully vetted and approved." 
-                           : "Hira AI has successfully matched your profile name with your CNIC."}
+                           : "ReVault AI has successfully matched your profile name with your CNIC."}
                        </p>
                     </div>
  

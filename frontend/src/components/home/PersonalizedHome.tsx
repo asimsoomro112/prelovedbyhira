@@ -5,6 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
+import ProductCard from "@/components/shared/ProductCard";
+import { useWishlistStore } from "@/store/useWishlistStore";
 import { 
   Sparkles, 
   ArrowRight, 
@@ -23,6 +25,7 @@ import {
 } from "lucide-react";
 
 export function CustomerHome({ user }: { user: any }) {
+  const { items: wishlistItems } = useWishlistStore();
   const { data: products } = useQuery({
     queryKey: ["home-featured-products"],
     queryFn: async () => {
@@ -31,14 +34,6 @@ export function CustomerHome({ user }: { user: any }) {
     }
   });
 
-  const { data: wishlist } = useQuery({
-    queryKey: ["customer-wishlist-count"],
-    queryFn: async () => {
-      const { data } = await api.get("/wishlist");
-      return data;
-    },
-    enabled: !!user
-  });
   const { data: vStatus } = useQuery({
     queryKey: ["seller-verification-status"],
     queryFn: async () => {
@@ -149,26 +144,7 @@ export function CustomerHome({ user }: { user: any }) {
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
              {products?.map((product: any) => (
-               <Link href={`/product/${product.id}`} key={product.id} className="group cursor-pointer">
-                  <div className="aspect-[3/4] glass-ultra crystal-border rounded-[32px] overflow-hidden relative mb-6">
-                     <Image 
-                       src={product.images?.[0] || 'https://images.unsplash.com/photo-1549062572-544a64fb0c56?auto=format&fit=crop&q=80&w=1000'} 
-                       alt={product.title}
-                       fill
-                       className="object-cover group-hover:scale-110 transition-transform duration-700"
-                     />
-                     <div className="absolute top-4 right-4 z-10">
-                        <button className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-400 hover:text-pink-500 transition-colors">
-                           <Heart className="w-5 h-5" />
-                        </button>
-                     </div>
-                  </div>
-                  <div className="space-y-2 px-2">
-                     <p className="text-[10px] font-bold text-gold-400 uppercase tracking-widest">{product.category}</p>
-                     <h3 className="font-bold text-dark-900 dark:text-cream-50 group-hover:text-gold-400 transition-colors line-clamp-1">{product.title}</h3>
-                     <p className="text-lg font-display font-bold">Rs. {(product.sellingPrice || 0).toLocaleString()}</p>
-                  </div>
-               </Link>
+               <ProductCard key={product.id} product={product} />
              ))}
           </div>
         </div>
@@ -337,26 +313,7 @@ function MarketplaceGrid() {
   return (
     <>
       {products.map((product: any) => (
-        <Link href={`/product/${product.id}`} key={product.id} className="group cursor-pointer">
-          <div className="aspect-[3/4] glass-ultra crystal-border rounded-[32px] overflow-hidden relative mb-6">
-            <Image 
-              src={product.images?.[0] || 'https://images.unsplash.com/photo-1549062572-544a64fb0c56?auto=format&fit=crop&q=80&w=1000'} 
-              alt={product.title}
-              fill
-              className="object-cover group-hover:scale-110 transition-transform duration-700"
-            />
-            <div className="absolute top-4 right-4 z-10">
-              <button className="w-10 h-10 rounded-full bg-white/80 backdrop-blur-md flex items-center justify-center text-gray-400 hover:text-pink-500 transition-colors">
-                <Heart className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-          <div className="space-y-2 px-2">
-            <p className="text-[10px] font-bold text-gold-400 uppercase tracking-widest">{product.category}</p>
-            <h3 className="font-bold text-dark-900 dark:text-cream-50 group-hover:text-gold-400 transition-colors line-clamp-1">{product.title}</h3>
-            <p className="text-lg font-display font-bold">Rs. {(product.sellingPrice || 0).toLocaleString()}</p>
-          </div>
-        </Link>
+        <ProductCard key={product.id} product={product} />
       ))}
     </>
   );
@@ -364,7 +321,7 @@ function MarketplaceGrid() {
 
 function PulseCard({ label, value, icon, trend, color = "text-dark-900 dark:text-cream-50" }: any) {
   return (
-    <div className="glass-ultra crystal-border p-8 rounded-[40px] space-y-4 shadow-soft hover:shadow-gold-3d transition-all">
+    <div className="glass-ultra crystal-border p-5 md:p-8 rounded-[40px] space-y-4 shadow-soft hover:shadow-gold-3d transition-all">
        <div className="w-12 h-12 rounded-2xl bg-gold-400/10 text-gold-400 flex items-center justify-center">
           {icon}
        </div>

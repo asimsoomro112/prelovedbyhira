@@ -5,7 +5,7 @@ import { ShoppingBag } from "lucide-react";
 
 export default function Loading() {
   return (
-    <div className="fixed inset-0 z-[200] bg-mesh flex items-center justify-center">
+    <div className="fixed inset-0 z-[600] bg-mesh flex items-center justify-center">
       <div className="relative">
         {/* Outer Glow */}
         <div className="absolute inset-0 bg-gold-400/20 blur-[60px] animate-pulse" />
@@ -30,7 +30,7 @@ export default function Loading() {
           
           <div className="flex flex-col items-center">
              <h2 className="text-2xl font-display font-bold text-gold-400 tracking-tight">
-               Preloved<span className="italic">ByHira</span>
+               ReVault
              </h2>
              <div className="flex gap-1.5 mt-2">
                 {[0, 1, 2].map((i) => (

@@ -6,7 +6,7 @@ import { deleteImage } from '../services/cloudinary.service';
 export const uploadSingle = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
   try {
     if (!req.file) { res.status(400).json({ error: 'No file uploaded' }); return; }
-    const folder = (req.query.folder as string) || 'prelovebyhira';
+    const folder = (req.query.folder as string) || 'revault';
     const isVideo = req.file.mimetype.startsWith('video/');
     const result = await uploadToCloudinary(req.file.buffer, folder, isVideo);
     res.json({ url: result.url, publicId: result.publicId, resourceType: isVideo ? 'video' : 'image' });
@@ -17,7 +17,7 @@ export const uploadMultiple = async (req: AuthRequest, res: Response, next: Next
   try {
     if (!req.files || (req.files as Express.Multer.File[]).length === 0) { res.status(400).json({ error: 'No files uploaded' }); return; }
     const files = req.files as Express.Multer.File[];
-    const folder = (req.query.folder as string) || 'prelovebyhira/products';
+    const folder = (req.query.folder as string) || 'revault/products';
     
     const results = await Promise.all(files.map(f => {
       const isVideo = f.mimetype.startsWith('video/');

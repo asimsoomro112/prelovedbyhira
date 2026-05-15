@@ -31,7 +31,7 @@ const baseTemplate = (content: string) => `
     <div class="wrapper">
         <div class="main">
             <div class="header">
-                <span class="h2">PrelovedByHira 2026</span>
+                <span class="h2">ReVault 2026</span>
                 <h1 class="h1">Luxury <span>Vault.</span></h1>
             </div>
             <div class="content">
@@ -40,7 +40,7 @@ const baseTemplate = (content: string) => `
             <div class="footer">
                 <p class="footer-text">
                     This is an automated 256-bit encrypted secure exchange.<br>
-                    © 2026 PrelovedByHira • Pakistan's #1 Luxury Trade Platform
+                    © 2026 ReVault • Pakistan's #1 Luxury Trade Platform
                 </p>
             </div>
         </div>
@@ -54,13 +54,13 @@ export const sendOTPEmail = async (email: string, otp: string) => {
     <span class="h2">Identity Verification</span>
     <p class="text">Welcome to the vault. Use the highly secure 2026 encryption key below to authenticate your access.</p>
     <div class="otp">${otp}</div>
-    <p class="text" style="font-size: 12px;">This key expires in 10 minutes. If you did not request this, please report to Hira AI Concierge immediately.</p>
+    <p class="text" style="font-size: 12px;">This key expires in 10 minutes. If you did not request this, please report to ReVault AI Concierge immediately.</p>
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
-    subject: `🔑 ${otp} is your Hira Access Key`,
+    subject: `🔑 ${otp} is your ReVault Access Key`,
     html: baseTemplate(content),
   });
 };
@@ -69,7 +69,7 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
   const content = `
     <span class="h2">Vault Access Granted</span>
     <h1 class="h1" style="font-size: 28px; margin: 20px 0;">Welcome, <span>${name}</span></h1>
-    <p class="text">Your digital identity has been synchronized with the Hira Luxury Vault. You now have exclusive access to Pakistan's most curated preloved marketplace.</p>
+    <p class="text">Your digital identity has been synchronized with the ReVault Luxury Vault. You now have exclusive access to Pakistan's most curated preloved marketplace.</p>
     <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
         <p style="color: ${GOLD}; font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 10px;">Membership Benefits</p>
         <ul style="margin: 0; padding-left: 20px; color: rgba(255,255,255,0.7); font-size: 14px;">
@@ -78,11 +78,11 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
             <li>Global Designer Network Access</li>
         </ul>
     </div>
-    <a href="https://prelovedbyhira.com/products" class="btn">Start Exploring</a>
+    <a href="https://revault.pk/products" class="btn">Start Exploring</a>
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `🥂 Welcome to the Inner Circle, ${name}`,
     html: baseTemplate(content),
@@ -98,7 +98,7 @@ export const sendForgotPasswordCode = async (email: string, code: string) => {
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `🛡️ ${code} is your Recovery Code`,
     html: baseTemplate(content),
@@ -109,7 +109,7 @@ export const sendOrderConfirmation = async (email: string, orderData: any) => {
   const content = `
     <span class="h2">Order Confirmation</span>
     <h1 class="h1" style="font-size: 28px; margin: 20px 0;">Acquisition <span>Secured.</span></h1>
-    <p class="text">Dear <b>${orderData.customerName}</b>, your request has been synchronized with the Hira Neural Vault. Your funds are protected by our Escrow-Secured protocol.</p>
+    <p class="text">Dear <b>${orderData.customerName}</b>, your request has been synchronized with the ReVault Neural Vault. Your funds are protected by our Escrow-Secured protocol.</p>
     
     <div style="background: rgba(255, 255, 255, 0.03); border-radius: 32px; border: 1px solid rgba(212, 175, 55, 0.1); overflow: hidden; margin: 40px 0;">
         <div style="padding: 30px; background: rgba(212, 175, 55, 0.05); border-bottom: 1px solid rgba(212, 175, 55, 0.1); text-align: left;">
@@ -144,12 +144,12 @@ export const sendOrderConfirmation = async (email: string, orderData: any) => {
         </div>
     </div>
     
-    <a href="https://prelovedbyhira.com/customer/dashboard" class="btn">Track Order in Vault</a>
+    <a href="https://revault.pk/customer/dashboard" class="btn">Track Order in Vault</a>
     <p style="margin-top: 30px; font-size: 12px; color: rgba(255,255,255,0.3);">Need assistance? Contact our 24/7 Concierge.</p>
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `🥂 Confirmation: Your luxury acquisition #ORD-${orderData.id.slice(-8).toUpperCase()} is secured`,
     html: baseTemplate(content),
@@ -170,11 +170,11 @@ export const sendSellerNotification = async (email: string, orderData: any) => {
     </div>
     
     <p class="text" style="font-size: 14px;">Funds will be released to your balance once the customer confirms delivery. Please ensure item is ready for dispatch.</p>
-    <a href="https://prelovedbyhira.com/seller/dashboard" class="btn">Manage My Sales</a>
+    <a href="https://revault.pk/seller/dashboard" class="btn">Manage My Sales</a>
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `💰 Sale Confirmed! You just sold: ${orderData.itemName}`,
     html: baseTemplate(content),
@@ -190,11 +190,11 @@ export const sendSellerRejectionEmail = async (email: string, name: string, reas
         <p style="margin: 5px 0; font-size: 14px;">${reason}</p>
     </div>
     <p class="text">You may re-apply with corrected documents at any time from your seller dashboard.</p>
-    <a href="https://prelovedbyhira.com/seller/verification" class="btn">Re-Apply Now</a>
+    <a href="https://revault.pk/seller/verification" class="btn">Re-Apply Now</a>
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `Seller Verification Update — ${name}`,
     html: baseTemplate(content),
@@ -205,12 +205,12 @@ export const sendVerificationEmail = async (email: string, name: string, token: 
   const content = `
     <span class="h2">Verify Your Access</span>
     <p class="text">Welcome to the inner circle, <b>${name}</b>. Please verify your identity to unlock the full potential of our luxury marketplace.</p>
-    <a href="https://prelovedbyhira.com/verify-email/${token}" class="btn">Verify Securely</a>
+    <a href="https://revault.pk/verify-email/${token}" class="btn">Verify Securely</a>
     <p class="text" style="font-size: 10px; margin-top: 30px;">This link will expire in 24 hours.</p>
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `🥂 Welcome to the Vault, ${name}`,
     html: baseTemplate(content),
@@ -226,11 +226,11 @@ export const sendPaymentRejectedEmail = async (email: string, orderId: string, r
         <p style="margin: 5px 0; font-size: 14px; color: #d32f2f;">${reason}</p>
     </div>
     <p class="text">Please log in to your dashboard and re-upload a valid bank or wallet receipt to secure your item.</p>
-    <a href="https://prelovedbyhira.com/customer/orders" class="btn">Re-upload Proof</a>
+    <a href="https://revault.pk/customer/orders" class="btn">Re-upload Proof</a>
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `❌ Action Required: Payment Proof Rejected (#${orderId.slice(-8).toUpperCase()})`,
     html: baseTemplate(content),
@@ -240,7 +240,7 @@ export const sendPaymentRejectedEmail = async (email: string, orderId: string, r
 export const sendSellerPaymentConfirmedEmail = async (email: string, orderData: any) => {
   const content = `
     <span class="h2">Payment Confirmed — Ready to Ship</span>
-    <p class="text">Great news! Hira Vault has verified the customer's payment for your listing. You are now authorized to ship the item.</p>
+    <p class="text">Great news! ReVault Vault has verified the customer's payment for your listing. You are now authorized to ship the item.</p>
     <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
         <p style="color: ${GOLD}; font-weight: 700; font-size: 12px; text-transform: uppercase; margin-bottom: 15px;">Next Steps</p>
         <p style="margin: 5px 0; font-size: 14px;">1. Pack the item securely.</p>
@@ -248,11 +248,11 @@ export const sendSellerPaymentConfirmedEmail = async (email: string, orderData: 
         <p style="margin: 5px 0; font-size: 14px;">3. Update tracking number in your dashboard.</p>
         <p style="margin: 15px 0 5px 0; font-size: 14px;">Order ID: <b>#ORD-${orderData.id.slice(-8).toUpperCase()}</b></p>
     </div>
-    <a href="https://prelovedbyhira.com/seller/dashboard" class="btn">View Shipping Address</a>
+    <a href="https://revault.pk/seller/dashboard" class="btn">View Shipping Address</a>
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `📦 Payment Confirmed: Ship your item (#ORD-${orderData.id.slice(-8).toUpperCase()})`,
     html: baseTemplate(content),
@@ -271,7 +271,7 @@ export const sendOrderStatusUpdate = async (email: string, orderId: string, stat
     'PAID': 'Your payment has been successfully synchronized and verified. The merchant has been notified to prepare your shipment.',
     'SHIPPED': 'Exciting news! Your luxury acquisition is now in transit. You can track its progress via your dashboard.',
     'DELIVERED': 'Mission accomplished. Your item has arrived. Please inspect it carefully before confirming delivery in the vault.',
-    'CONFIRMED': 'Trade finalized. The escrow funds have been released. Thank you for choosing PrelovedByHira.'
+    'CONFIRMED': 'Trade finalized. The escrow funds have been released. Thank you for choosing ReVault.'
   };
 
   const content = `
@@ -291,12 +291,12 @@ export const sendOrderStatusUpdate = async (email: string, orderId: string, stat
         </div>
     </div>
     
-    <a href="https://prelovedbyhira.com/customer/orders" class="btn">View Live Status</a>
-    <p style="margin-top: 30px; font-size: 12px; color: rgba(255,255,255,0.3);">This is an official communication from the PrelovedByHira Luxury Vault.</p>
+    <a href="https://revault.pk/customer/orders" class="btn">View Live Status</a>
+    <p style="margin-top: 30px; font-size: 12px; color: rgba(255,255,255,0.3);">This is an official communication from the ReVault Luxury Vault.</p>
   `;
 
   await transporter.sendMail({
-    from: `"PrelovedByHira Vault" <${process.env.SMTP_USER}>`,
+    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
     to: email,
     subject: `${statusIcons[status] || '✨'} Status Update: Order #${orderId.slice(-8).toUpperCase()} is ${status}`,
     html: baseTemplate(content),

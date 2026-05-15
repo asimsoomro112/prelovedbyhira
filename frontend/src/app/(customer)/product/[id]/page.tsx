@@ -701,7 +701,7 @@ export default function ProductDetailPage() {
                     { icon: <Lock className="w-3 h-3" />,  text: "Escrow",     c: "text-gold-400"    },
                     { icon: <RotateCcw className="w-3 h-3" />, text: "Returns", c: "text-gray-400"  },
                   ].map((t, i) => (
-                    <span key={i} className={`flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest ${t.c}`}>
+                    <span key={i} className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest ${t.c}`}>
                       {t.icon} {t.text}
                     </span>
                   ))}
@@ -717,7 +717,7 @@ export default function ProductDetailPage() {
                     </div>
                     <div>
                       <p className="text-[11px] font-black text-dark-900 dark:text-cream-50 uppercase tracking-wider">Authenticity Checklist</p>
-                      <p className="text-[9px] text-gray-400 font-medium">Inspected by PrelovedByHira team</p>
+                      <p className="text-[9px] text-gray-400 font-medium">Inspected by ReVault team</p>
                     </div>
                   </div>
                   <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] font-bold text-emerald-500 uppercase tracking-widest">
@@ -729,7 +729,7 @@ export default function ProductDetailPage() {
                   <AuthItem label="Original Box/Bag"   ok={product.originalPacking} />
                   <AuthItem label="Invoice Available"  ok={product.invoiceAvailable} />
                   <AuthItem label="Unaltered/Original" ok={!product.isAltered} />
-                  <AuthItem label="Vetted by Hira"     ok={true} />
+                  <AuthItem label="Vetted by ReVault"     ok={true} />
                 </div>
 
                 <div className="mt-4 pt-4 border-t border-gold-400/8 flex items-start gap-2">
@@ -783,7 +783,7 @@ export default function ProductDetailPage() {
                 {[
                   { icon: <Lock className="w-4 h-4" />,       label: "Escrow",   sub: "100% Safe",     c: "emerald" },
                   { icon: <Package className="w-4 h-4" />,    label: "24h Ship", sub: "Nationwide",    c: "gold"    },
-                  { icon: <Award className="w-4 h-4" />,      label: "Vetted",   sub: "By Hira",       c: "gold"    },
+                  { icon: <Award className="w-4 h-4" />,      label: "Vetted",   sub: "By ReVault",       c: "gold"    },
                   { icon: <RotateCcw className="w-4 h-4" />,  label: "Returns",  sub: "7-day policy",  c: "slate"   },
                 ].map((b, i) => (
                   <div key={i} className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center ${
@@ -792,8 +792,8 @@ export default function ProductDetailPage() {
                     "bg-gray-100/60 dark:bg-dark-900 border-gray-200/60 dark:border-dark-800 text-gray-500"
                   }`}>
                     {b.icon}
-                    <p className="text-[8px] font-black uppercase tracking-wide leading-tight">{b.label}</p>
-                    <p className="text-[7px] opacity-65 font-medium leading-tight">{b.sub}</p>
+                    <p className="text-[10px] font-black uppercase tracking-wide leading-tight">{b.label}</p>
+                    <p className="text-[9px] opacity-65 font-medium leading-tight">{b.sub}</p>
                   </div>
                 ))}
               </div>
@@ -905,7 +905,7 @@ export default function ProductDetailPage() {
         {/* Urgency strip */}
         <div className="flex items-center justify-center gap-2 bg-red-500 py-2 px-4">
           <Flame className="w-3 h-3 text-white animate-pulse" />
-          <span className="text-[9px] font-black text-white uppercase tracking-[0.18em]">
+          <span className="text-[10px] font-black text-white uppercase tracking-[0.18em]">
             {viewers} people viewing · Only 1 left
           </span>
         </div>
@@ -913,7 +913,7 @@ export default function ProductDetailPage() {
         <div className="bg-white dark:bg-dark-950 border-t border-gold-400/15 px-4 pt-3 pb-[env(safe-area-inset-bottom,16px)] pb-4">
           <div className="flex items-center justify-between mb-3">
             <div>
-              <p className="text-[8px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Elite Price</p>
+              <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mb-1">Elite Price</p>
               <p className="text-2xl font-accent font-bold text-gold-400 leading-none">Rs. {(product.sellingPrice || 0).toLocaleString()}</p>
             </div>
             <div className="flex items-center gap-2">

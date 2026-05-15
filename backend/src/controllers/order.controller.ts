@@ -108,6 +108,148 @@ export const createOrder = async (req: AuthRequest, res: Response, next: NextFun
   }
 };
 
+/**
+ * 🛡️ DATA FIX C-05: Atomic Bulk Checkout
+ * Creates multiple orders in a single Firestore transaction.
+ * If ANY item fails (out of stock, inactive, self-purchase), ALL orders roll back.
+ * Prevents partial-order scenarios where some items succeed and others fail.
+ */
+export const createBulkOrders = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const { items, shippingAddress, paymentMethod = 'Bank Transfer' } = req.body;
+    const buyerId = req.user!.id;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      throw new AppError('No items provided for checkout', 400);
+    }
+    if (!shippingAddress || !shippingAddress.address || !shippingAddress.phone) {
+      throw new AppError('Complete shipping address is required', 400);
+    }
+    if (items.length > 20) {
+      throw new AppError('Maximum 20 items per checkout', 400);
+    }
+
+    const results = await db.runTransaction(async (transaction) => {
+      const orders: Array<{ id: string; [key: string]: any }> = [];
+
+      // Phase 1: Read all products first (Firestore requires all reads before writes)
+      const productRefs = items.map((item: any) => db.collection('products').doc(item.productId));
+      const productDocs = await Promise.all(productRefs.map(ref => transaction.get(ref)));
+
+      // Phase 2: Validate every item
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const productDoc = productDocs[i];
+        const qty = Math.max(1, parseInt(item.quantity || 1));
+
+        if (!productDoc.exists) {
+          throw new AppError(`Product "${item.productId}" not found`, 404);
+        }
+
+        const product = productDoc.data()!;
+
+        if (product.status !== 'ACTIVE') {
+          throw new AppError(`"${product.title}" is no longer available`, 400);
+        }
+        if ((product.stock || 0) < qty) {
+          throw new AppError(`"${product.title}" — only ${product.stock || 0} left in stock`, 400);
+        }
+        if (product.sellerId === buyerId) {
+          throw new AppError(`You cannot purchase your own product "${product.title}"`, 400);
+        }
+      }
+
+      // Phase 3: All validations passed — write all orders and stock updates
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        const productDoc = productDocs[i];
+        const product = productDoc.data()!;
+        const qty = Math.max(1, parseInt(item.quantity || 1));
+        const shippingCost = Number(item.shippingCost || 0);
+
+        const unitPrice = Number(product.sellingPrice);
+        const sellingPriceTotal = unitPrice * qty;
+        const platformFee = sellingPriceTotal * 0.20;
+        const netAmount = sellingPriceTotal * 0.80;
+        const totalPrice = sellingPriceTotal + shippingCost;
+
+        const orderData = {
+          buyerId,
+          sellerId: product.sellerId,
+          productId: item.productId,
+          quantity: qty,
+          unitPrice,
+          totalPrice,
+          platformFee,
+          netAmount,
+          shippingCost,
+          paymentMethod,
+          status: 'AWAITING_PAYMENT',
+          shippingAddress,
+          paymentProofUrl: null,
+          aiVerified: false,
+          adminConfirmed: false,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+
+        const orderRef = db.collection('orders').doc();
+        transaction.set(orderRef, orderData);
+
+        // Reserve stock
+        const newStock = (product.stock || 0) - qty;
+        transaction.update(productRefs[i], {
+          stock: newStock,
+          status: newStock <= 0 ? 'SOLD' : 'ACTIVE',
+          updatedAt: new Date().toISOString(),
+        });
+
+        orders.push({ id: orderRef.id, ...orderData });
+      }
+
+      return orders;
+    });
+
+    // Send emails outside the transaction (non-blocking)
+    const buyerDoc = await db.collection('users').doc(buyerId).get();
+    for (const order of results) {
+      try {
+        const productDoc = await db.collection('products').doc(order.productId).get();
+        const sellerDoc = await db.collection('users').doc(order.sellerId).get();
+
+        if (buyerDoc.exists) {
+          await EmailService.sendOrderConfirmation(buyerDoc.data()!.email, {
+            id: order.id,
+            total: order.totalPrice,
+            customerName: buyerDoc.data()!.name,
+            productName: productDoc.data()?.title || 'Luxury Item',
+            sellerName: sellerDoc.data()?.name || 'Verified Merchant',
+            paymentMethod: order.paymentMethod,
+            shippingAddress: order.shippingAddress,
+          });
+        }
+        if (sellerDoc.exists) {
+          await EmailService.sendSellerNotification(sellerDoc.data()!.email, {
+            itemName: productDoc.data()?.title || 'Item',
+            earnings: order.netAmount,
+            id: order.id,
+            customerName: buyerDoc.data()?.name || 'Customer',
+          });
+        }
+      } catch (emailErr) {
+        console.warn(`[Vault] Email send failed for order ${order.id}:`, emailErr);
+      }
+    }
+
+    res.status(201).json({
+      orders: results,
+      message: `${results.length} order(s) created atomically. Please upload payment receipt.`,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const handlePaymentCallback = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { orderId, success, secret } = req.body;
@@ -395,7 +537,7 @@ export const submitPaymentProof = async (req: AuthRequest, res: Response, next: 
     try {
       aiResults = await AIService.verifyPaymentReceipt(proofUrl, order.totalPrice);
     } catch (err) {
-      console.warn("[Hira AI] Payment audit failed, queuing for manual review.");
+      console.warn("[ReVault AI] Payment audit failed, queuing for manual review.");
     }
 
     await orderRef.update({
@@ -410,7 +552,7 @@ export const submitPaymentProof = async (req: AuthRequest, res: Response, next: 
 
     res.json({ 
       message: aiResults.isMatch 
-        ? 'Confirmed! Hira AI has matched your payment receipt. Admin will perform a final review shortly.' 
+        ? 'Confirmed! ReVault AI has matched your payment receipt. Admin will perform a final review shortly.' 
         : `Receipt uploaded. ${aiResults.reason || 'AI could not automatically verify the amount.'} Admin will review it manually.`,
       aiResults
     });

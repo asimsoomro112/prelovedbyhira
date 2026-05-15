@@ -148,7 +148,7 @@ function StatCard({ label, value, trend, icon, primary }: any) {
     <motion.div 
       whileHover={{ y: -5 }}
       whileTap={{ scale: 0.98 }}
-      className={`p-5 md:p-8 glass-ultra crystal-border rounded-3xl md:rounded-[40px] space-y-4 md:space-y-6 shadow-soft transition-all ${primary ? "bg-gold-400/5" : ""}`}
+      className={`p-4 md:p-8 glass-ultra crystal-border rounded-3xl md:rounded-[40px] space-y-4 md:space-y-6 shadow-soft transition-all ${primary ? "bg-gold-400/5" : ""}`}
     >
        <div className="flex justify-between items-start">
           <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${primary ? "bg-gold-400 text-white shadow-gold" : "bg-gold-400/10 text-gold-400"}`}>

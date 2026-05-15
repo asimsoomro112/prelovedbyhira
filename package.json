@@ -1,12 +1,12 @@
 {
-  "name": "prelovebyhira",
+  "name": "revault",
   "version": "1.0.0",
   "private": true,
   "workspaces": [
     "frontend",
     "backend"
   ],
-  "description": "PrelovedByHira — Preloved Fashion Marketplace for Pakistan",
+  "description": "ReVault — Preloved Fashion Marketplace for Pakistan",
   "scripts": {
     "dev:frontend": "cd frontend && npm run dev",
     "dev:mobile": "concurrently \"npm run dev:backend\" \"cd frontend && npm run mobile\"",

@@ -14,7 +14,7 @@ const startServer = async () => {
       console.log(`
   ╔══════════════════════════════════════════════╗
   ║                                              ║
-  ║   ✨ PrelovedByHira Cloud API Server         ║
+  ║   ✨ ReVault Cloud API Server               ║
   ║                                              ║
   ║   🌐 Server:  ${config.backendUrl.padEnd(27)}║
   ║   📦 Env:     ${config.nodeEnv.padEnd(27)}║

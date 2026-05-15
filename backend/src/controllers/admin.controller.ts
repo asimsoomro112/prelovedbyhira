@@ -370,7 +370,7 @@ export const getSettings = async (_req: express.Request, res: express.Response, 
         minPayoutAmount: 5000,
         aiChatEnabled: true,
         emailNotifications: true,
-        supportEmail: 'care@hira.pk',
+        supportEmail: 'care@revault.pk',
         updatedAt: new Date().toISOString()
       };
       await db.collection('settings').doc('platform').set(defaults);

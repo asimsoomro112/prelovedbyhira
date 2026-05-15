@@ -28,7 +28,7 @@ export default function AdminSettingsPage() {
     minPayoutAmount: 5000,
     aiChatEnabled: true,
     emailNotifications: true,
-    supportEmail: 'care@hira.pk'
+    supportEmail: 'care@revault.pk'
   });
 
   useEffect(() => {
@@ -73,7 +73,7 @@ export default function AdminSettingsPage() {
           <Settings className="w-10 h-10 text-gold-400" />
           Platform Vault Settings
         </h1>
-        <p className="text-zinc-500 dark:text-gray-400">Control the neural core and business logic of PrelovedByHira.</p>
+        <p className="text-zinc-500 dark:text-gray-400">Control the neural core and business logic of ReVault.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -133,7 +133,7 @@ export default function AdminSettingsPage() {
           <div className="space-y-6">
             <div className="flex items-center justify-between p-4 bg-white dark:bg-black/20 rounded-2xl border border-zinc-200 dark:border-white/5">
               <div>
-                <p className="text-zinc-900 dark:text-white font-medium">Hira AI Concierge</p>
+                <p className="text-zinc-900 dark:text-white font-medium">ReVault AI Concierge</p>
                 <p className="text-xs text-zinc-500 dark:text-gray-500">Enable real-time customer assistance</p>
               </div>
               <button 

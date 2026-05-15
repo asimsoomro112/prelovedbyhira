@@ -8,6 +8,7 @@ import Link from "next/link";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useCartStore } from "@/store/useCartStore";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import NotificationBell from "./NotificationBell";
 
 export default function DesktopNavbar() {
@@ -43,17 +44,15 @@ export default function DesktopNavbar() {
         glass-ultra crystal-border shadow-gold-3d
       `}>
         {/* LOGO AREA */}
-        <Link href="/" className="flex items-center gap-3 group shrink-0">
-          <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-gold-400 to-gold-600 flex items-center justify-center shadow-gold group-hover:rotate-[10deg] transition-transform duration-500">
-            <ShoppingBag className="w-5 h-5 text-white" />
-            <div className="absolute inset-0 bg-white/20 rounded-2xl blur-lg animate-pulse" />
-          </div>
-          <div className="flex flex-col">
-            <span className="text-xl font-display font-bold leading-none tracking-tight text-dark-900 dark:text-cream-50">
-              Preloved<span className="text-gold-400 italic">ByHira</span>
-            </span>
-            <span className="text-[8px] font-bold text-dark-400 dark:text-gray-400 uppercase tracking-[4px] mt-1">Luxury 2026</span>
-          </div>
+        <Link href="/" className="group shrink-0 relative flex items-center">
+          <Image 
+            src="/logo-navbar.png" 
+            alt="ReVault Luxury" 
+            width={500} 
+            height={80}
+            className="w-[200px] h-auto object-contain brightness-110 group-hover:scale-[1.02] transition-transform"
+            priority
+          />
         </Link>
 
         {/* NAVIGATION LINKS */}
@@ -146,7 +145,7 @@ export default function DesktopNavbar() {
               <div className="absolute top-20 right-0 w-64 glass-ultra crystal-border rounded-[32px] opacity-0 pointer-events-none group-hover/user:opacity-100 group-hover/user:pointer-events-auto transition-all duration-300 shadow-gold-3d p-4 z-[110]">
                  <div className="space-y-1">
                     <div className="px-4 py-2 mb-2 border-b border-white/10">
-                       <p className="text-[8px] font-bold text-gold-400 uppercase tracking-[0.2em]">Signed in as</p>
+                       <p className="text-[10px] font-bold text-gold-400 uppercase tracking-[0.2em]">Signed in as</p>
                        <p className="text-xs font-bold text-dark-900 dark:text-cream-50 truncate">{user.email}</p>
                     </div>
                     <DropdownLink icon={<LayoutDashboard />} label="Control Panel" href={user.role === 'ADMIN' ? '/admin/dashboard' : (user.role === 'SELLER' ? '/seller/dashboard' : '/customer/dashboard')} />

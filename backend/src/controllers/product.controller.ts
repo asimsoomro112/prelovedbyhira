@@ -19,10 +19,36 @@ export const getProducts = async (req: Request, res: Response, next: NextFunctio
       sortBy: req.query.sortBy as string,
       page: req.query.page ? parseInt(req.query.page as string) : 1,
       limit: req.query.limit ? parseInt(req.query.limit as string) : 12,
+      lastDocId: req.query.lastDocId as string | undefined, // 🛡️ M-02: Cursor for pagination
     };
 
     const result = await ProductService.getProducts(filters);
     res.json(result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getProductsBulk = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { ids } = req.query;
+    if (!ids || !Array.isArray(ids)) {
+      throw new AppError('Product IDs are required as an array', 400);
+    }
+
+    if (ids.length === 0) return res.json([]);
+    if (ids.length > 30) throw new AppError('Cannot fetch more than 30 products at once', 400);
+
+    const snapshot = await db.collection('products')
+      .where('__name__', 'in', ids)
+      .get();
+
+    const products = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.json(products);
   } catch (error) {
     next(error);
   }

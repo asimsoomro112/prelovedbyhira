@@ -7,6 +7,7 @@ const router = Router();
 
 // ─── Public Routes ──────────────────────────
 router.get('/', productController.getProducts);
+router.get('/bulk', productController.getProductsBulk);
 router.post('/visual-search', upload.single('image'), productController.visualSearch);
 router.get('/:id', productController.getProductDetail);
 

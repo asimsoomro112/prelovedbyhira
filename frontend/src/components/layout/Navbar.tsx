@@ -64,7 +64,7 @@ export default function Navbar() {
           {/* Logo & Navigation */}
           <div className="flex items-center gap-12">
             <Link href="/" className="font-display italic text-2xl shrink-0 group">
-              Preloved<span className="font-bold not-italic text-gold-400 group-hover:tracking-wider transition-all duration-500">ByHira</span>
+              Re<span className="font-bold not-italic text-gold-400 group-hover:tracking-wider transition-all duration-500">Vault</span>
             </Link>
 
             <div className="hidden lg:flex items-center gap-8">
@@ -241,7 +241,7 @@ export default function Navbar() {
                 <div className="absolute top-[-20%] left-[-20%] w-[150%] h-[150%] border-[40px] border-gold-400 rounded-full" />
               </div>
               <div className="flex items-center justify-between mb-12">
-                 <Link href="/" className="font-display italic text-2xl">Preloved<span className="text-gold-400">ByHira</span></Link>
+                 <Link href="/" className="font-display italic text-2xl">Re<span className="text-gold-400">Vault</span></Link>
                  <button onClick={() => setIsMobileMenuOpen(false)} className="p-3 bg-gold-400/10 text-gold-400 rounded-2xl"><X className="w-6 h-6" /></button>
               </div>
               

@@ -36,33 +36,48 @@ function CheckoutContent() {
   const [directProduct, setDirectProduct] = useState<any>(null);
   const [loadingProduct, setLoadingProduct] = useState(!!directId);
 
+  const [receipt, setReceipt] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+
+  // ✅ M-10: Revoke object URL to prevent memory leak
+  useEffect(() => {
+    return () => {
+      if (receiptPreview) URL.revokeObjectURL(receiptPreview);
+    };
+  }, [receiptPreview]);
+
+  const [step, setStep] = useState(1);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [checkoutResult, setCheckoutResult] = useState<any>(null);
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
+
   useEffect(() => {
     if (directId) {
       api.get(`/products/${directId}`)
         .then(({ data }) => {
+          // ✅ H-06: Pre-validate stock
+          if (data.product.status === 'SOLD') {
+            toast.error("This masterpiece has already been claimed.");
+            router.push('/products');
+            return;
+          }
           setDirectProduct(data.product);
           setLoadingProduct(false);
         })
         .catch(() => setLoadingProduct(false));
     }
-  }, [directId]);
+  }, [directId, router]);
 
-  const itemsToProcess = (directId && directProduct) 
+  const itemsToProcess: any[] = (directId && directProduct) 
     ? [{ id: "direct", productId: directId, quantity: directQty, product: directProduct }]
     : items;
+
   const [shippingDetails, setShippingDetails] = useState({
     name: user?.name || "",
     phone: "",
     address: "",
     city: ""
   });
-
-  const [receipt, setReceipt] = useState<File | null>(null);
-  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
-  const [step, setStep] = useState(1);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [checkoutResult, setCheckoutResult] = useState<any>(null);
-  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   const BANK_ACCOUNTS = [
     {
@@ -86,8 +101,8 @@ function CheckoutContent() {
 
   const [selectedBank, setSelectedBank] = useState(BANK_ACCOUNTS[0]);
 
-  const subtotal = itemsToProcess.reduce((acc, item) => acc + ((item.product?.sellingPrice || 0) * item.quantity), 0);
-  const uniqueSellers = Array.from(new Set(itemsToProcess.map(i => i.product?.sellerId).filter(Boolean)));
+  const subtotal = itemsToProcess.reduce((acc: number, item: any) => acc + ((item.product?.sellingPrice || 0) * item.quantity), 0);
+  const uniqueSellers = Array.from(new Set(itemsToProcess.map((i: any) => i.product?.sellerId).filter(Boolean)));
   const shippingCost = uniqueSellers.length * 300;
   const total = subtotal + shippingCost;
 
@@ -108,23 +123,24 @@ function CheckoutContent() {
 
     setIsProcessing(true);
     try {
-      // 🚀 Step 1: Create Orders (One per product)
-      const orderPromises = itemsToProcess.map(async (item) => {
+      // 🛡️ DATA FIX C-05: Use atomic bulk checkout — all-or-nothing
+      const bulkItems = itemsToProcess.map((item: any) => {
         const sellerId = item.product?.sellerId;
-        const isFirstForSeller = itemsToProcess.findIndex(i => i.product?.sellerId === sellerId) === itemsToProcess.indexOf(item);
-        const itemShippingCost = isFirstForSeller ? 300 : 0;
-
-        return api.post("/orders/create", {
+        const isFirstForSeller = itemsToProcess.findIndex((i: any) => i.product?.sellerId === sellerId) === itemsToProcess.indexOf(item);
+        return {
           productId: item.productId,
           quantity: item.quantity,
-          shippingAddress: shippingDetails,
-          shippingCost: itemShippingCost,
-          paymentMethod: selectedBank.name
-        });
+          shippingCost: isFirstForSeller ? 300 : 0,
+        };
       });
 
-      const responses = await Promise.all(orderPromises);
-      const allOrders = responses.map(r => r.data.order);
+      const { data: bulkResponse } = await api.post("/orders/create-bulk", {
+        items: bulkItems,
+        shippingAddress: shippingDetails,
+        paymentMethod: selectedBank.name,
+      });
+
+      const allOrders = bulkResponse.orders;
 
       // 🚀 Step 2: Upload Receipt & Run AI Scan
       let aiVerification = null;
@@ -144,7 +160,7 @@ function CheckoutContent() {
 
       setCheckoutResult(aiVerification);
       setStep(4); // Success step
-      toast.success("Order request submitted to Hira Neural Vault.");
+      toast.success("Order request submitted to ReVault Neural Vault.");
       clearCart();
     } catch (error: any) {
       console.error("Checkout Error:", error);
@@ -206,7 +222,7 @@ function CheckoutContent() {
               {isSummaryOpen && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                   <div className="p-4 space-y-3 border-x border-b border-gold-400/10 rounded-b-2xl">
-                    {itemsToProcess.map((item, i) => (
+                    {itemsToProcess.map((item: any, i: number) => (
                       <div key={i} className="flex justify-between items-center text-sm">
                         <span className="text-gray-500 truncate mr-4">{item.product?.title || 'Item'}</span>
                         <span className="font-bold shrink-0">Rs. {((item.product?.sellingPrice || 0) * item.quantity).toLocaleString()}</span>
@@ -365,7 +381,7 @@ function CheckoutContent() {
                       <div className="flex items-center justify-center gap-2 text-emerald-500 font-bold uppercase tracking-[0.2em] text-[10px]">
                         <Sparkles className="w-4 h-4" /> AI Match Successful
                       </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">Hira AI has verified Rs. {total.toLocaleString()} from your receipt.</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-300">ReVault AI has verified Rs. {total.toLocaleString()} from your receipt.</p>
                     </div>
                   ) : (
                     <div className="p-6 bg-amber-500/5 border-2 border-dashed border-amber-500/20 rounded-2xl space-y-3 max-w-lg mx-auto">
@@ -396,7 +412,7 @@ function CheckoutContent() {
                 <h2 className="text-3xl font-accent font-bold">Rs. {total.toLocaleString()}</h2>
               </div>
               <div className="p-6 space-y-4">
-                {itemsToProcess.map((item, i) => (
+                {itemsToProcess.map((item: any, i: number) => (
                   <div key={i} className="flex justify-between items-center text-sm font-medium">
                     <span className="text-gray-500 truncate mr-4">{item.product?.title || 'Unknown Item'}</span>
                     <span className="dark:text-cream-50 font-bold shrink-0">Rs. {((item.product?.sellingPrice || 0) * item.quantity).toLocaleString()}</span>

@@ -41,18 +41,23 @@ export default function ProductListingPage() {
     refetch
   } = useInfiniteQuery({
     queryKey: ['products', filters],
-    queryFn: async ({ pageParam = 1 }) => {
+    queryFn: async ({ pageParam = null }) => {
       const { data } = await api.get('/products', {
         params: {
           ...filters,
-          page: pageParam,
+          lastDocId: pageParam,
           limit: 12
         }
       });
       return data;
     },
-    getNextPageParam: (lastPage) => lastPage.pagination.page < lastPage.pagination.totalPages ? lastPage.pagination.page + 1 : undefined,
-    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      if (lastPage.pagination.page < lastPage.pagination.totalPages) {
+        return lastPage.pagination.lastDocId;
+      }
+      return undefined;
+    },
+    initialPageParam: null,
   });
 
   // Infinite Scroll Logic

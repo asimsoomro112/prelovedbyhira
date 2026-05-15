@@ -50,7 +50,7 @@ app.use('/api/', globalRateLimiter);
 app.get('/api', (_req, res) => {
   res.json({
     status: 'online',
-    message: 'Welcome to the PrelovedByHira Neural API (2026)',
+    message: 'Welcome to the ReVault Neural API (2026)',
     version: '2.0.0-neural',
     documentation: '/api/health'
   });
@@ -59,7 +59,7 @@ app.get('/api', (_req, res) => {
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'ok',
-    name: 'PrelovedByHira API',
+    name: 'ReVault API',
     version: '1.0.0',
     timestamp: new Date().toISOString(),
   });

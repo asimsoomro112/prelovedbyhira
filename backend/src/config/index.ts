@@ -53,6 +53,26 @@ export const config = {
     port: parseInt(process.env.SMTP_PORT || '587', 10),
     user: process.env.SMTP_USER || '',
     pass: process.env.SMTP_PASS || '',
-    from: process.env.EMAIL_FROM || 'PrelovedByHira <noreply@prelovebyhira.com>',
+    from: process.env.EMAIL_FROM || 'ReVault <noreply@revault.com>',
   },
 };
+
+// 🛡️ SECURITY FIX M-04: Fatal validation for production environment
+// Prevents the app from starting with known default secrets
+if (config.nodeEnv === 'production') {
+  const INSECURE_DEFAULTS = ['default-access-secret', 'default-refresh-secret'];
+
+  if (INSECURE_DEFAULTS.includes(config.jwt.accessSecret)) {
+    throw new Error('❌ FATAL: JWT_ACCESS_SECRET is not set or is using the insecure default. Set a strong secret in your environment variables.');
+  }
+  if (INSECURE_DEFAULTS.includes(config.jwt.refreshSecret)) {
+    throw new Error('❌ FATAL: JWT_REFRESH_SECRET is not set or is using the insecure default. Set a strong secret in your environment variables.');
+  }
+  if (!config.cloudinary.cloudName || !config.cloudinary.apiKey) {
+    console.warn('⚠️ WARNING: Cloudinary is not configured. Image uploads will fail.');
+  }
+  if (!config.stripe.secretKey) {
+    console.warn('⚠️ WARNING: Stripe is not configured. Card payments will be unavailable.');
+  }
+}
+

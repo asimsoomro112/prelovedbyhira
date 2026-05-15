@@ -15,20 +15,22 @@ export default function CartPage() {
     queryKey: ['cart-products', items.map(i => i.productId)],
     queryFn: async () => {
       if (items.length === 0) return [];
-      const responses = await Promise.all(items.map(item => api.get(`/products/${item.productId}`)));
-      // The API returns { product, related }, we only need the product in the cart
-      return responses.map(r => r.data.product);
+      const ids = items.map(item => item.productId);
+      const { data } = await api.get('/products/bulk', { 
+        params: { ids } 
+      });
+      return data;
     },
     enabled: items.length > 0
   });
 
-  const subtotal = products?.reduce((acc, product) => {
+  const subtotal = products?.reduce((acc: number, product: any) => {
     const item = items.find(i => i.productId === product.id);
     return acc + (product.sellingPrice * (item?.quantity || 0));
   }, 0) || 0;
 
   // 🚚 Shipping Logic: Rs. 300 per unique seller
-  const uniqueSellers = products ? Array.from(new Set(products.map(p => p.sellerId))) : [];
+  const uniqueSellers = products ? Array.from(new Set(products.map((p: any) => p.sellerId))) : [];
   const shippingCost = uniqueSellers.length * 300;
   const total = subtotal + shippingCost;
 
@@ -63,7 +65,7 @@ export default function CartPage() {
                    </Link>
                 </motion.div>
               ) : (
-                products?.map((product) => {
+                products?.map((product: any) => {
                   const item = items.find(i => i.productId === product.id);
                   return (
                     <motion.div 

@@ -58,7 +58,7 @@ export const getWishlist = async (req: AuthRequest, res: Response, next: NextFun
       return {
         id: pDoc.id,
         ...pData,
-        seller: { user: { name: sDoc.exists ? sDoc.data()?.name : "Preloved Member" } }
+        seller: { user: { name: sDoc.exists ? sDoc.data()?.name : "ReVault Member" } }
       };
     }));
 

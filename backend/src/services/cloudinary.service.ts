@@ -9,7 +9,7 @@ cloudinary.config({
 
 export const uploadImage = async (
   filePath: string,
-  folder: string = 'prelovebyhira'
+  folder: string = 'revault'
 ): Promise<{ url: string; publicId: string }> => {
   const result = await cloudinary.uploader.upload(filePath, {
     folder,
@@ -28,7 +28,7 @@ export const uploadImage = async (
 
 export const uploadMultipleImages = async (
   filePaths: string[],
-  folder: string = 'prelovebyhira'
+  folder: string = 'revault'
 ): Promise<{ url: string; publicId: string }[]> => {
   const uploads = filePaths.map((path) => uploadImage(path, folder));
   return Promise.all(uploads);

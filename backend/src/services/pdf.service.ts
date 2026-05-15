@@ -12,7 +12,7 @@ export class PDFService {
       doc.on('error', reject);
 
       // --- Header ---
-      doc.fontSize(20).text('PrelovedByHira', { align: 'center' });
+      doc.fontSize(20).text('ReVault', { align: 'center' });
       doc.fontSize(10).text('Official Order Receipt', { align: 'center' });
       doc.moveDown();
       doc.moveTo(50, doc.y).lineTo(550, doc.y).stroke();
@@ -44,7 +44,7 @@ export class PDFService {
 
       // --- Footer ---
       doc.moveDown(5);
-      doc.fontSize(10).fillColor('grey').text('Thank you for shopping with PrelovedByHira!', { align: 'center' });
+      doc.fontSize(10).fillColor('grey').text('Thank you for shopping with ReVault!', { align: 'center' });
 
       doc.end();
     });

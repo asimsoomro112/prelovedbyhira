@@ -1,6 +1,6 @@
-# PrelovedByHira Marketplace 👗✨ (2026 Edition)
+# ReVault Marketplace 👗✨ (2026 Edition)
 
-Welcome to **PrelovedByHira**, Pakistan's elite 2026-standard luxury marketplace. This platform is now powered by a **Serverless Cloud Architecture** (Firebase + Firestore + Cloudinary), featuring AI identity verification and neural visual search.
+Welcome to **ReVault**, Pakistan's elite 2026-standard luxury marketplace. This platform is now powered by a **Serverless Cloud Architecture** (Firebase + Firestore + Cloudinary), featuring AI identity verification and neural visual search.
 
 ## 🚀 2026 Elite Features
 
