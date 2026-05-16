@@ -242,7 +242,7 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
           handleLogout={handleLogout}
           router={router}
         />
-      {/* ── MAIN CONTENT AREA ───────────────────────────────────────────── */}
+      </aside>
       <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative">
 
         {/* Background orbs — Hidden on mobile for performance optimization */}
