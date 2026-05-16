@@ -36,10 +36,10 @@ export const createPromotion = async (req: AuthRequest, res: Response, next: Nex
 export const getSellerPromotions = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const snapshot = await db.collection('promotions').where('sellerId', '==', req.user!.id).get();
-    const promotions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const promotions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as { id: string; createdAt?: string; [key: string]: any }));
     
     // Sort manually since we might not have a composite index
-    promotions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    promotions.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
     
     res.json(promotions);
   } catch (error) {
@@ -49,7 +49,7 @@ export const getSellerPromotions = async (req: AuthRequest, res: Response, next:
 
 export const deletePromotion = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { id } = req.params;
+    const id = req.params.id as string;
     const docRef = db.collection('promotions').doc(id);
     const doc = await docRef.get();
     

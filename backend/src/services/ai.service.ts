@@ -1,19 +1,17 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import axios from 'axios';
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export class AIService {
   /**
-   * Scans a CNIC/ID document and extracts key information using Google Gemini Pro Vision.
+   * Scans a CNIC/ID document and extracts key information using Google Gemini Vision.
    */
   static async scanIdentityDocument(imageUrl: string) {
     try {
       console.log(`[Neural Link] Fetching document from vault for scanning...`);
       const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
       const imageData = Buffer.from(response.data).toString('base64');
-
-      const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       
       const prompt = `You are the ReVault AI Verification Agent. 
       Analyze this identification document and extract:
@@ -29,17 +27,25 @@ export class AIService {
         "confidence": 0.95
       }`;
 
-      const result = await model.generateContent([
-        prompt,
-        {
-          inlineData: {
-            data: imageData,
-            mimeType: "image/jpeg"
-          }
-        }
-      ]);
+      const result = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: imageData,
+                },
+              },
+            ],
+          },
+        ],
+      });
 
-      const text = result.response.text();
+      const text = result.text || '';
       // Robust JSON extraction
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json|```/gi, "").trim();
@@ -67,7 +73,6 @@ export class AIService {
    * Analyzes an uploaded image to find similar luxury products using Gemini.
    */
   static async performVisualSearch(imageUrl: string) {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
     console.log(`[Gemini Search] Analyzing visual intent for image: ${imageUrl}`);
     
     return {
@@ -96,7 +101,6 @@ export class AIService {
     for (const modelName of modelsToTry) {
       try {
         console.log(`📡 Attempting Neural Link with model: ${modelName}...`);
-        const model = genAI.getGenerativeModel({ model: modelName });
 
         const systemPrompt = `CRITICAL: YOUR LINGUISTIC IDENTITY IS FIXED. 
           - YOU ONLY KNOW AND USE TWO LANGUAGES: ENGLISH AND ROMAN URDU.
@@ -121,23 +125,26 @@ export class AIService {
           - TONE: Sophisticated, helpful, and premium.`;
 
         const historyItems = (history || []).map((h: any) => ({
-          role: h.role === 'user' ? 'user' : 'model',
+          role: h.role === 'user' ? 'user' as const : 'model' as const,
           parts: [{ text: h.content || "" }]
         }));
 
         if (historyItems.length === 0) {
-          historyItems.push({ role: 'user', parts: [{ text: systemPrompt }] });
-          historyItems.push({ role: 'model', parts: [{ text: "Understood. How may I assist you?" }] });
+          historyItems.push({ role: 'user' as const, parts: [{ text: systemPrompt }] });
+          historyItems.push({ role: 'model' as const, parts: [{ text: "Understood. How may I assist you?" }] });
         }
 
-        const chat = model.startChat({ history: historyItems });
+        const chat = ai.chats.create({
+          model: modelName,
+          history: historyItems,
+        });
         
         // Final Linguistic Guardrail: Re-enforce the Roman Urdu rule in every message
         const promptWithGuardrail = `(REMINDER: USE ONLY ROMAN URDU OR ENGLISH. NO HINDI SCRIPT.) ${message}`;
         
-        const result = await chat.sendMessage(promptWithGuardrail);
+        const result = await chat.sendMessage({ message: promptWithGuardrail });
         console.log(`✅ Neural Link established with ${modelName}`);
-        return result.response.text();
+        return result.text;
       } catch (error: any) {
         console.warn(`⚠️ Model ${modelName} failed: ${error.status || error.message}`);
         lastError = error;
@@ -168,8 +175,6 @@ export class AIService {
         const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
         const imageData = Buffer.from(response.data).toString('base64');
         
-        const model = genAI.getGenerativeModel({ model: modelName });
-        
         const prompt = `
         Analyze this payment receipt screenshot (JazzCash/EasyPaisa/Bank).
         1. Extract the Transaction Amount.
@@ -190,17 +195,25 @@ export class AIService {
         }
       `;
 
-        const result = await model.generateContent([
-          prompt,
-          {
-            inlineData: {
-              data: imageData,
-              mimeType: "image/jpeg"
-            }
-          }
-        ]);
+        const result = await ai.models.generateContent({
+          model: modelName,
+          contents: [
+            {
+              role: "user",
+              parts: [
+                { text: prompt },
+                {
+                  inlineData: {
+                    mimeType: "image/jpeg",
+                    data: imageData,
+                  },
+                },
+              ],
+            },
+          ],
+        });
 
-        const text = result.response.text();
+        const text = result.text || '';
         const jsonMatch = text.match(/\{[\s\S]*\}/);
         const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json|```/gi, "").trim();
         return JSON.parse(cleanJson);
