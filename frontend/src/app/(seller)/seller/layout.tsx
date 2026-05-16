@@ -247,9 +247,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
       {/* ── MAIN CONTENT AREA ───────────────────────────────────────────── */}
       <main className="flex-1 lg:ml-72 flex flex-col min-h-screen relative">
 
-        {/* Background orbs */}
-        <div aria-hidden className="pointer-events-none fixed top-[-15%] right-[-8%] w-[600px] h-[600px] bg-gold-400/4 blur-[130px] rounded-full" />
-        <div aria-hidden className="pointer-events-none fixed bottom-[-10%] left-[10%] w-[400px] h-[400px] bg-gold-400/3 blur-[100px] rounded-full" />
+        {/* Background orbs — Hidden on mobile for performance optimization */}
+        <div aria-hidden className="pointer-events-none fixed top-[-15%] right-[-8%] w-[600px] h-[600px] bg-gold-400/4 blur-[130px] rounded-full hidden lg:block" />
+        <div aria-hidden className="pointer-events-none fixed bottom-[-10%] left-[10%] w-[400px] h-[400px] bg-gold-400/3 blur-[100px] rounded-full hidden lg:block" />
 
         {/* ── CINEMATIC HEADER ──────────────────────────────────────────── */}
         <header
