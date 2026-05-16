@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Playfair_Display, DM_Serif_Display } from "next/font/google";
+import { Inter, Playfair_Display, DM_Serif_Display, Cormorant_Garamond, Jost } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import NavbarWrapper from "@/components/layout/NavbarWrapper";
@@ -23,6 +23,21 @@ const dmSerif = DM_Serif_Display({
   weight: '400',
   subsets: ['latin'],
   variable: '--font-dm-serif',
+  display: 'swap',
+});
+
+const cormorant = Cormorant_Garamond({
+  weight: ['400', '600', '700'],
+  style: ['normal', 'italic'],
+  subsets: ['latin'],
+  variable: '--font-cormorant',
+  display: 'swap',
+});
+
+const jost = Jost({
+  weight: ['300', '400', '500', '600', '700', '900'],
+  subsets: ['latin'],
+  variable: '--font-jost',
   display: 'swap',
 });
 
@@ -137,7 +152,6 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,700&family=Jost:wght@300;400;500;600;700;900&display=swap" rel="stylesheet" />
         <link rel="preconnect" href="https://res.cloudinary.com" />
 
         {/* JSON-LD Structured Data */}
@@ -192,7 +206,7 @@ export default function RootLayout({
         />
       </head>
       <body 
-        className={`${inter.variable} ${playfair.variable} ${dmSerif.variable} font-body bg-mesh text-dark-900 dark:text-cream-50 antialiased selection:bg-gold-400 selection:text-white`}
+        className={`${inter.variable} ${playfair.variable} ${dmSerif.variable} ${cormorant.variable} ${jost.variable} font-body bg-mesh text-dark-900 dark:text-cream-50 antialiased selection:bg-gold-400 selection:text-white`}
         suppressHydrationWarning
       >
         <Providers>

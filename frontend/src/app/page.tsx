@@ -571,6 +571,7 @@ export default function HomePage() {
                     alt="The ReVault Door" 
                     width={1000}
                     height={1000}
+                    priority={true}
                     className="w-full h-full object-contain transition-transform duration-[10s] group-hover:scale-105"
                   />
                 </div>
