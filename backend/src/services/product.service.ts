@@ -20,6 +20,8 @@ export class ProductService {
       size, sortBy, page = 1, limit = 12, lastDocId 
     } = filters;
 
+    console.log(`[ProductService] Fetching products. Sort: ${sortBy}, Filters: ${JSON.stringify({category, condition, size})}`);
+
     // Normalize category filters to match DB Enums (UPPERCASE)
     let normalizedCategory: string | string[] | undefined = category;
     if (category) {
@@ -47,21 +49,26 @@ export class ProductService {
       if (condition) q = q.where('condition', '==', condition);
       if (size) q = q.where('size', '==', size);
       
-      if (level === 'simple') return q; // Filters + Active, but no Price Range/Ordering
-
-      const hasPriceRange = (minPrice !== undefined && minPrice > 0) || (maxPrice !== undefined && maxPrice < 1000000);
-      
-      if (hasPriceRange) {
-        if (minPrice && minPrice > 0) q = q.where('sellingPrice', '>=', minPrice);
-        if (maxPrice && maxPrice < 1000000) q = q.where('sellingPrice', '<=', maxPrice);
-        
-        if (sortBy === 'price_desc') q = q.orderBy('sellingPrice', 'desc');
-        else q = q.orderBy('sellingPrice', 'asc');
-      } else {
+      if (level === 'simple') {
+        // Simple mode: try to apply basic ordering if no complex index is required
         if (sortBy === 'price_asc') q = q.orderBy('sellingPrice', 'asc');
         else if (sortBy === 'price_desc') q = q.orderBy('sellingPrice', 'desc');
         else if (sortBy === 'popular') q = q.orderBy('views', 'desc');
         else q = q.orderBy('createdAt', 'desc');
+        return q;
+      }
+
+      const hasPriceRange = (minPrice !== undefined && minPrice > 0) || (maxPrice !== undefined && maxPrice < 1000000);
+      
+      // Complex mode logic
+      if (sortBy === 'price_asc') q = q.orderBy('sellingPrice', 'asc');
+      else if (sortBy === 'price_desc') q = q.orderBy('sellingPrice', 'desc');
+      else if (sortBy === 'popular') q = q.orderBy('views', 'desc');
+      else q = q.orderBy('createdAt', 'desc');
+
+      if (hasPriceRange) {
+        if (minPrice && minPrice > 0) q = q.where('sellingPrice', '>=', minPrice);
+        if (maxPrice && maxPrice < 1000000) q = q.where('sellingPrice', '<=', maxPrice);
       }
       return q;
     };
@@ -134,11 +141,40 @@ export class ProductService {
       products = await mapProductsWithSellers(snapshot.docs);
     } catch (e1) {
       try {
-        // 2. Fallback: Filtered Query (No Price/Sort)
-        console.warn("[ReVault AI] Complex index missing, falling back to simple filtered search.");
-        const query = buildQuery('simple');
-        const snapshot = await applyPagination(query);
-        products = await mapProductsWithSellers(snapshot.docs);
+        /**
+         * 🛡️ SMALL COLLECTION OPTIMIZATION:
+         * If complex index is missing, fetch ALL active products (up to 500)
+         * and perform GLOBAL sorting + pagination in memory.
+         * This ensures "Real" sorting for the user without requiring manual indices.
+         */
+        console.warn("[ReVault AI] Complex index missing. Using Global In-Memory Sort for accuracy.");
+        
+        // Fetch all active products matching simple filters
+        const baseQuery = buildQuery('simple');
+        const allDocsSnapshot = await baseQuery.limit(500).get();
+        let allProducts = await mapProductsWithSellers(allDocsSnapshot.docs);
+
+        // Global Sort
+        if (sortBy === 'price_asc') allProducts.sort((a: any, b: any) => a.sellingPrice - b.sellingPrice);
+        else if (sortBy === 'price_desc') allProducts.sort((a: any, b: any) => b.sellingPrice - a.sellingPrice);
+        else if (sortBy === 'popular') allProducts.sort((a: any, b: any) => (b.views || 0) - (a.views || 0));
+        else allProducts.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+        // Global Pagination
+        const start = (page - 1) * limit;
+        products = allProducts.slice(start, start + limit);
+        total = allProducts.length;
+
+        return {
+          products,
+          pagination: {
+            total,
+            page,
+            limit,
+            totalPages: Math.ceil(total / limit),
+            lastDocId: products.length > 0 ? products[products.length - 1].id : null,
+          },
+        };
       } catch (e2) {
         // 3. Ultra-Safe: Just show active items
         console.error("[ReVault AI] Critical Query Failure, using ultra-safe mode.");
@@ -146,6 +182,14 @@ export class ProductService {
         const snapshot = await applyPagination(query);
         products = await mapProductsWithSellers(snapshot.docs);
       }
+    }
+
+    // 4. Final Smart Sort Fallback (In-memory sorting if Firestore ordering failed)
+    if (products.length > 0) {
+      if (sortBy === 'price_asc') products.sort((a, b) => a.sellingPrice - b.sellingPrice);
+      else if (sortBy === 'price_desc') products.sort((a, b) => b.sellingPrice - a.sellingPrice);
+      else if (sortBy === 'popular') products.sort((a, b) => (b.views || 0) - (a.views || 0));
+      else if (sortBy === 'newest') products.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
     }
 
     try {

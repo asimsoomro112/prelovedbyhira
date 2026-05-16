@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import axios from 'axios';
 
+// Initialize with a fallback key if not provided
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
 export class AIService {
@@ -9,26 +10,26 @@ export class AIService {
    */
   static async scanIdentityDocument(imageUrl: string) {
     try {
-      console.log(`[Neural Link] Fetching document from vault for scanning...`);
+      console.log(`[Neural Link] Fetching document for scanning: ${imageUrl}`);
       const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
       const imageData = Buffer.from(response.data).toString('base64');
       
-      const prompt = `You are the ReVault AI Verification Agent. 
-      Analyze this identification document and extract:
+      const prompt = `Analyze this identification document and extract:
       1. Full Name
       2. ID Number (CNIC/Identity Number)
       3. Address (if present)
       
       Return ONLY a JSON object in this format:
       {
-        "fullName": "Extracted Name",
-        "cnicNumber": "Extracted ID Number",
-        "address": "Extracted Address",
+        "fullName": "Name",
+        "cnicNumber": "ID Number",
+        "address": "Address",
         "confidence": 0.95
       }`;
 
+      // Use gemini-1.5-flash for reliability and speed
       const result = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-1.5-flash",
         contents: [
           {
             role: "user",
@@ -46,13 +47,10 @@ export class AIService {
       });
 
       const text = result.text || '';
-      // Robust JSON extraction
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json|```/gi, "").trim();
       
-      if (!cleanJson) throw new Error("AI returned an empty response");
       const extractedData = JSON.parse(cleanJson);
-
       console.log(`[ReVault AI] Neural Scan Complete for: ${extractedData.fullName}`);
       
       return { extractedData };
@@ -70,16 +68,55 @@ export class AIService {
   }
 
   /**
-   * Analyzes an uploaded image to find similar luxury products using Gemini.
+   * Analyzes an uploaded image to detect category and features for similarity search.
    */
   static async performVisualSearch(imageUrl: string) {
-    console.log(`[Gemini Search] Analyzing visual intent for image: ${imageUrl}`);
-    
-    return {
-      suggestedTags: ["Velvet", "Maroon", "Bridal", "Hand-worked"],
-      detectedCategory: "Shadi Wear",
-      confidence: 0.94
-    };
+    try {
+      console.log(`[Gemini Search] Analyzing visual intent for image: ${imageUrl}`);
+      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      const imageData = Buffer.from(response.data).toString('base64');
+
+      const prompt = `Identify this luxury item. Return detected category, brand (if visible), and descriptive tags.
+      Categories must be one of: SHADI-WEAR, BRIDAL, KURTAS, SHOES, BAGS, WATCHES.
+      
+      Return ONLY a JSON object:
+      {
+        "detectedCategory": "CATEGORY",
+        "brand": "string",
+        "suggestedTags": ["tag1", "tag2"],
+        "confidence": 0.9
+      }`;
+
+      const result = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: imageData,
+                },
+              },
+            ],
+          },
+        ],
+      });
+
+      const text = result.text || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json|```/gi, "").trim();
+      return JSON.parse(cleanJson);
+    } catch (error) {
+      console.error("Visual Search Error:", error);
+      return {
+        suggestedTags: [],
+        detectedCategory: "SHADI-WEAR",
+        confidence: 0.5
+      };
+    }
   }
 
   /**
@@ -87,12 +124,10 @@ export class AIService {
    * Supercharged with Real-time Store Context & Luxury Fashion Intelligence
    */
   static async getChatResponse(message: string, history: any[]) {
+    // Correct models list
     const modelsToTry = [
-      "gemini-2.5-flash",
-      "gemini-3-flash-preview",
-      "gemini-2.5-flash-lite",
-      "gemini-2.0-flash",
       "gemini-1.5-flash",
+      "gemini-2.0-flash-exp",
       "gemini-1.5-pro"
     ];
 
@@ -104,25 +139,14 @@ export class AIService {
 
         const systemPrompt = `CRITICAL: YOUR LINGUISTIC IDENTITY IS FIXED. 
           - YOU ONLY KNOW AND USE TWO LANGUAGES: ENGLISH AND ROMAN URDU.
-          - IF ASKED WHAT LANGUAGES YOU SPEAK, ONLY MENTION ENGLISH AND ROMAN URDU.
-          - NEVER MENTION HINDI, ARABIC, OR ANY OTHER LANGUAGE.
-          - NEVER USE HINDI SCRIPT (DEVANAGARI).
           - ALWAYS WRITE URDU IN ROMAN SCRIPT (e.g., "Aapka order process ho raha hai").
           
-          YOUR KNOWLEDGE BASE (THE VAULT):
-          - PLATFORM: 'ReVault' - Pakistan's #1 Luxury Preloved Marketplace.
-          - FEE SYSTEM: 20% flat commission on every sale. (Example: If item sells for 10,000 PKR, seller gets 8,000 PKR).
-          - SELLER VERIFICATION: Sellers must upload CNIC/ID and address. ReVault AI (you) verifies them within 24-48 hours.
-          - AUTHENTICITY: 100% Guaranteed. Every item is physically inspected by the ReVault team before shipping to buyer.
-          - CATEGORIES: Shadi Wear, Luxury Handbags (Zara, LV, Gucci), Designer Shoes, Jewelry.
-          - SHIPPING: 3-5 working days across Pakistan.
+          PLATFORM: 'ReVault' - Pakistan's #1 Luxury Preloved Marketplace.
+          FEE: 20% commission.
+          AUTHENTICITY: 100% Guaranteed. Physical inspection by team.
+          SHIPPING: 3-5 working days.
           
-          YOUR MISSION & ACTIONS:
-          - TRACK ORDER: Tell users to visit the 'My Orders' page (/orders) to see their real-time tracking status.
-          - LIST ITEM: Tell sellers to go to the 'Seller Dashboard' (/seller/dashboard) to upload their luxury items.
-          - COMPLAINTS: If a user has an issue, tell them to visit the 'Support' page (/contact) or 'Dispute Center'.
-          - AUTHENTICITY: Remind them that we physically verify every item before they receive it.
-          - TONE: Sophisticated, helpful, and premium.`;
+          TONE: Sophisticated, helpful, and premium.`;
 
         const historyItems = (history || []).map((h: any) => ({
           role: h.role === 'user' ? 'user' as const : 'model' as const,
@@ -139,89 +163,71 @@ export class AIService {
           history: historyItems,
         });
         
-        // Final Linguistic Guardrail: Re-enforce the Roman Urdu rule in every message
-        const promptWithGuardrail = `(REMINDER: USE ONLY ROMAN URDU OR ENGLISH. NO HINDI SCRIPT.) ${message}`;
-        
-        const result = await chat.sendMessage({ message: promptWithGuardrail });
+        const result = await chat.sendMessage({ message });
         console.log(`✅ Neural Link established with ${modelName}`);
         return result.text;
       } catch (error: any) {
         console.warn(`⚠️ Model ${modelName} failed: ${error.status || error.message}`);
         lastError = error;
         
-        // If we get a 429 (Quota Exceeded), it means the model is VALID 
-        // but we are out of free credits. Stop here instead of showing a 404 later.
         if (error.status === 429) {
-          return `I apologize, my neural link to the vault is momentarily unstable. (Error: 429 - Quota Exceeded). Your daily free Gemini credits have been used. Please try again later or upgrade your Vault plan. 💎`;
+          return `Daily neural link quota exceeded. Please try again later. 💎`;
         }
-        
         continue;
       }
     }
 
-    console.error("❌ All Neural Models Failed!");
-    return `I apologize, my neural link to the vault is momentarily unstable. (Error: ${lastError?.status || 'Total Outage'}). Please check your API key in the Vault settings.`;
+    return `Neural link unstable. (Error: ${lastError?.status || 'Connection Failed'}). Please try again.`;
   }
+
   /**
    * Neural Receipt Auditor: Extracts and verifies payment data from bank screenshots.
    */
   static async verifyPaymentReceipt(imageUrl: string, orderDetails: any) {
-    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
-    let lastError = null;
+    try {
+      console.log(`[Neural Link] Scanning receipt for order validation...`);
+      const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
+      const imageData = Buffer.from(response.data).toString('base64');
+      
+      const prompt = `Analyze this payment receipt screenshot.
+      Match Amount with: Rs. ${orderDetails.totalAmount}
+      Match Receiver with: "ReVault" or "Meezan Bank"
+      
+      Return ONLY a JSON object:
+      {
+        "amount": number,
+        "trxId": "string",
+        "receiver": "string",
+        "isMatch": boolean,
+        "reason": "explanation",
+        "confidence": 0.95
+      }`;
 
-    for (const modelName of modelsToTry) {
-      try {
-        console.log(`[Neural Link] Scanning receipt with ${modelName}...`);
-        const response = await axios.get(imageUrl, { responseType: 'arraybuffer' });
-        const imageData = Buffer.from(response.data).toString('base64');
-        
-        const prompt = `
-        Analyze this payment receipt screenshot (JazzCash/EasyPaisa/Bank).
-        1. Extract the Transaction Amount.
-        2. Extract the Transaction ID (TRX ID).
-        3. Extract the Receiver Account/Name.
-        4. Match Amount with: Rs. ${orderDetails}
-        5. Match Receiver with: "ReVault" or "Meezan Bank" or "asimsoomro"
-        
-        Return ONLY a JSON object:
-        {
-          "amount": number,
-          "trxId": "string",
-          "receiver": "string",
-          "isMatch": true, (is amount correct AND receiver matches ReVault platform?)
-          "reason": "short explanation of match/mismatch",
-          "isLikelyFraud": false,
-          "confidence": 0.95
-        }
-      `;
-
-        const result = await ai.models.generateContent({
-          model: modelName,
-          contents: [
-            {
-              role: "user",
-              parts: [
-                { text: prompt },
-                {
-                  inlineData: {
-                    mimeType: "image/jpeg",
-                    data: imageData,
-                  },
+      const result = await ai.models.generateContent({
+        model: "gemini-1.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              { text: prompt },
+              {
+                inlineData: {
+                  mimeType: "image/jpeg",
+                  data: imageData,
                 },
-              ],
-            },
-          ],
-        });
+              },
+            ],
+          },
+        ],
+      });
 
-        const text = result.text || '';
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
-        const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json|```/gi, "").trim();
-        return JSON.parse(cleanJson);
-      } catch (error: any) {
-        console.warn(`[AI Audit] ${modelName} failed, trying next...`);
-        lastError = error;
-      }
+      const text = result.text || '';
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      const cleanJson = jsonMatch ? jsonMatch[0] : text.replace(/```json|```/gi, "").trim();
+      return JSON.parse(cleanJson);
+    } catch (error: any) {
+      console.error("Receipt verification failed:", error);
+      throw error;
     }
-    throw lastError;
   }
 }
