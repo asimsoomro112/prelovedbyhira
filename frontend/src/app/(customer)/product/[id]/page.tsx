@@ -24,6 +24,11 @@ import api from "@/lib/api";
 import { useCartStore } from "@/store/useCartStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { toast } from "sonner";
+import { ProductGallery } from "./components/ProductGallery";
+import { ProductInfo } from "./components/ProductInfo";
+import { ProductActions } from "./components/ProductActions";
+import { SellerProfile } from "./components/SellerProfile";
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HOOKS
@@ -372,431 +377,48 @@ export default function ProductDetailPage() {
           {/* ── MAIN GRID ───────────────────────────────────────────── */}
           <div className="grid lg:grid-cols-[1fr_460px] xl:grid-cols-[1fr_500px] gap-6 lg:gap-10 xl:gap-16 items-start">
 
+
             {/* ── LEFT: IMAGE GALLERY ────────────────────────────── */}
-            <div className="lg:sticky lg:top-28 space-y-3 lg:space-y-5">
-
-              {/* Main image */}
-              <div
-                {...swipe}
-                onClick={() => setLightbox(true)}
-                className="relative aspect-[4/5] lg:aspect-[3/4] rounded-[24px] lg:rounded-[40px] overflow-hidden bg-white dark:bg-dark-900 cursor-zoom-in group border border-black/5 dark:border-white/5 shadow-xl select-none"
-              >
-                <AnimatePresence mode="wait">
-                  <motion.div
-                    key={img}
-                    initial={{ opacity: 0, scale: 1.04 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.45 }}
-                    className="absolute inset-0"
-                  >
-                    <Image
-                      src={product.images?.[img] || "https://images.unsplash.com/photo-1549062572-544a64fb0c56?auto=format&fit=crop&q=80&w=1200"}
-                      alt={product.title} fill priority
-                      sizes="(max-width: 768px) 100vw, 55vw"
-                      className="object-cover group-hover:scale-[1.04] transition-transform duration-1000 ease-out"
-                    />
-                  </motion.div>
-                </AnimatePresence>
-
-                {/* Top-left badges */}
-                <div className="absolute top-4 left-4 flex flex-col gap-2 z-10 pointer-events-none">
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-black/35 backdrop-blur-md text-white rounded-full text-[9px] lg:text-[10px] font-bold uppercase tracking-widest border border-white/10 shadow-lg">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" /> Unique Piece
-                  </span>
-                  <span className="flex items-center gap-1.5 px-3 py-1.5 bg-gold-400/85 backdrop-blur-md text-white rounded-full text-[9px] lg:text-[10px] font-bold uppercase tracking-widest border border-white/10 shadow-lg">
-                    <ShieldCheck className="w-3 h-3" /> Vetted
-                  </span>
-                </div>
-
-                {/* Savings badge — top-right */}
-                {savings > 0 && (
-                  <div className="absolute top-4 right-4 z-10 bg-emerald-500 text-white rounded-2xl px-3 py-2 shadow-lg flex flex-col items-center pointer-events-none">
-                    <span className="text-[7px] font-bold uppercase tracking-widest opacity-80 leading-none">Save</span>
-                    <span className="text-lg font-black leading-tight">{savings}%</span>
-                  </div>
-                )}
-
-                {/* Desktop: wishlist + share on image */}
-                <div className="hidden lg:flex absolute bottom-6 right-6 flex-col gap-3 z-10">
-                  <button
-                    onClick={e => { e.stopPropagation(); onWishlist(); }}
-                    className={`w-12 h-12 rounded-2xl backdrop-blur-xl border flex items-center justify-center transition-all shadow-xl hover:scale-110 ${wishlisted ? "bg-red-500/15 border-red-400/40 text-red-500" : "bg-white/60 dark:bg-black/40 border-white/20 text-dark-900 dark:text-white hover:bg-gold-400 hover:text-white hover:border-transparent"}`}
-                  >
-                    <Heart className={`w-5 h-5 transition-all ${wishlisted ? "fill-red-500" : ""}`} />
-                  </button>
-                  <button
-                    onClick={e => { e.stopPropagation(); onShare(); }}
-                    className="w-12 h-12 rounded-2xl bg-white/60 dark:bg-black/40 backdrop-blur-xl border border-white/20 flex items-center justify-center text-dark-900 dark:text-white hover:bg-gold-400 hover:text-white hover:border-transparent transition-all shadow-xl hover:scale-110"
-                  >
-                    <Share2 className="w-5 h-5" />
-                  </button>
-                </div>
-
-                {/* Zoom hint */}
-                <div className="hidden lg:flex absolute bottom-6 left-6 items-center gap-1.5 px-3 py-1.5 bg-black/30 backdrop-blur-md text-white rounded-full text-[9px] font-bold uppercase tracking-widest pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ZoomIn className="w-3 h-3" /> Click to zoom
-                </div>
-
-                {/* Desktop nav arrows */}
-                {galleryItems.length > 1 && (
-                  <div className="absolute inset-x-5 top-1/2 -translate-y-1/2 hidden lg:flex justify-between z-10 pointer-events-none">
-                    <button
-                      onClick={e => { e.stopPropagation(); setImg(p => p > 0 ? p - 1 : galleryItems.length - 1); }}
-                      className="pointer-events-auto w-12 h-12 rounded-full bg-white/70 dark:bg-black/50 backdrop-blur-xl border border-white/20 flex items-center justify-center text-dark-900 dark:text-white hover:bg-gold-400 hover:text-white hover:border-transparent transition-all shadow-xl hover:scale-110 opacity-0 group-hover:opacity-100"
-                    >
-                      <ChevronLeft className="w-6 h-6" />
-                    </button>
-                    <button
-                      onClick={e => { e.stopPropagation(); setImg(p => p < galleryItems.length - 1 ? p + 1 : 0); }}
-                      className="pointer-events-auto w-12 h-12 rounded-full bg-white/70 dark:bg-black/50 backdrop-blur-xl border border-white/20 flex items-center justify-center text-dark-900 dark:text-white hover:bg-gold-400 hover:text-white hover:border-transparent transition-all shadow-xl hover:scale-110 opacity-0 group-hover:opacity-100"
-                    >
-                      <ChevronRight className="w-6 h-6" />
-                    </button>
-                  </div>
-                )}
-
-                {/* Mobile dots */}
-                {galleryItems.length > 1 && (
-                  <div className="lg:hidden absolute bottom-4 inset-x-0 flex justify-center items-center gap-1.5 z-10">
-                    {galleryItems.map((_: any, i: number) => (
-                      <button key={i} onClick={e => { e.stopPropagation(); setImg(i); }}
-                        className={`transition-all duration-300 rounded-full ${i === img ? "w-6 h-1.5 bg-gold-400" : "w-1.5 h-1.5 bg-white/50"}`}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Thumbnails — desktop */}
-              <div className="hidden lg:flex gap-3">
-                {galleryItems.map((item: any, i: number) => (
-                  <button key={i} onClick={() => setImg(i)}
-                    className={`relative w-[72px] h-24 rounded-2xl overflow-hidden shrink-0 transition-all duration-300 ${i === img ? "ring-2 ring-gold-400 ring-offset-[3px] dark:ring-offset-dark-950 scale-[0.93]" : "opacity-40 hover:opacity-80"}`}
-                  >
-                    {item.type === 'video' ? (
-                       <div className="w-full h-full bg-dark-900 flex flex-col items-center justify-center text-gold-400">
-                          <Upload className="w-6 h-6" />
-                          <span className="text-[8px] font-black uppercase tracking-tighter mt-1">Video</span>
-                       </div>
-                    ) : (
-                      <Image src={item.url} alt="" fill sizes="72px" className="object-cover" />
-                    )}
-                  </button>
-                ))}
-              </div>
-
-              {/* Thumbnails — mobile (compact) */}
-              <div className="lg:hidden flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
-                {product.images?.map((src: string, i: number) => (
-                  <button key={i} onClick={() => setImg(i)}
-                    className={`relative w-14 h-[72px] rounded-xl overflow-hidden shrink-0 transition-all ${i === img ? "ring-2 ring-gold-400 ring-offset-2 dark:ring-offset-dark-950 scale-[0.93]" : "opacity-35 hover:opacity-70"}`}
-                  >
-                    <Image src={src} alt="" fill sizes="56px" className="object-cover" />
-                  </button>
-                ))}
-              </div>
-            </div>
+            <ProductGallery 
+              product={product} 
+              img={img} 
+              setImg={setImg} 
+              galleryItems={galleryItems} 
+              swipe={swipe} 
+              setLightbox={setLightbox} 
+              wishlisted={wishlisted} 
+              onWishlist={onWishlist} 
+              onShare={onShare} 
+              savings={savings} 
+            />
 
             {/* ── RIGHT: PRODUCT INFO ────────────────────────────── */}
             <article className="space-y-5 lg:space-y-6">
 
-              {/* Brand + Status */}
-              <div className="flex items-center justify-between gap-3 flex-wrap">
-                <span className="inline-flex items-center gap-2 px-4 py-2 bg-white dark:bg-dark-900 border border-gold-400/20 rounded-full text-[11px] font-black text-gold-400 uppercase tracking-[0.3em] shadow-sm">
-                  <BadgeCheck className="w-3.5 h-3.5" /> {product.brand}
-                </span>
-                <span className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest ${
-                  (product.stock || 0) > 0 
-                    ? "bg-emerald-500/8 text-emerald-600 dark:text-emerald-400 border-emerald-500/20" 
-                    : "bg-red-500/8 text-red-600 dark:text-red-400 border-red-500/20"
-                }`}>
-                  <span className={`w-1.5 h-1.5 rounded-full animate-pulse ${(product.stock || 0) > 0 ? "bg-emerald-500" : "bg-red-500"}`} />
-                  {(product.stock || 0) > 0 ? `In Stock` : "Out of Stock"}
-                </span>
-              </div>
 
-              {/* Title */}
-              <div>
-                <h1 className="text-[1.6rem] lg:text-[2.4rem] xl:text-5xl font-display font-bold text-dark-900 dark:text-cream-50 leading-[1.1] tracking-tight">
-                  {product.title}
-                </h1>
-
-                {/* Rating + social proof row */}
-                <div className="flex items-center flex-wrap gap-x-4 gap-y-2 mt-3">
-                  <div className="flex items-center gap-1.5">
-                    <div className="flex">
-                      {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-4 h-4 ${i < 5 ? "fill-gold-400 text-gold-400" : "fill-gold-400/20 text-gold-400/20"}`} />
-                      ))}
-                    </div>
-                    <span className="text-sm font-bold text-dark-900 dark:text-cream-50">5.0</span>
-                  </div>
-                  <span className="text-gray-300 dark:text-gray-600 text-sm">·</span>
-                  <span className="flex items-center gap-1.5 text-xs text-gray-500 font-medium">
-                    <Heart className="w-3.5 h-3.5 text-gold-400" />
-                    <span className="font-bold text-dark-900 dark:text-cream-50">12</span> saved this
-                  </span>
-                </div>
-              </div>
-
-              {/* ── PRICE BLOCK ──────────────────────────────────── */}
-              <div className="p-5 lg:p-6 bg-white dark:bg-dark-900 rounded-2xl lg:rounded-3xl border border-gold-400/10 shadow-sm space-y-2">
-                {/* Market value anchor */}
-                <div className="flex items-center gap-2">
-                  <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                  <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
-                    Retail market value: Rs. {mktVal.toLocaleString()}
-                  </span>
-                </div>
-                <div className="flex items-end gap-4 flex-wrap">
-                  <p className="text-4xl lg:text-5xl font-accent font-bold text-gold-400 leading-none">
-                    Rs. {(product.sellingPrice || 0).toLocaleString()}
-                  </p>
-                  <div className="pb-0.5 space-y-1">
-                    <p className="text-lg text-gray-400 line-through decoration-red-400/50 decoration-2 font-medium leading-none">
-                      Rs. {(product.originalPrice || 0).toLocaleString()}
-                    </p>
-                    {savedRs > 0 && (
-                      <div className="flex items-center gap-1.5">
-                        <Zap className="w-3 h-3 text-emerald-500" />
-                        <span className="text-[10px] font-bold text-emerald-500 uppercase tracking-widest">
-                          You save Rs. {savedRs.toLocaleString()} ({savings}% off)
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* ── CONDITION + SIZE ─────────────────────────────── */}
-              <div className="grid grid-cols-2 gap-3">
-                {/* Condition */}
-                <div className="p-4 lg:p-5 bg-white dark:bg-dark-900 rounded-2xl border border-gold-400/10 shadow-sm space-y-2.5">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Star className="w-3 h-3 text-gold-400" /> Condition
-                  </p>
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-black text-dark-900 dark:text-cream-50">{cond.label}</p>
-                      <p className="text-[9px] text-gray-400 font-medium mt-0.5">{cond.desc}</p>
-                    </div>
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 ${
-                      cond.color === "emerald" ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                      : cond.color === "gold" ? "bg-gold-400/10 text-gold-500 border border-gold-400/20"
-                      : "bg-amber-500/10 text-amber-500 border border-amber-500/20"
-                    }`}>
-                      {cond.grade}
-                    </div>
-                  </div>
-                  <div className="h-1.5 bg-gray-100 dark:bg-dark-800 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${cond.pct}%` }}
-                      transition={{ duration: 1.2, ease: "easeOut" }}
-                      className={`h-full rounded-full ${
-                        cond.color === "emerald" ? "bg-emerald-500" : cond.color === "gold" ? "bg-gold-400" : "bg-amber-500"
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                {/* Size */}
-                <div className="p-4 lg:p-5 bg-white dark:bg-dark-900 rounded-2xl border border-gold-400/10 shadow-sm space-y-2.5">
-                  <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Tag className="w-3 h-3 text-gold-400" /> Size · {product.category}
-                  </p>
-                  <div className="flex items-center justify-between gap-2">
-                    <p className={`font-accent font-bold text-dark-900 dark:text-cream-50 truncate ${
-                      (product.size || "").length > 6 ? "text-xl lg:text-2xl" : "text-3xl lg:text-4xl"
-                    }`}>
-                      {product.size || "M"}
-                    </p>
-                    <div className="text-right shrink-0">
-                      <p className="text-[9px] text-gray-400 font-medium">International</p>
-                      <p className="text-[9px] text-gold-400 font-bold mt-0.5">Size Guide →</p>
-                    </div>
-                  </div>
-                  {product.color && (
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded-full border border-gray-200 dark:border-gray-700 bg-gray-200" style={{ background: product.color?.toLowerCase() }} />
-                      <span className="text-[10px] text-gray-500 font-medium">{product.color}</span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* ── QUANTITY SELECTOR ─────────────────────────────── */}
-              {(product.stock || 0) > 1 && (
-                <div className="flex items-center justify-between p-4 bg-white dark:bg-dark-900 rounded-2xl border border-gold-400/10 shadow-sm">
-                  <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Select Quantity</span>
-                  <div className="flex items-center gap-6">
-                    <button 
-                      onClick={() => setQty(Math.max(1, qty - 1))}
-                      className="w-10 h-10 rounded-xl border border-gold-400/20 flex items-center justify-center text-gold-400 hover:bg-gold-400/5 active:scale-90 transition-all"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="text-xl font-accent font-bold w-4 text-center">{qty}</span>
-                    <button 
-                      onClick={() => setQty(Math.min(product.stock || 1, qty + 1))}
-                      className="w-10 h-10 rounded-xl border border-gold-400/20 flex items-center justify-center text-gold-400 hover:bg-gold-400/5 active:scale-90 transition-all"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* ── ACTION BUTTONS ───────────────────────────────── */}
-              <div ref={actionsRef} className="space-y-3">
-                {/* Primary CTA */}
-                <motion.div animate={pulsed ? { scale: [1, 1.015, 1] } : {}} transition={{ repeat: 2, duration: 0.65 }}>
-                  <Link
-                    href={(product.stock || 0) > 0 
-                      ? (isAuthenticated ? `/checkout?id=${product.id}&qty=${qty}` : `/login?redirect=/checkout?id=${product.id}&qty=${qty}`)
-                      : "#"
-                    }
-                    onClick={e => (product.stock || 0) <= 0 && e.preventDefault()}
-                    className={`group relative flex items-center justify-center gap-3 w-full h-[60px] lg:h-[68px] rounded-2xl font-black text-base lg:text-lg shadow-gold transition-all overflow-hidden ${
-                      (product.stock || 0) > 0 
-                        ? "bg-gradient-to-r from-gold-400 via-gold-500 to-gold-600 text-white hover:shadow-[0_8px_30px_rgba(212,175,55,0.5)] hover:scale-[1.01] active:scale-[0.98]" 
-                        : "bg-gray-200 dark:bg-dark-800 text-gray-400 cursor-not-allowed shadow-none"
-                    }`}
-                  >
-                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-                    <Zap className="w-5 h-5 shrink-0" />
-                    {(product.stock || 0) > 0 
-                      ? (isAuthenticated ? "Buy Now — Secure Checkout" : "Login to Checkout")
-                      : "Out of Stock"
-                    }
-                    <Lock className="w-4 h-4 shrink-0 opacity-70" />
-                  </Link>
-                </motion.div>
-
-                {/* Secondary */}
-                <button
-                  onClick={() => onAddBag(qty)}
-                  disabled={(product.stock || 0) <= 0}
-                  className="flex items-center justify-center gap-3 w-full h-[52px] border-2 border-gold-400/35 text-gold-500 dark:text-gold-400 rounded-2xl font-bold text-sm lg:text-base hover:border-gold-400 hover:bg-gold-400/5 active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <ShoppingBag className="w-5 h-5" /> {(product.stock || 0) > 0 ? "Add to Bag" : "Unavailable"}
-                </button>
-
-                {product.videoUrl && (
-                   <button
-                    onClick={openVideoModal}
-                    className="flex items-center justify-center gap-3 w-full h-[52px] bg-white dark:bg-dark-900 border border-gold-400/10 text-dark-900 dark:text-cream-50 rounded-2xl font-bold text-sm hover:border-gold-400/30 transition-all"
-                  >
-                    <Play className="w-4 h-4 fill-gold-400 text-gold-400" /> Watch product film
-                  </button>
-                )}
+              <ProductInfo 
+                product={product} 
+                cond={cond} 
+                mktVal={mktVal} 
+                savedRs={savedRs} 
+                savings={savings} 
+                qty={qty} 
+                setQty={setQty} 
+              />
 
 
+              <ProductActions 
+                product={product} 
+                isAuthenticated={isAuthenticated} 
+                qty={qty} 
+                pulsed={pulsed} 
+                onAddBag={onAddBag} 
+                openVideoModal={openVideoModal} 
+                actionsRef={actionsRef} 
+              />
 
-                {/* Micro trust row */}
-                <div className="flex items-center justify-center gap-5 pt-1 flex-wrap">
-                  {[
-                    { icon: <Timer className="w-3 h-3" />, text: "Ships 24h",  c: "text-emerald-500" },
-                    { icon: <Lock className="w-3 h-3" />,  text: "Escrow",     c: "text-gold-400"    },
-                    { icon: <RotateCcw className="w-3 h-3" />, text: "Returns", c: "text-gray-400"  },
-                  ].map((t, i) => (
-                    <span key={i} className={`flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest ${t.c}`}>
-                      {t.icon} {t.text}
-                    </span>
-                  ))}
-                </div>
-              </div>
 
-              {/* ── AUTHENTICITY CARD ────────────────────────────── */}
-              <div className="p-5 lg:p-6 bg-white dark:bg-dark-900 rounded-2xl lg:rounded-3xl border border-gold-400/10 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center">
-                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                    </div>
-                    <div>
-                      <p className="text-[11px] font-black text-dark-900 dark:text-cream-50 uppercase tracking-wider">Authenticity Checklist</p>
-                      <p className="text-[9px] text-gray-400 font-medium">Inspected by ReVault team</p>
-                    </div>
-                  </div>
-                  <span className="flex items-center gap-1 px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-[9px] font-bold text-emerald-500 uppercase tracking-widest">
-                    <CheckCircle2 className="w-3 h-3" /> Verified
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-2 gap-x-6 gap-y-3">
-                  <AuthItem label="Original Box/Bag"   ok={product.originalPacking} />
-                  <AuthItem label="Invoice Available"  ok={product.invoiceAvailable} />
-                  <AuthItem label="Unaltered/Original" ok={!product.isAltered} />
-                  <AuthItem label="Vetted by ReVault"     ok={true} />
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-gold-400/8 flex items-start gap-2">
-                  <Lock className="w-3.5 h-3.5 text-gold-400 mt-0.5 shrink-0" />
-                  <p className="text-[10px] text-gray-500 font-medium leading-relaxed">
-                    Payment held in <span className="text-gold-400 font-bold">escrow</span> until you confirm receipt. Full refund if item doesn't match listing.
-                  </p>
-                </div>
-              </div>
-
-              {/* ── SELLER CARD ──────────────────────────────────── */}
-              <div className="p-5 lg:p-6 bg-white dark:bg-dark-900 rounded-2xl lg:rounded-3xl border border-gold-400/10 shadow-sm hover:border-gold-400/25 transition-all">
-                <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-4">Sold by</p>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="relative shrink-0">
-                      <div className="relative w-14 h-14 lg:w-16 lg:h-16 rounded-2xl overflow-hidden border-2 border-gold-400/30">
-                        <Image src={product.seller?.user?.avatar || "/placeholder.jpg"} alt={product.seller?.user?.name || "Seller"} fill sizes="64px" className="object-cover" />
-                      </div>
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white dark:border-dark-900" />
-                    </div>
-                    <div>
-                      <p className="font-bold text-dark-900 dark:text-cream-50 flex items-center gap-1.5">
-                        {product.seller?.user?.name || "Exclusive Boutique"}
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                      </p>
-                      <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1.5">
-                        <span className="flex items-center gap-1 text-xs text-gray-500 font-medium">
-                          <Star className="w-3.5 h-3.5 fill-gold-400 text-gold-400" />
-                          {product.seller?.rating || "5.0"}
-                        </span>
-                        <span className="text-gray-300 dark:text-gray-600 text-xs">·</span>
-                        <span className="text-xs text-gray-500 font-medium">
-                          {product.seller?.totalSales || "120"}+ sales
-                        </span>
-
-                      </div>
-                    </div>
-                  </div>
-                  <Link
-                    href={`/shop/${product.sellerId || product.seller?.userId}`}
-                    className="w-10 h-10 rounded-xl bg-gold-400/8 border border-gold-400/20 text-gold-400 flex items-center justify-center hover:bg-gold-400 hover:text-white hover:border-transparent transition-all hover:scale-105"
-                  >
-                    <ArrowRight className="w-5 h-5" />
-                  </Link>
-                </div>
-              </div>
-
-              {/* ── TRUST BADGES ROW ─────────────────────────────── */}
-              <div className="grid grid-cols-4 gap-2.5">
-                {[
-                  { icon: <Lock className="w-4 h-4" />,       label: "Escrow",   sub: "100% Safe",     c: "emerald" },
-                  { icon: <Package className="w-4 h-4" />,    label: "24h Ship", sub: "Nationwide",    c: "gold"    },
-                  { icon: <Award className="w-4 h-4" />,      label: "Vetted",   sub: "By ReVault",       c: "gold"    },
-                  { icon: <RotateCcw className="w-4 h-4" />,  label: "Returns",  sub: "7-day policy",  c: "slate"   },
-                ].map((b, i) => (
-                  <div key={i} className={`flex flex-col items-center gap-1.5 p-3 rounded-xl border text-center ${
-                    b.c === "emerald" ? "bg-emerald-500/5 border-emerald-500/15 text-emerald-500" :
-                    b.c === "gold"    ? "bg-gold-400/5 border-gold-400/15 text-gold-400" :
-                    "bg-gray-100/60 dark:bg-dark-900 border-gray-200/60 dark:border-dark-800 text-gray-500"
-                  }`}>
-                    {b.icon}
-                    <p className="text-[10px] font-black uppercase tracking-wide leading-tight">{b.label}</p>
-                    <p className="text-[9px] opacity-65 font-medium leading-tight">{b.sub}</p>
-                  </div>
-                ))}
-              </div>
+              <SellerProfile product={product} />
             </article>
           </div>
 
