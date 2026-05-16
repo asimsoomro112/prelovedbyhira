@@ -254,9 +254,9 @@ export default function SellerLayout({ children }: { children: React.ReactNode }
         {/* ── CINEMATIC HEADER ──────────────────────────────────────────── */}
         <header
           className={`
-            sticky top-0 z-[99] flex items-center justify-between px-4 lg:px-10
+            fixed top-0 right-0 z-[99] flex items-center justify-between px-4 lg:px-10
             transition-all duration-400
-            w-full
+            w-full lg:w-[calc(100%-288px)]
             ${scrolled
               ? "h-16 lg:h-18 glass-ultra crystal-border border-l-0 border-r-0 border-t-0 shadow-gold-3d"
               : "h-16 lg:h-24 bg-transparent"
