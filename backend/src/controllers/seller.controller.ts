@@ -134,11 +134,8 @@ export const getVerificationStatus = async (req: AuthRequest, res: Response, nex
     const sellerId = req.user!.id;
     let sellerDoc = await db.collection('sellers').doc(sellerId).get();
     
-    // Auto-create seller profile if it's missing but user is a SELLER/ADMIN
+    // Auto-create seller profile if it's missing (Allow CUSTOMERS to initiate verification)
     if (!sellerDoc.exists) {
-      if (req.user!.role !== 'SELLER' && req.user!.role !== 'ADMIN') {
-        throw new AppError('Unauthorized', 403);
-      }
 
       const newSeller = {
         userId: sellerId,

@@ -25,6 +25,7 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import api from "@/lib/api";
 import { toast } from "sonner";
+import { useChatStore } from "@/store/useChatStore";
 
 export default function OrderDetailsPage() {
   const { id } = useParams();
@@ -300,7 +301,10 @@ export default function OrderDetailsPage() {
            <div className="p-8 glass-crystal rounded-[32px] border border-gold-400/10 text-center space-y-4">
               <p className="text-[10px] font-bold text-gold-400 uppercase tracking-widest">Need Assistance?</p>
               <p className="text-xs text-gray-500 leading-relaxed">Our concierge team is ready to help with any order inquiries.</p>
-              <button className="w-full h-12 border border-gold-400/20 rounded-xl text-xs font-bold hover:bg-gold-400/5 transition-all">
+              <button 
+                onClick={() => useChatStore.getState().openChat()}
+                className="w-full h-12 border border-gold-400/20 rounded-xl text-xs font-bold hover:bg-gold-400/5 transition-all"
+              >
                  Live Chat Support
               </button>
            </div>

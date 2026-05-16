@@ -7,13 +7,22 @@ import { uploadToCloudinary } from '../middleware/upload';
 
 const updateProfileSchema = z.object({
   name: z.string().min(2).optional(),
-  phone: z.string().min(10).optional(),
+  phone: z.string().optional(),
   bio: z.string().optional(),
   city: z.string().optional(),
   address: z.string().optional(),
   interests: z.array(z.string()).optional(),
   size: z.array(z.string()).optional(),
   onboardingCompleted: z.boolean().optional(),
+  addresses: z.array(z.object({
+    id: z.string(),
+    label: z.string().optional(), // e.g., 'Home', 'Work'
+    name: z.string(),
+    phone: z.string(),
+    city: z.string(),
+    address: z.string(),
+    isDefault: z.boolean().optional(),
+  })).optional(),
 });
 
 export const getProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {

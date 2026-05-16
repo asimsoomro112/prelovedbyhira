@@ -22,6 +22,7 @@ import aiRoutes from './routes/ai.routes';
 import categoryRoutes from './routes/category.routes';
 import uploadRoutes from './routes/upload.routes';
 import promotionRoutes from './routes/promotion.routes';
+import chatRoutes from './routes/chat.routes';
 
 const app = express();
 
@@ -82,6 +83,7 @@ app.use('/api/ai', aiRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/promotions', promotionRoutes);
+app.use('/api/chat', chatRoutes);
 
 // ─── 404 Handler ────────────────────────────
 app.use((_req, res) => {

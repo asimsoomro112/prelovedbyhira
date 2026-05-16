@@ -9,22 +9,27 @@ import {
   ShieldCheck, 
   AlertCircle,
   X,
-  Package
+  Package,
+  MessageCircle
 } from "lucide-react";
+import { useChatStore } from "@/store/useChatStore";
 import { motion, AnimatePresence } from "framer-motion";
 import api from "@/lib/api";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useRouter } from "next/navigation";
 
 export default function NotificationDropdown() {
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { user } = useAuthStore();
 
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000); // Polling every minute
+    const interval = setInterval(fetchNotifications, 90000); // Polling every 90 seconds (optimized)
     return () => clearInterval(interval);
   }, []);
 
@@ -37,8 +42,9 @@ export default function NotificationDropdown() {
       setNotifications(data);
       setUnreadCount(data.filter((n: any) => !n.isRead).length);
     } catch (error: any) {
-      // Only log non-auth errors to keep console clean
-      if (error.response?.status !== 401) {
+      // Only log genuine server errors, ignore network issues (like server restarts) and 401s
+      const isNetworkError = error.message === 'Network Error' || error.code === 'ERR_NETWORK';
+      if (error.response?.status !== 401 && !isNetworkError) {
         console.error("Failed to fetch notifications:", error.message);
       }
     }
@@ -51,6 +57,20 @@ export default function NotificationDropdown() {
       setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       toast.error("Failed to mark as read");
+    }
+  };
+
+  const handleNotificationClick = (n: any) => {
+    if (!n.isRead) markAsRead(n.id);
+    
+    // Custom actions based on type
+    if (n.type === 'SUPPORT_REPLY' || n.type === 'SUPPORT_MESSAGE') {
+      if (user?.role === 'ADMIN') {
+        router.push('/admin/support');
+      } else {
+        useChatStore.getState().openChat();
+      }
+      setIsOpen(false);
     }
   };
 
@@ -70,6 +90,8 @@ export default function NotificationDropdown() {
       case 'ORDER': return <ShoppingBag className="w-4 h-4" />;
       case 'VERIFICATION': return <ShieldCheck className="w-4 h-4" />;
       case 'DISPUTE': return <AlertCircle className="w-4 h-4" />;
+      case 'SUPPORT_REPLY': 
+      case 'SUPPORT_MESSAGE': return <MessageCircle className="w-4 h-4" />;
       default: return <Bell className="w-4 h-4" />;
     }
   };
@@ -79,6 +101,8 @@ export default function NotificationDropdown() {
       case 'ORDER': return 'bg-blue-500/10 text-blue-500';
       case 'VERIFICATION': return 'bg-emerald-500/10 text-emerald-500';
       case 'DISPUTE': return 'bg-red-500/10 text-red-500';
+      case 'SUPPORT_REPLY':
+      case 'SUPPORT_MESSAGE': return 'bg-amber-500/10 text-amber-500';
       default: return 'bg-gold-400/10 text-gold-400';
     }
   };
@@ -163,7 +187,7 @@ export default function NotificationDropdown() {
                       <button 
                         key={n.id} 
                         className={`w-full p-4 flex gap-4 transition-all hover:bg-gold-400/5 active:bg-gold-400/10 relative text-left min-h-[64px] ${!n.isRead ? 'bg-gold-400/[0.02]' : ''}`}
-                        onClick={() => !n.isRead && markAsRead(n.id)}
+                        onClick={() => handleNotificationClick(n)}
                       >
                         <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getColor(n.type)}`}>
                           {getIcon(n.type)}

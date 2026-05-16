@@ -5,7 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { motion } from "framer-motion";
-import { User, Phone, MapPin, Save, ArrowLeft, Loader2, Home } from "lucide-react";
+import { User, Phone, MapPin, Save, ArrowLeft, Loader2, Home, AlertTriangle, Plus } from "lucide-react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 import { useRouter } from "next/navigation";
@@ -27,7 +27,7 @@ export default function AccountSettingsPage() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
 
-  const { register, handleSubmit, setValue, formState: { errors } } = useForm<ProfileFormValues>({
+  const { register, handleSubmit, setValue, getValues, formState: { errors } } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
   });
 
@@ -54,9 +54,15 @@ export default function AccountSettingsPage() {
     try {
       const { data } = await api.put("/users/profile", values);
 
-      // Update the auth store so navbar and other places reflect the new name
+      // Update the auth store so navbar and other places reflect the new details
       if (user) {
-        setUser({ ...user, name: data.user.name, phone: data.user.phone, city: data.user.city });
+        setUser({ 
+          ...user, 
+          name: data.user.name, 
+          phone: data.user.phone, 
+          city: data.user.city,
+          address: data.user.address 
+        });
       }
 
       toast.success("Profile updated successfully!");
@@ -127,29 +133,71 @@ export default function AccountSettingsPage() {
 
             <div className="space-y-6 bg-cream-50 dark:bg-dark-800/50 p-6 rounded-3xl border border-gold-400/5">
               <h2 className="font-bold text-lg flex items-center gap-2 border-b border-gold-400/10 pb-3">
-                <MapPin className="w-5 h-5 text-gold-400" /> Shipping Information
+                <MapPin className="w-5 h-5 text-gold-400" /> Address Book
               </h2>
 
-              <div className="space-y-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 ml-1 uppercase tracking-wider">City</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-gold-400 transition-colors">
-                      <MapPin className="w-5 h-5" />
+              <div className="space-y-4">
+                {(user as any)?.addresses?.map((addr: any) => (
+                  <div key={addr.id} className="p-4 bg-white dark:bg-dark-900 rounded-2xl border border-gold-400/10 flex justify-between items-start group relative">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-widest bg-gold-400/10 text-gold-400 px-2 py-0.5 rounded-full">
+                          {addr.label || 'Other'}
+                        </span>
+                        {addr.isDefault && <span className="text-[10px] font-bold uppercase tracking-widest bg-emerald-500/10 text-emerald-500 px-2 py-0.5 rounded-full">Default</span>}
+                      </div>
+                      <p className="text-sm font-bold">{addr.name}</p>
+                      <p className="text-xs text-gray-500">{addr.phone}</p>
+                      <p className="text-xs text-gray-500">{addr.address}, {addr.city}</p>
                     </div>
-                    <input {...register("city")} placeholder="e.g. Lahore, Karachi, Islamabad" className="w-full bg-white dark:bg-dark-800 border border-gold-400/20 rounded-2xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-gold-400/50 transition-all text-sm" />
+                    <button 
+                      type="button"
+                      onClick={async () => {
+                        const newAddresses = (user as any).addresses.filter((a: any) => a.id !== addr.id);
+                        try {
+                          const { data } = await api.put("/users/profile", { addresses: newAddresses });
+                          setUser({ ...user, addresses: data.user.addresses } as any);
+                          toast.success("Address removed");
+                        } catch (e) {
+                          toast.error("Failed to remove address");
+                        }
+                      }}
+                      className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
+                ))}
 
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-gray-700 dark:text-gray-300 ml-1 uppercase tracking-wider">Full Address</label>
-                  <div className="relative group">
-                    <div className="absolute left-4 top-3 text-gray-400 group-focus-within:text-gold-400 transition-colors">
-                      <Home className="w-5 h-5" />
-                    </div>
-                    <textarea {...register("address")} rows={3} placeholder="House, Street, Area..." className="w-full bg-white dark:bg-dark-800 border border-gold-400/20 rounded-2xl pl-12 pr-4 py-3 outline-none focus:ring-2 focus:ring-gold-400/50 transition-all text-sm resize-none" />
-                  </div>
-                </div>
+                <button 
+                  type="button"
+                  onClick={() => {
+                    const name = prompt("Receiver Name") || "";
+                    const phone = prompt("Phone Number") || "";
+                    const city = prompt("City") || "";
+                    const address = prompt("Full Address") || "";
+                    const label = prompt("Label (Home, Work, etc.)") || "Home";
+                    
+                    if (!name || !phone || !city || !address) {
+                      toast.error("All fields are required to add a new address");
+                      return;
+                    }
+
+                    const newAddr = {
+                      id: Math.random().toString(36).substr(2, 9),
+                      name, phone, city, address, label,
+                      isDefault: !(user as any)?.addresses?.length
+                    };
+
+                    const currentAddresses = (user as any)?.addresses || [];
+                    const newAddresses = [...currentAddresses, newAddr];
+
+                    onSubmit({ ...getValues(), addresses: newAddresses } as any);
+                  }}
+                  className="w-full py-4 border-2 border-dashed border-gold-400/20 rounded-2xl text-xs font-bold text-gold-400 hover:bg-gold-400/5 transition-all flex items-center justify-center gap-2"
+                >
+                  <Plus className="w-4 h-4" /> Add New Address
+                </button>
               </div>
             </div>
 

@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "./providers";
 import NavbarWrapper from "@/components/layout/NavbarWrapper";
 import AIConcierge from "@/components/shared/AIConcierge";
+import LiveChat from "@/components/shared/LiveChat";
 import { Toaster } from "sonner";
 
 const inter = Inter({ 
@@ -224,6 +225,7 @@ export default function RootLayout({
                    </main>
                 </NavbarWrapper>
                 <AIConcierge />
+                <LiveChat />
              </div>
           </div>
           <Toaster 

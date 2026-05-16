@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { User, Mail, Phone, MapPin, ShieldCheck, ShoppingBag, Heart, Settings, ArrowRight, Camera, Bell, AlertTriangle } from "lucide-react";
+import { User, Mail, Phone, MapPin, ShieldCheck, ShoppingBag, Heart, Settings, ArrowRight, Camera, Bell, AlertTriangle, Home } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -66,7 +66,10 @@ export default function ProfilePage() {
                  <InfoItem icon={<User />} label="Full Name" value={user.name} />
                  <InfoItem icon={<Mail />} label="Email Address" value={user.email} />
                  <InfoItem icon={<Phone />} label="Phone Number" value={user.phone || "Not set"} />
-                 <InfoItem icon={<MapPin />} label="Shipping City" value={(user as any).city || "Not set"} />
+                 <InfoItem icon={<MapPin />} label="City" value={(user as any).city || "Not set"} />
+                 <div className="sm:col-span-2">
+                    <InfoItem icon={<Home />} label="Full Shipping Address" value={(user as any).address || "Not set"} />
+                 </div>
               </div>
            </section>
 
@@ -110,12 +113,12 @@ export default function ProfilePage() {
               <h3 className="text-xl font-display font-bold">{user.role === 'SELLER' ? 'Manage Your Shop' : 'Start Selling Your Wardrobe'}</h3>
               <p className="text-gray-400 text-sm">{user.role === 'SELLER' ? 'Switch to your seller dashboard to manage listings and orders.' : 'Join our elite community of sellers and turn your preloved items into cash.'}</p>
               {user.role === 'SELLER' ? (
-                <Link href="/seller/dashboard" className="w-full py-4 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-pill flex items-center justify-center font-bold text-sm shadow-lg shadow-emerald-500/20">
-                  Switch to Seller Dashboard <ArrowRight className="w-4 h-4 ml-2" />
+                <Link href="/seller/dashboard" className="w-full h-14 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl flex items-center justify-center font-bold text-[13px] whitespace-nowrap shadow-lg shadow-emerald-500/20 px-4 group hover:scale-[1.02] transition-all">
+                  Switch to Seller Dashboard <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Link>
               ) : (
-                <Link href="/seller/verification" className="w-full py-4 bg-gold-400 rounded-pill flex items-center justify-center font-bold text-sm shadow-gold">
-                  Setup Seller Profile <ArrowRight className="w-4 h-4 ml-2" />
+                <Link href="/seller/verification" className="w-full h-14 bg-gold-400 rounded-2xl flex items-center justify-center font-bold text-[13px] shadow-gold group hover:scale-[1.02] transition-all">
+                  Setup Seller Profile <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
                 </Link>
               )}
            </div>

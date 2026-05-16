@@ -21,8 +21,10 @@ import {
   ShieldCheck,
   Zap,
   Star,
-  Users
+  Users,
+  MessageCircle
 } from "lucide-react";
+import { useChatStore } from "@/store/useChatStore";
 
 export function CustomerHome({ user }: { user: any }) {
   const { items: wishlistItems } = useWishlistStore();
@@ -53,20 +55,35 @@ export function CustomerHome({ user }: { user: any }) {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-7xl mx-auto"
         >
-          <h1 className="text-5xl lg:text-7xl font-display font-bold text-dark-900 dark:text-cream-50 leading-tight">
-            Welcome back, <span className="text-gold-400 italic">{user.name.split(' ')[0]}.</span><br />
-            The vault is <span className="relative">
-              curated
-              <motion.span 
-                animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="absolute -top-2 -right-6 w-8 h-8 bg-gold-400/20 blur-xl rounded-full"
-              />
-            </span> for you.
-          </h1>
-          <p className="mt-6 text-xl text-dark-700/60 dark:text-cream-50/60 max-w-2xl">
-            Our AI has analyzed the latest luxury drops. Here is what matches your style profile today.
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+              <h1 className="text-5xl lg:text-7xl font-display font-bold text-dark-900 dark:text-cream-50 leading-tight">
+                Welcome back, <span className="text-gold-400 italic">{user.name.split(' ')[0]}.</span><br />
+                The vault is <span className="relative">
+                  curated
+                  <motion.span 
+                    animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                    className="absolute -top-2 -right-6 w-8 h-8 bg-gold-400/20 blur-xl rounded-full"
+                  />
+                </span> for you.
+              </h1>
+              <p className="mt-6 text-xl text-dark-700/60 dark:text-cream-50/60 max-w-2xl">
+                Our AI has analyzed the latest luxury drops. Here is what matches your style profile today.
+              </p>
+            </div>
+            
+            {user.role === 'SELLER' && (
+              <div className="shrink-0">
+                <button 
+                  onClick={() => (window as any).setHomeMode?.('SELLER')}
+                  className="px-8 py-4 bg-emerald-500 text-white rounded-2xl font-bold shadow-lg flex items-center gap-3 hover:scale-105 active:scale-95 transition-all"
+                >
+                  <LayoutDashboard className="w-5 h-5" /> Switch to Seller Vault
+                </button>
+              </div>
+            )}
+          </div>
         </motion.div>
       </section>
 
@@ -185,17 +202,25 @@ export function SellerHome({ user }: { user: any }) {
                 Live Shop Status
               </div>
               <h1 className="text-5xl lg:text-7xl font-display font-bold text-dark-900 dark:text-cream-50">Boutique <span className="text-gold-400 italic">Overview.</span></h1>
-            </div>
-            <div className="flex flex-wrap gap-4">
-               <Link href="/seller/explore" className="px-8 py-4 bg-dark-900 text-white dark:bg-cream-50 dark:text-dark-900 rounded-2xl font-bold shadow-lg flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
-                  <ShoppingBag className="w-5 h-5" /> Explore Market
-               </Link>
-               <Link href="/seller/add-product" className="px-8 py-4 bg-gold-400 text-white rounded-2xl font-bold shadow-gold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
-                  <Plus className="w-5 h-5" /> List New Item
-               </Link>
-               <Link href="/seller/dashboard" className="px-8 py-4 glass-ultra crystal-border rounded-2xl font-bold flex items-center gap-2 hover:bg-gold-400/5 transition-all">
-                  <LayoutDashboard className="w-5 h-5" /> Full Vault
-               </Link>
+              <div className="flex flex-wrap gap-4 mt-6">
+                {user?.role === 'SELLER' && (
+                  <button 
+                    onClick={() => (window as any).setHomeMode?.('CUSTOMER')}
+                    className="px-8 py-4 bg-blue-600 text-white rounded-2xl font-bold shadow-lg flex items-center gap-2 hover:scale-105 active:scale-95 transition-all"
+                  >
+                    <ShoppingBag className="w-5 h-5" /> Switch to Buying Mode
+                  </button>
+                )}
+                <Link href="/seller/explore" className="px-8 py-4 bg-dark-900 text-white dark:bg-cream-50 dark:text-dark-900 rounded-2xl font-bold shadow-lg flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
+                   <ShoppingBag className="w-5 h-5" /> Explore Market
+                </Link>
+                <Link href="/seller/add-product" className="px-8 py-4 bg-gold-400 text-white rounded-2xl font-bold shadow-gold flex items-center gap-2 hover:scale-105 active:scale-95 transition-all">
+                   <Plus className="w-5 h-5" /> List New Item
+                </Link>
+                <Link href="/seller/dashboard" className="px-8 py-4 glass-ultra crystal-border rounded-2xl font-bold flex items-center gap-2 hover:bg-gold-400/5 transition-all">
+                   <LayoutDashboard className="w-5 h-5" /> Full Vault
+                </Link>
+              </div>
             </div>
           </div>
 
@@ -270,6 +295,14 @@ export function SellerHome({ user }: { user: any }) {
                   <p className="text-sm font-bold uppercase tracking-widest text-gray-400">No pending actions. You're all caught up! ✨</p>
                </div>
              )}
+
+             <ActionItem 
+               icon={<MessageCircle className="text-gold-400" />} 
+               title="Merchant Support" 
+               desc="Need help with your vault or have a dispute?" 
+               action="Open Live Chat" 
+               onClick={() => useChatStore.getState().openChat()}
+             />
           </div>
         </div>
       </section>
@@ -334,7 +367,7 @@ function PulseCard({ label, value, icon, trend, color = "text-dark-900 dark:text
   );
 }
 
-function ActionItem({ icon, title, desc, action, href }: any) {
+function ActionItem({ icon, title, desc, action, href, onClick }: any) {
   return (
     <div className="flex flex-col md:flex-row md:items-center justify-between p-6 glass-crystal crystal-border rounded-3xl gap-6">
        <div className="flex items-center gap-6">
@@ -346,9 +379,15 @@ function ActionItem({ icon, title, desc, action, href }: any) {
              <p className="text-sm text-gray-500">{desc}</p>
           </div>
        </div>
-       <Link href={href} className="px-6 py-3 border border-gold-400/20 rounded-xl text-xs font-bold text-gold-400 hover:bg-gold-400 hover:text-white transition-all text-center">
-          {action}
-       </Link>
+       {href ? (
+         <Link href={href} className="px-6 py-3 border border-gold-400/20 rounded-xl text-xs font-bold text-gold-400 hover:bg-gold-400 hover:text-white transition-all text-center">
+            {action}
+         </Link>
+       ) : (
+         <button onClick={onClick} className="px-6 py-3 border border-gold-400/20 rounded-xl text-xs font-bold text-gold-400 hover:bg-gold-400 hover:text-white transition-all text-center">
+            {action}
+         </button>
+       )}
     </div>
   );
 }

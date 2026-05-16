@@ -10,6 +10,7 @@ import Image from "next/image";
 import { toast } from "sonner";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense } from "react";
+import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 
 export default function CheckoutPage() {
@@ -78,6 +79,31 @@ function CheckoutContent() {
     address: "",
     city: ""
   });
+
+  // 🚀 Fetch full profile to pre-fill address/phone
+  const { data: profile } = useQuery({
+    queryKey: ["checkout-profile-fetch"],
+    queryFn: async () => {
+      const { data } = await api.get("/users/profile");
+      return data.user;
+    },
+    enabled: !!user,
+  });
+
+  // ✅ Auto-populate once profile is loaded
+  useEffect(() => {
+    if (profile) {
+      setShippingDetails({
+        name: profile.name || user?.name || "",
+        phone: profile.phone || "",
+        city: profile.city || "",
+        address: profile.address || ""
+      });
+      if (profile.address && profile.phone) {
+        toast.info("Saved shipping info loaded from your profile.");
+      }
+    }
+  }, [profile, user]);
 
   const BANK_ACCOUNTS = [
     {
@@ -243,6 +269,36 @@ function CheckoutContent() {
               {/* ✅ STEP 1: SHIPPING — all fields stacked vertically on mobile */}
               {step === 1 && (
                 <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+                  
+                  {/* 📍 Saved Addresses Dropdown */}
+                  {profile?.addresses?.length > 0 && (
+                    <div className="space-y-3 p-6 bg-gold-400/5 rounded-[32px] border border-gold-400/10">
+                      <label className="text-[10px] font-bold text-gold-400 uppercase tracking-widest block">Select Saved Address</label>
+                      <select 
+                        className="w-full h-14 px-4 bg-white dark:bg-dark-900 border-2 border-gold-400/20 rounded-2xl outline-none focus:border-gold-400 transition-all font-bold text-sm appearance-none"
+                        style={{ backgroundImage: `url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23C4A35A' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e")`, backgroundPosition: 'right 16px center', backgroundRepeat: 'no-repeat', backgroundSize: '20px' }}
+                        onChange={(e) => {
+                          const addr = profile.addresses.find((a: any) => a.id === e.target.value);
+                          if (addr) {
+                            setShippingDetails({
+                              name: addr.name,
+                              phone: addr.phone,
+                              city: addr.city,
+                              address: addr.address
+                            });
+                            toast.success(`Switched to ${addr.label || 'Saved Address'}`);
+                          }
+                        }}
+                      >
+                        <option value="">Choose from Address Book...</option>
+                        {profile.addresses.map((addr: any) => (
+                          <option key={addr.id} value={addr.id}>{addr.label || 'Address'} - {addr.city}</option>
+                        ))}
+                      </select>
+                      <p className="text-[10px] text-gray-500 italic">Manage your addresses in Profile Settings.</p>
+                    </div>
+                  )}
+
                   <div className="space-y-4">
                     <InputGroup
                       label="Full Name"

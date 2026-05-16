@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 import DesktopNavbar from "./DesktopNavbar";
 import MobileNavbar from "./MobileNavbar";
 import BottomNavbar from "./BottomNavbar";
+import { Footer } from "./Footer";
 
 export default function NavbarWrapper({ children }: { children?: React.ReactNode }) {
   const pathname = usePathname();
@@ -23,8 +24,9 @@ export default function NavbarWrapper({ children }: { children?: React.ReactNode
       <MobileNavbar />
       {/* ✅ Mobile: 72px top (14px header) + 64px bottom (bottom nav)
           Desktop: 100px top (desktop nav) + 40px bottom */}
-      <div className="pt-[72px] lg:pt-[100px] pb-[120px] lg:pb-10">
+      <div className="pt-[72px] lg:pt-[100px]">
         {children}
+        <Footer />
       </div>
       {!shouldHideBottom && <BottomNavbar />}
     </>

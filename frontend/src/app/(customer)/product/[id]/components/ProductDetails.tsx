@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
-import { Info, Truck, Shield, Leaf, Ruler, Package, History, Zap, Star, Lock } from "lucide-react";
+import { Info, Truck, Shield, Leaf, Ruler, Package, History, Zap, Star, Lock, MessageCircle } from "lucide-react";
 import { useState } from "react";
+import { useChatStore } from "@/store/useChatStore";
 
 interface ProductDetailsProps {
   product: any;
@@ -149,6 +150,27 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             </div>
           </motion.div>
         )}
+      </div>
+
+      {/* Support Section */}
+      <div className="pt-8 border-t border-gold-400/10">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 md:p-8 bg-gold-400/5 rounded-[32px] border border-gold-400/10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-gold-400/10 text-gold-500 flex items-center justify-center shrink-0">
+              <MessageCircle size={24} />
+            </div>
+            <div>
+              <h4 className="text-lg font-bold text-dark-900 dark:text-cream-50">Need Assistance?</h4>
+              <p className="text-sm text-gray-500 mt-1">Have questions about this item or need to report an issue?</p>
+            </div>
+          </div>
+          <button 
+            onClick={() => useChatStore.getState().openChat()}
+            className="w-full sm:w-auto px-8 py-4 bg-gold-400 text-white rounded-2xl font-bold hover:scale-105 active:scale-95 transition-transform shadow-gold whitespace-nowrap"
+          >
+            Open Live Chat Support
+          </button>
+        </div>
       </div>
     </div>
   );

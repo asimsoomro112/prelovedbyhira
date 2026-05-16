@@ -192,7 +192,13 @@ function ProductCard({ item, highlight, c }: { item: any; highlight?: boolean; c
     <motion.div ref={ref} initial={{ opacity: 0, scale: 0.94 }} animate={inView ? { opacity: 1, scale: 1 } : {}} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
       <motion.div onMouseMove={onMove} onMouseLeave={onLeave} style={{ rotateX, rotateY, transformPerspective: 1000 }} className={`group relative rounded-[40px] overflow-hidden cursor-pointer ${highlight ? 'h-[560px]' : 'aspect-[3/4]'}`} onClick={() => router.push(`/product/${item.id}`)} whileHover={{ scale: 1.02 }} transition={{ duration: 0.3 }}>
         <div className="absolute inset-0 z-0">
-          <Image src={item.images?.[0] || "https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=600"} alt={item.title} fill className="object-contain transition-transform duration-1000 group-hover:scale-110" />
+          <Image 
+            src={item.images?.[0] || "https://images.unsplash.com/photo-1583394838336-acd977736f90?q=80&w=600"} 
+            alt={item.title} 
+            fill 
+            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            className="object-contain transition-transform duration-1000 group-hover:scale-110" 
+          />
           <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, rgba(6,6,10,0.95) 0%, rgba(6,6,10,0.3) 50%, transparent 100%)' }} />
         </div>
         <button onClick={(e) => { e.stopPropagation(); toggleItem({ id: item.id, title: item.title, brand: item.brand, sellingPrice: item.sellingPrice, images: item.images }); }} className="absolute top-6 right-6 z-20 w-12 h-12 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center transition-all active:scale-90 hover:bg-white/20">
@@ -260,8 +266,33 @@ export default function HomeClient({ trending, arrivals, productCount }: { trend
     { value: "24hr",    label: "Avg Dispatch",       icon: Timer    },
   ];
 
-  if (user?.role === 'SELLER') return <SellerHome user={user} />;
-  if (user?.role === 'CUSTOMER') return <CustomerHome user={user} />;
+  const [viewMode, setViewMode] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (user) {
+      const savedMode = localStorage.getItem(`home_mode_${user.id}`);
+      setViewMode(savedMode || user.role);
+    }
+  }, [user]);
+
+  // Handle global switch requests from PersonalizedHome components
+  useEffect(() => {
+    (window as any).setHomeMode = (mode: string) => {
+      if (user) {
+        localStorage.setItem(`home_mode_${user.id}`, mode);
+        setViewMode(mode);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    return () => { delete (window as any).setHomeMode; };
+  }, [user]);
+
+  if (viewMode === 'SELLER') return <SellerHome user={user} />;
+  if (viewMode === 'CUSTOMER') return <CustomerHome user={user} />;
+  
+  // Fallback to role if viewMode not yet set
+  if (user?.role === 'SELLER' && !viewMode) return <SellerHome user={user} />;
+  if (user?.role === 'CUSTOMER' && !viewMode) return <CustomerHome user={user} />;
 
   return (
     <div style={{ background: c.bg, color: c.text, overflowX: 'hidden', transition: 'background 0.5s, color 0.5s' }} className="min-h-screen selection:bg-amber-400/30">
@@ -445,7 +476,13 @@ export default function HomeClient({ trending, arrivals, productCount }: { trend
             <div className="pt-10"><Link href="/register" className="px-8 py-4 bg-gold-500 text-white rounded-xl font-bold uppercase tracking-widest text-xs hover:scale-105 transition-all shadow-gold inline-flex items-center gap-3">Become a Merchant <ArrowRight size={14} /></Link></div>
           </motion.div>
           <motion.div initial={{ opacity: 0, x: 50 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} className="flex-1 relative h-[500px] w-full rounded-[48px] overflow-hidden glass-ultra border border-white/5">
-             <Image src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&q=80&w=1000" alt="Merchant Dashboard" fill className="object-cover opacity-50" />
+             <Image 
+                src="https://images.unsplash.com/photo-1441984904996-e0b6ba687e04?auto=format&fit=crop&q=80&w=1000" 
+                alt="Merchant Dashboard" 
+                fill 
+                sizes="(max-width: 768px) 100vw, 50vw"
+                className="object-cover opacity-50" 
+              />
              <div className="absolute inset-0 bg-gradient-to-t from-dark-950 to-transparent" />
              <div className="absolute bottom-10 left-10 right-10 p-8 glass-crystal border border-white/10 rounded-3xl">
                 <div className="flex items-center gap-4 mb-4"><div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center"><TrendingUp size={20} className="text-emerald-500" /></div><div><p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Global Status</p><p className="text-sm font-bold text-emerald-500">Shop Health: Elite 99.8%</p></div></div>

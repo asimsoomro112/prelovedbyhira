@@ -49,6 +49,16 @@ export default function AIConcierge() {
     }
   }, [messages, isTyping]);
 
+  // 🛡️ VISIBILITY LOGIC: Hide on Admin and Seller portals
+  const isAdminPath = pathname?.startsWith('/admin');
+  const isSellerPath = pathname?.startsWith('/seller');
+  const isUserAdmin = user?.role === 'ADMIN';
+  const isUserSeller = user?.role === 'SELLER';
+
+  if (isAdminPath || isSellerPath || isUserAdmin || (isUserSeller && isSellerPath)) {
+    return null;
+  }
+
   const handleSend = async () => {
     if (!input.trim()) return;
 

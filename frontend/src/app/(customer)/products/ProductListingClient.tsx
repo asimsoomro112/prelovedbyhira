@@ -1,15 +1,17 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Filter, ChevronDown, X, SlidersHorizontal, Search, CheckCircle2, Check } from "lucide-react";
 import ProductCard from "@/components/shared/ProductCard";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
 
-const CATEGORIES = ['Dresses', 'Bags', 'Shoes', 'Jewelry', 'Tops', 'More'];
+const CATEGORIES = ['Dresses', 'Bags', 'Shoes', 'Jewelry', 'Tops', 'Watches', 'Accessories'];
+const BRANDS = ['Chanel', 'Louis Vuitton', 'Gucci', 'Prada', 'Hermes', 'Rolex', 'Cartier', 'Dior', 'Others'];
 const CONDITIONS = ['NEW', 'EXCELLENT', 'GOOD', 'FAIR', 'POOR'];
-const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
+const SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', 'ONE SIZE'];
 
 const SORT_OPTIONS = [
   { id: 'newest',     label: 'Newest Arrivals' },
@@ -23,12 +25,32 @@ export default function ProductListingClient({ initialProducts, initialPaginatio
   const [isSortOpen, setIsSortOpen] = useState(false);
   const [filters, setFilters] = useState({
     category: [] as string[],
+    brand: [] as string[],
     condition: [] as string[],
     size: [] as string[],
     minPrice: 0,
-    maxPrice: 50000,
-    sortBy: 'newest'
+    maxPrice: 500000,
+    sortBy: 'newest',
+    search: ''
   });
+
+  const searchParams = useSearchParams();
+
+  // Initialize filters from URL params
+  useEffect(() => {
+    const cat = searchParams.get('category');
+    const brand = searchParams.get('brand');
+    const sort = searchParams.get('sortBy');
+    const search = searchParams.get('search');
+
+    setFilters(prev => ({
+      ...prev,
+      category: cat ? [cat] : prev.category,
+      brand: brand ? [brand] : prev.brand,
+      sortBy: sort || prev.sortBy,
+      search: search || prev.search
+    }));
+  }, [searchParams]);
 
   // Lock body scroll when filter is open
   useEffect(() => {
@@ -94,7 +116,7 @@ export default function ProductListingClient({ initialProducts, initialPaginatio
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const toggleFilter = (type: 'category' | 'condition' | 'size', value: string) => {
+  const toggleFilter = (type: 'category' | 'condition' | 'size' | 'brand', value: string) => {
     setFilters(prev => {
       const current = prev[type] as string[];
       const updated = current.includes(value) 
@@ -104,33 +126,61 @@ export default function ProductListingClient({ initialProducts, initialPaginatio
     });
   };
 
-  const activeFilterCount = filters.category.length + filters.condition.length + filters.size.length + (filters.maxPrice < 50000 ? 1 : 0);
+  const activeFilterCount = filters.category.length + filters.brand.length + filters.condition.length + filters.size.length + (filters.maxPrice < 500000 ? 1 : 0) + (filters.search ? 1 : 0);
 
   const clearAllFilters = () => {
-    setFilters({ category: [], condition: [], size: [], minPrice: 0, maxPrice: 50000, sortBy: 'newest' });
+    setFilters({ category: [], brand: [], condition: [], size: [], minPrice: 0, maxPrice: 500000, sortBy: 'newest', search: '' });
   };
 
   const FilterContent = () => (
     <div className="space-y-10">
+      {/* Search Input (Mobile Only) */}
+      <div className="sm:hidden relative">
+        <input 
+          type="text"
+          placeholder="Neural Search..."
+          value={filters.search}
+          onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+          className="w-full h-12 bg-cream-50 dark:bg-dark-900 rounded-2xl pl-12 pr-4 text-sm border border-gold-400/10 focus:border-gold-400 transition-all outline-none"
+        />
+        <Search className="w-5 h-5 text-gray-400 absolute left-4 top-1/2 -translate-y-1/2" />
+      </div>
+
       {/* Categories Section */}
       <FilterSection title="Curated Categories">
-        <div className="grid grid-cols-1 gap-2">
+        <div className="grid grid-cols-1 gap-1">
           {CATEGORIES.map(cat => (
             <button 
               key={cat}
               onClick={() => toggleFilter('category', cat)}
-              className={`group flex items-center justify-between p-3 rounded-2xl transition-all duration-300 ${
+              className={`group flex items-center justify-between p-2.5 rounded-xl transition-all duration-300 ${
                 filters.category.includes(cat) 
-                  ? "bg-gold-400/10 border border-gold-400/20 text-gold-400 shadow-[0_0_20px_rgba(201,162,39,0.05)]" 
-                  : "hover:bg-gray-50 dark:hover:bg-white/5 border border-transparent text-gray-500 dark:text-gray-400"
+                  ? "bg-gold-400/10 text-gold-400" 
+                  : "hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400"
               }`}
             >
-              <span className="text-[13px] font-bold tracking-wide">{cat}</span>
-              <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                filters.category.includes(cat) ? "border-gold-400 bg-gold-400" : "border-gold-400/20 group-hover:border-gold-400/40"
-              }`}>
-                {filters.category.includes(cat) && <Check className="w-3 h-3 text-white stroke-[3]" />}
-              </div>
+              <span className="text-[12px] font-bold tracking-wide">{cat}</span>
+              {filters.category.includes(cat) && <Check className="w-3.5 h-3.5" />}
+            </button>
+          ))}
+        </div>
+      </FilterSection>
+
+      {/* Designer Brands Section */}
+      <FilterSection title="Designer Brands">
+        <div className="grid grid-cols-1 gap-1 max-h-48 overflow-y-auto scrollbar-none px-1">
+          {BRANDS.map(brand => (
+            <button 
+              key={brand}
+              onClick={() => toggleFilter('brand', brand)}
+              className={`group flex items-center justify-between p-2.5 rounded-xl transition-all duration-300 ${
+                filters.brand.includes(brand) 
+                  ? "bg-gold-400/10 text-gold-400" 
+                  : "hover:bg-gray-50 dark:hover:bg-white/5 text-gray-500 dark:text-gray-400"
+              }`}
+            >
+              <span className="text-[12px] font-bold tracking-wide">{brand}</span>
+              {filters.brand.includes(brand) && <Check className="w-3.5 h-3.5" />}
             </button>
           ))}
         </div>
@@ -155,14 +205,14 @@ export default function ProductListingClient({ initialProducts, initialPaginatio
          </div>
       </FilterSection>
 
-      {/* Price Range Section (FIXED) */}
+      {/* Price Range Section */}
       <FilterSection title="Price Ceiling">
         <div className="space-y-6 px-1">
           <div className="relative pt-8">
             {/* Price Label (Floating) */}
             <motion.div 
               initial={false}
-              animate={{ left: `${(filters.maxPrice / 50000) * 100}%` }}
+              animate={{ left: `${(filters.maxPrice / 500000) * 100}%` }}
               className="absolute top-0 -translate-x-1/2 bg-gold-400 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold shadow-xl shadow-gold-400/30 whitespace-nowrap"
             >
               Rs. {filters.maxPrice.toLocaleString()}
@@ -172,8 +222,8 @@ export default function ProductListingClient({ initialProducts, initialPaginatio
             <input 
               type="range" 
               min="0" 
-              max="50000" 
-              step="500"
+              max="500000" 
+              step="1000"
               value={filters.maxPrice}
               onChange={(e) => setFilters(prev => ({ ...prev, maxPrice: parseInt(e.target.value) }))}
               className="w-full h-1.5 bg-gray-200 dark:bg-white/10 rounded-full appearance-none cursor-pointer accent-gold-400" 
@@ -181,8 +231,8 @@ export default function ProductListingClient({ initialProducts, initialPaginatio
             />
           </div>
           <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-gray-400">
-            <span>Entry Level</span>
-            <span className="text-gold-400">Peak Luxury</span>
+            <span>Entry</span>
+            <span className="text-gold-400">Luxury Peak</span>
           </div>
         </div>
       </FilterSection>
@@ -214,11 +264,18 @@ export default function ProductListingClient({ initialProducts, initialPaginatio
       {/* ✅ STICKY FILTER + SORT BAR */}
       <div className="sticky top-[72px] lg:top-[100px] z-40 -mx-4 md:-mx-6 px-4 md:px-6 py-3 bg-white/90 dark:bg-dark-950/90 backdrop-blur-xl border-b border-gold-400/10 mb-4">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-1 min-w-0">
             <h1 className="text-xl md:text-3xl font-display font-bold">Browse</h1>
-            <span className="text-xs text-gray-400 font-medium hidden md:inline">
-              {data?.pages[0]?.pagination?.total || 0} products
-            </span>
+            <div className="hidden sm:flex flex-1 max-w-xs relative ml-4">
+              <input 
+                type="text"
+                placeholder="Neural Search..."
+                value={filters.search}
+                onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
+                className="w-full h-10 bg-cream-50 dark:bg-dark-900 rounded-full pl-10 pr-4 text-xs border border-gold-400/10 focus:border-gold-400 transition-all outline-none"
+              />
+              <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            </div>
           </div>
           
           <div className="flex items-center gap-2">

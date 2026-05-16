@@ -6,8 +6,13 @@ import { AppError } from '../middleware/errorHandler';
 export const getNotifications = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
+    const isAdmin = req.user?.role === 'ADMIN';
+    
+    // Fetch notifications for the user. If admin, also fetch global 'ADMIN' notifications.
+    const userIds = isAdmin ? [userId, 'ADMIN'] : [userId];
+    
     const snapshot = await db.collection('notifications')
-      .where('userId', '==', userId)
+      .where('userId', 'in', userIds)
       .limit(50)
       .get();
 
@@ -36,7 +41,9 @@ export const markAsRead = async (req: AuthRequest, res: Response, next: NextFunc
 
     // 🛡️ SECURITY: Verify ownership before marking as read
     const notifDoc = await db.collection('notifications').doc(id).get();
-    if (!notifDoc.exists || notifDoc.data()?.userId !== userId) {
+    const notifData = notifDoc.data();
+    
+    if (!notifDoc.exists || (notifData?.userId !== userId && notifData?.userId !== 'ADMIN')) {
       throw new AppError('Notification not found', 404);
     }
 
@@ -53,9 +60,12 @@ export const markAsRead = async (req: AuthRequest, res: Response, next: NextFunc
 export const markAllAsRead = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
+    const isAdmin = req.user?.role === 'ADMIN';
+    const userIds = isAdmin ? [userId, 'ADMIN'] : [userId];
+
     const batch = db.batch();
     const snapshot = await db.collection('notifications')
-      .where('userId', '==', userId)
+      .where('userId', 'in', userIds)
       .where('isRead', '==', false)
       .get();
 
@@ -73,8 +83,11 @@ export const markAllAsRead = async (req: AuthRequest, res: Response, next: NextF
 export const getUnreadCount = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
     const userId = req.user!.id;
+    const isAdmin = req.user?.role === 'ADMIN';
+    const userIds = isAdmin ? [userId, 'ADMIN'] : [userId];
+
     const snapshot = await db.collection('notifications')
-      .where('userId', '==', userId)
+      .where('userId', 'in', userIds)
       .where('isRead', '==', false)
       .count()
       .get();

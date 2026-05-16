@@ -37,7 +37,7 @@ export function useNotifications() {
       connectSocket(token);
       const socket = getSocket(token);
       
-      socket?.on("notification", (newNotification) => {
+      socket?.on("notification", (newNotification: any) => {
         queryClient.setQueryData(["notifications"], (old: any) => [newNotification, ...(old || [])]);
         toast(newNotification.title, {
           description: newNotification.message,

@@ -302,3 +302,26 @@ export const sendOrderStatusUpdate = async (email: string, orderId: string, stat
     html: baseTemplate(content),
   });
 };
+
+export const sendSupportReplyEmail = async (email: string, name: string, message: string) => {
+  const content = `
+    <span class="h2">Neural Concierge Support</span>
+    <h1 class="h1" style="font-size: 28px; margin: 20px 0;">New <span>Support Reply.</span></h1>
+    <p class="text">Dear <b>${name}</b>, the ReVault Support Team has responded to your inquiry.</p>
+    
+    <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
+        <p style="color: ${GOLD}; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px;">Latest Response</p>
+        <p style="margin: 0; font-size: 15px; font-style: italic; color: #fff;">"${message}"</p>
+    </div>
+    
+    <p class="text" style="font-size: 14px;">You can view the full conversation and reply from your secure dashboard inbox.</p>
+    <a href="https://revault.pk/login" class="btn">View & Reply in Vault</a>
+  `;
+
+  await transporter.sendMail({
+    from: `"ReVault Concierge" <${process.env.SMTP_USER}>`,
+    to: email,
+    subject: `💬 New Support Message from ReVault Concierge`,
+    html: baseTemplate(content),
+  });
+};

@@ -1,87 +1,107 @@
+"use client";
+
 import Link from 'next/link';
 import Image from 'next/image';
-import { Heart } from 'lucide-react';
+import { Heart, Camera, Globe, Send, MessageCircle, Mail, ArrowUpRight } from 'lucide-react';
+import { useChatStore } from '@/store/useChatStore';
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
+  const openChat = useChatStore(state => state.openChat);
 
   const footerLinks = {
-    shop: [
-      { label: "Dresses", href: '/products?category=DRESSES' },
-      { label: "Handbags", href: '/products?category=BAGS' },
-      { label: 'Traditional', href: '/products?category=DRESSES' },
-      { label: 'Shoes', href: '/products?category=SHOES' },
-      { label: 'New Arrivals', href: '/products?sort=newest' },
+    "The Collection": [
+      { label: "Bags & Handbags", href: '/products?category=Bags' },
+      { label: "Luxury Watches", href: '/products?category=Watches' },
+      { label: 'Jewelry & Accessories', href: '/products?category=Jewelry' },
+      { label: 'Designer Shoes', href: '/products?category=Shoes' },
+      { label: 'New Arrivals', href: '/products?sortBy=newest' },
     ],
-    company: [
-      { label: 'About Us', href: '/about' },
+    "The Ecosystem": [
       { label: 'Sell on ReVault', href: '/seller/dashboard' },
-      { label: 'Order History', href: '/customer/orders' },
-      { label: 'My Profile', href: '/customer/profile' },
-      { label: 'Contact', href: '/contact' },
+      { label: 'Escrow Protection', href: '/legal/escrow' },
+      { label: 'Order Tracking', href: '/customer/dashboard' },
+      { label: 'Sustainability', href: '/customer/dashboard' },
+      { label: 'About ReVault', href: '/legal/privacy' },
     ],
-    support: [
-      { label: 'Help Center', href: '/help' },
-      { label: 'Shipping Info', href: '/shipping' },
-      { label: 'Returns & Refunds', href: '/returns' },
-      { label: 'Privacy Policy', href: '/privacy' },
-      { label: 'Terms of Service', href: '/terms' },
+    "Legal Vault": [
+      { label: 'Terms of Service', href: '/legal/terms' },
+      { label: 'Privacy Policy', href: '/legal/privacy' },
+      { label: 'Escrow Policy', href: '/legal/escrow' },
+      { label: 'Help Center', href: '/legal/escrow' },
     ],
   };
 
   return (
-    <footer className="bg-brand-dark text-white mt-auto">
-      {/* Newsletter */}
-      <div className="border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-            <div>
-              <h3 className="text-xl font-bold" style={{ fontFamily: 'var(--font-heading)' }}>Stay in the Loop ✨</h3>
-              <p className="text-sm text-gray-400 mt-1">Get exclusive deals and new arrivals straight to your inbox.</p>
+    <footer className="bg-black text-white relative overflow-hidden mt-20">
+      {/* Decorative Gradient */}
+      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-gold-400/50 to-transparent" />
+      
+      {/* Newsletter / Stay in the Vault */}
+      <div className="border-b border-white/5 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-10">
+            <div className="max-w-md text-center lg:text-left">
+              <h3 className="text-3xl md:text-4xl font-display font-bold leading-tight">Stay in the <span className="text-gold-400 italic">Vault.</span></h3>
+              <p className="text-gray-500 mt-4 text-sm tracking-wide">Be the first to secure rare preloved treasures and exclusive luxury insights.</p>
             </div>
-            <div className="flex w-full md:w-auto gap-2">
-              <input type="email" inputMode="email" autoComplete="email" placeholder="Enter your email" className="flex-1 md:w-72 px-4 py-3 rounded-lg bg-white/10 border border-white/10 text-base text-white placeholder:text-gray-500 focus:outline-none focus:border-brand-gold transition-colors min-h-[48px]" id="newsletter-email" />
-              <button className="btn-primary whitespace-nowrap min-h-[48px]" id="newsletter-submit">Subscribe</button>
+            <div className="flex w-full lg:w-auto gap-3 glass-ultra p-2 rounded-2xl border border-white/10 group focus-within:border-gold-400 transition-all">
+              <input 
+                type="email" 
+                placeholder="Secure your invite (email)..." 
+                className="bg-transparent border-none outline-none flex-1 px-4 py-3 text-sm placeholder:text-gray-600 focus:ring-0" 
+              />
+              <button className="px-8 py-3 bg-gold-400 text-white rounded-xl font-bold text-sm shadow-gold hover:scale-105 active:scale-95 transition-all">
+                Join Now
+              </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Links */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 md:py-12">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-          {/* Brand */}
-          <div className="col-span-2 md:col-span-1">
-            <Link href="/" className="inline-block h-12 relative">
-               <Image 
-                 src="/logo-navbar.png" 
-                 alt="ReVault" 
-                 width={150} 
-                 height={40} 
-                 className="h-10 w-auto object-contain brightness-200" 
-               />
+      {/* Main Links */}
+      <div className="max-w-7xl mx-auto px-6 py-20 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-16 lg:gap-10">
+          {/* Brand Pillar */}
+          <div className="lg:col-span-2 space-y-8">
+            <Link href="/" className="group flex items-center">
+              <Image 
+                src="/logo-navbar.png" 
+                alt="ReVault Luxury" 
+                width={300} 
+                height={60}
+                className="w-[220px] h-auto object-contain brightness-125 group-hover:scale-[1.02] transition-transform"
+                priority
+              />
             </Link>
-            <p className="text-sm text-gray-300 mt-3 leading-relaxed">Pakistan&apos;s premier preloved fashion marketplace. Sustainable style, affordable luxury.</p>
-            <div className="flex gap-4 mt-6">
-              {['Instagram', 'Facebook', 'Twitter'].map((social) => (
-                <a key={social} href={`https://${social.toLowerCase()}.com`} target="_blank" rel="noopener noreferrer" className="relative group">
-                  <div className="w-12 h-12 rounded-2xl overflow-hidden border border-white/10 group-hover:border-gold-400 transition-all">
-                    <Image src="/logo-social.jpg" alt={social} fill className="object-cover group-hover:scale-110 transition-transform" />
-                  </div>
-                  <span className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-gray-500 opacity-0 group-hover:opacity-100 transition-all uppercase tracking-widest">{social}</span>
-                </a>
-              ))}
+            <p className="text-gray-500 text-sm leading-relaxed max-w-sm">
+              Pakistan's first and most secure luxury preloved marketplace. We leverage AI-verified authentication and secure escrow protection to redefine high-end fashion trade.
+            </p>
+            <div className="flex gap-4">
+              <SocialIcon icon={<Camera size={20} />} href="#" label="Instagram" />
+              <SocialIcon icon={<Send size={20} />} href="#" label="Twitter" />
+              <SocialIcon icon={<Mail size={20} />} href="mailto:care@revault.pk" label="Email" />
+              <button 
+                onClick={openChat}
+                className="w-12 h-12 rounded-2xl bg-gold-400/10 text-gold-400 border border-gold-400/20 flex items-center justify-center hover:bg-gold-400 hover:text-white transition-all shadow-gold-sm"
+                title="Live Support"
+              >
+                <MessageCircle size={20} />
+              </button>
             </div>
           </div>
 
           {/* Link Columns */}
           {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title}>
-              <h4 className="font-semibold text-sm uppercase tracking-wider text-brand-gold mb-4">{title}</h4>
-              <ul className="space-y-2.5">
+            <div key={title} className="space-y-6">
+              <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-gold-400/80">{title}</h4>
+              <ul className="space-y-4">
                 {links.map((link) => (
-                  <li key={link.href}>
-                    <Link href={link.href} className="text-sm text-gray-300 hover:text-gold-400 transition-colors py-1 inline-block min-h-[36px] flex items-center">{link.label}</Link>
+                  <li key={link.label}>
+                    <Link href={link.href} className="text-sm text-gray-400 hover:text-gold-400 transition-all flex items-center gap-2 group">
+                      <span className="group-hover:translate-x-1 transition-transform">{link.label}</span>
+                      <ArrowUpRight className="w-3 h-3 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -90,15 +110,39 @@ export function Footer() {
         </div>
       </div>
 
-      {/* Bottom */}
-      <div className="border-t border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-col sm:flex-row items-center justify-between gap-3" style={{ paddingBottom: 'calc(1.25rem + env(safe-area-inset-bottom))' }}>
-          <p className="text-xs text-gray-500">© {currentYear} ReVault. All rights reserved.</p>
-          <p className="text-xs text-gray-500 flex items-center gap-1">
-            Made with <Heart className="w-3 h-3 text-brand-gold fill-brand-gold" /> in Pakistan
-          </p>
+      {/* Legal Bottom Bar */}
+      <div className="border-t border-white/5 relative z-10">
+        <div className="max-w-7xl mx-auto px-6 py-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2 text-[10px] font-bold text-gray-600 uppercase tracking-widest">
+            <span>© {currentYear} ReVault Global</span>
+            <span className="mx-2">•</span>
+            <span>Neural Trade Protected</span>
+          </div>
+          
+          <div className="flex items-center gap-6">
+            <Image src="/logo-navbar.png" alt="ReVault" width={80} height={20} className="opacity-20 grayscale brightness-200" />
+            <div className="flex items-center gap-1.5 text-xs text-gray-600">
+               Made with <Heart className="w-3 h-3 text-red-500 fill-red-500" /> in Pakistan
+            </div>
+          </div>
         </div>
       </div>
+
+      {/* Decorative mesh background */}
+      <div className="absolute inset-0 bg-[url('/mesh-grid.png')] opacity-[0.03] pointer-events-none" />
     </footer>
+  );
+}
+
+function SocialIcon({ icon, href, label }: any) {
+  return (
+    <Link 
+      href={href} 
+      aria-label={label}
+      className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center text-gray-400 hover:border-gold-400 hover:text-gold-400 transition-all group overflow-hidden relative"
+    >
+      <div className="absolute inset-0 bg-gold-400 opacity-0 group-hover:opacity-10 transition-opacity" />
+      {icon}
+    </Link>
   );
 }

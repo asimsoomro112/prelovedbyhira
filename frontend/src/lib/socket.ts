@@ -1,29 +1,36 @@
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 
-let socket: Socket | null = null;
+// 🛡️ REVAULT 2026: Socket.io disabled in favor of Firestore Listeners
+// We return a mock socket object to prevent connection errors while keeping code compatible.
+
+class MockSocket {
+  connected = false;
+  auth = {};
+  on() { return this; }
+  off() { return this; }
+  emit() { return this; }
+  connect() { 
+    console.log("📡 [ReVault Neural] Socket Connection Suppressed (Using Firestore Listeners)");
+    return this; 
+  }
+  disconnect() { return this; }
+}
+
+let socket: any = null;
 
 export const getSocket = (token?: string) => {
   if (!socket && typeof window !== "undefined") {
-    socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:5000", {
-      auth: { token },
-      transports: ["websocket"],
-      autoConnect: false,
-    });
+    // Return a mock instead of a real io() instance
+    socket = new MockSocket();
   }
   return socket;
 };
 
 export const connectSocket = (token: string) => {
-  const s = getSocket(token);
-  if (s && !s.connected) {
-    s.auth = { token };
-    s.connect();
-  }
+  // Suppressed
+  return;
 };
 
 export const disconnectSocket = () => {
-  if (socket) {
-    socket.disconnect();
-    socket = null;
-  }
+  socket = null;
 };

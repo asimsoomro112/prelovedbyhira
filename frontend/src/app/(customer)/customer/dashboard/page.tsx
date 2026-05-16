@@ -24,9 +24,11 @@ import {
   Zap,
   Tag,
   AlertTriangle,
-  ArrowUpRight
+  ArrowUpRight,
+  MessageCircle
 } from "lucide-react";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useChatStore } from "@/store/useChatStore";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import api from "@/lib/api";
@@ -192,7 +194,7 @@ export default function CustomerDashboard() {
          <div className="lg:col-span-2 space-y-10">
             <div className="flex items-center justify-between">
                <div>
-                  <h2 className="text-3xl font-display font-bold">In-Transit</h2>
+                  <h2 className="text-3xl font-display font-bold text-dark-900 dark:text-white">In-Transit</h2>
                   <p className="text-xs text-gray-500 mt-1">Your items currently moving through the vault.</p>
                </div>
                <Link href="/customer/orders" className="px-6 py-3 bg-cream-50 dark:bg-dark-900 rounded-xl text-[10px] font-bold text-gray-500 hover:text-gold-400 transition-all">
@@ -226,23 +228,24 @@ export default function CustomerDashboard() {
          {/* CURATED FOR YOU / SHOP LINKS */}
          <div className="space-y-12">
             <div className="space-y-8">
-               <h2 className="text-3xl font-display font-bold">Luxury Guide</h2>
+               <h2 className="text-3xl font-display font-bold text-dark-900 dark:text-white">Luxury Guide</h2>
                <div className="grid gap-4">
                   <ShopCategoryLink icon={<Tag />} label="New Arrivals" color="gold" href="/products?sort=newest" />
                   <ShopCategoryLink icon={<Zap />} label="Flash Sales" color="red" href="/products?onSale=true" />
+                  <ShopCategoryLink icon={<MessageCircle />} label="Live Support Chat" color="emerald" onClick={() => useChatStore.getState().openChat()} />
                   <ShopCategoryLink icon={<ShoppingBag />} label="Designer Bags" color="blue" href="/products?category=handbags" />
                   <ShopCategoryLink icon={<Sparkles />} label="Jewelry Vault" color="emerald" href="/products?category=jewelry" />
                </div>
             </div>
 
-            <div className="p-10 glass-ultra crystal-border rounded-[48px] bg-dark-900 text-white space-y-8 overflow-hidden relative">
+            <div className="p-10 glass-ultra crystal-border rounded-[48px] !bg-neutral-950 !text-white space-y-8 overflow-hidden relative">
                <div className="absolute top-0 right-0 w-32 h-32 bg-gold-400/20 blur-[60px] rounded-full" />
                <div className="relative z-10 space-y-6">
                   <div className="space-y-2">
-                     <h3 className="text-2xl font-display font-bold">Invite & Earn</h3>
-                     <p className="text-xs text-gray-400 leading-relaxed">Share the luxury with friends and get Rs. 500 Style Points on their first purchase.</p>
+                     <h3 className="text-2xl font-display font-bold text-white">Invite & Earn</h3>
+                     <p className="text-xs text-gray-300 leading-relaxed">Share the luxury with friends and get Rs. 500 Style Points on their first purchase.</p>
                   </div>
-                  <button className="w-full h-14 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl flex items-center justify-center gap-3 font-bold transition-all">
+                  <button className="w-full h-14 bg-white/10 hover:bg-white/20 border border-white/20 rounded-2xl flex items-center justify-center gap-3 font-bold transition-all text-white">
                      Get Referral Link <ChevronRight className="w-4 h-4" />
                   </button>
                </div>
@@ -269,7 +272,7 @@ function QuickStat({ label, value, icon }: any) {
   );
 }
 
-function ShopCategoryLink({ icon, label, color, href }: any) {
+function ShopCategoryLink({ icon, label, color, href, onClick }: any) {
   const colorMap: any = {
     gold: "text-gold-400 bg-gold-400/10",
     red: "text-red-400 bg-red-400/10",
@@ -277,16 +280,30 @@ function ShopCategoryLink({ icon, label, color, href }: any) {
     emerald: "text-emerald-400 bg-emerald-400/10"
   };
 
-  return (
-    <Link href={href} className="flex items-center justify-between p-6 glass-ultra crystal-border rounded-3xl hover:bg-gold-400/5 transition-all group">
+  const content = (
+    <div className="flex items-center justify-between w-full p-6 glass-ultra crystal-border rounded-3xl hover:bg-gold-400/5 transition-all group text-left">
        <div className="flex items-center gap-4">
           <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${colorMap[color]}`}>
              {icon}
           </div>
-          <span className="text-sm font-bold group-hover:text-gold-400 transition-colors">{label}</span>
+          <span className="text-sm font-bold text-dark-900 dark:text-cream-50 group-hover:text-gold-400 transition-colors">{label}</span>
        </div>
        <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-gold-400 group-hover:translate-x-1 transition-all" />
-    </Link>
+    </div>
+  );
+
+  if (href) {
+    return (
+      <Link href={href}>
+         {content}
+      </Link>
+    );
+  }
+
+  return (
+    <button onClick={onClick} className="w-full">
+       {content}
+    </button>
   );
 }
 
@@ -321,6 +338,7 @@ function OrderCard({ order }: any) {
                   src={order.product?.images?.[0] || 'https://images.unsplash.com/photo-1549062572-544a64fb0c56?auto=format&fit=crop&q=80&w=1000'} 
                   alt="Product" 
                   fill 
+                  sizes="(max-width: 768px) 64px, 96px"
                   className="object-cover group-hover:scale-110 transition-transform duration-500" 
                 />
              </div>
@@ -374,7 +392,10 @@ function OrderCard({ order }: any) {
           }`}>
              {order.paymentRejected ? 'Fix Payment Now' : 'Track Details'}
           </Link>
-          <button className="flex-1 py-5 border-2 border-gold-400 text-gold-400 rounded-3xl font-bold flex items-center justify-center gap-2 hover:bg-gold-400/5 transition-all">
+          <button 
+            onClick={() => useChatStore.getState().openChat()}
+            className="flex-1 py-5 border-2 border-gold-400 text-gold-400 rounded-3xl font-bold flex items-center justify-center gap-2 hover:bg-gold-400/5 transition-all"
+          >
              Contact Support
           </button>
        </div>

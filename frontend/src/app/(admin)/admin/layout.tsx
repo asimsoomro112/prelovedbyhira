@@ -24,12 +24,14 @@ import {
   ShieldAlert,
   Shield,
   Lock,
-  PieChart
+  PieChart,
+  MessageCircle
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
-import ThemeToggle from "@/components/shared/ThemeToggle";
+import ThemeToggle from "@/components/ThemeToggle";
+import NotificationDropdown from "@/components/NotificationDropdown";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -50,6 +52,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { icon: <Store />, label: "Sellers", href: "/admin/sellers" },
     { icon: <ShoppingBag />, label: "Products", href: "/admin/products" },
     { icon: <CreditCard />, label: "Orders", href: "/admin/orders" },
+    { icon: <MessageCircle />, label: "Support Inbox", href: "/admin/support" },
     { icon: <Lock />, label: "Escrow Manager", href: "/admin/escrow" },
     { icon: <MessageSquare />, label: "Disputes", href: "/admin/disputes" },
     { icon: <BarChart3 />, label: "Payouts", href: "/admin/payouts" },
@@ -177,9 +180,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
            
            <div className="flex items-center gap-2 lg:gap-4">
               <ThemeToggle />
-              <button className="hidden sm:flex w-11 h-11 rounded-xl bg-zinc-100 dark:bg-zinc-800/50 border border-zinc-200 dark:border-white/5 items-center justify-center text-gray-400 hover:text-gold-400 transition-all">
-                 <Bell className="w-5 h-5" />
-               </button>
+              <NotificationDropdown />
                <div className="w-px h-8 bg-zinc-200 dark:bg-white/10 mx-2 hidden sm:block" />
                <button className="px-4 lg:px-6 h-11 bg-gold-400 text-white rounded-xl font-bold text-[10px] lg:text-xs shadow-gold hover:scale-105 active:scale-95 transition-all truncate min-h-[44px]">
                   Broadcast
