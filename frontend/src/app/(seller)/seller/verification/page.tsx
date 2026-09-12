@@ -46,17 +46,15 @@ type VerificationValues = z.infer<typeof verificationSchema>;
 
 const pageVariants = {
 	enter: (dir: number) =>
-		({ opacity: 0, x: dir > 0 ? 40 : -40, filter: "blur(6px)" }) as const,
+		({ opacity: 0, x: dir > 0 ? 40 : -40 }) as const,
 	center: {
 		opacity: 1,
 		x: 0,
-		filter: "blur(0px)",
 		transition: { type: "spring", stiffness: 280, damping: 26 } as const,
 	},
 	exit: (dir: number) => ({
 		opacity: 0,
 		x: dir > 0 ? -40 : 40,
-		filter: "blur(6px)",
 		transition: { duration: 0.18 } as const,
 	}),
 };
@@ -67,11 +65,10 @@ const fieldVariants = {
 } as const;
 
 const fieldItem = {
-	hidden: { opacity: 0, y: 12, filter: "blur(4px)" },
+	hidden: { opacity: 0, y: 12 },
 	visible: {
 		opacity: 1,
 		y: 0,
-		filter: "blur(0px)",
 		transition: { type: "spring", stiffness: 260, damping: 22 } as const,
 	},
 } as const;
@@ -130,7 +127,8 @@ export default function SellerVerificationPage() {
 
 	useEffect(() => {
 		checkStatus();
-	}, [checkStatus]);
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, []);
 
 	const handleRetry = () => {
 		setRejectionReason(null);
