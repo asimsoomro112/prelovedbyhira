@@ -35,7 +35,8 @@ export async function getFreshArrivals(limit = 6) {
 			},
 		);
 		if (!res.ok) return { products: [], pagination: { total: 0 } };
-		return res.json();
+		const data = await res.json();
+		return data;
 	} catch (error) {
 		console.warn("Failed to fetch fresh arrivals (backend down during build?)");
 		return { products: [], pagination: { total: 0 } };
@@ -106,7 +107,8 @@ export async function getProducts(
 			next: { revalidate: 60 }, // Quick revalidation for listing
 		});
 		if (!res.ok) return { products: [], pagination: { total: 0 } };
-		return res.json();
+		const data = await res.json();
+		return data;
 	} catch (error) {
 		console.warn("Failed to fetch products (backend down during build?)");
 		return { products: [], pagination: { total: 0 } };
