@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
 
 const api = axios.create({
-	baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api",
+	baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '/api' : 'http://localhost:5000/api'),
 	withCredentials: true,
 });
 
