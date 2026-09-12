@@ -64,12 +64,12 @@ if (config.nodeEnv === "production") {
 	const INSECURE_DEFAULTS = ["default-access-secret", "default-refresh-secret"];
 
 	if (INSECURE_DEFAULTS.includes(config.jwt.accessSecret)) {
-		throw new Error(
+		console.error(
 			"❌ FATAL: JWT_ACCESS_SECRET is not set or is using the insecure default. Set a strong secret in your environment variables.",
 		);
 	}
 	if (INSECURE_DEFAULTS.includes(config.jwt.refreshSecret)) {
-		throw new Error(
+		console.error(
 			"❌ FATAL: JWT_REFRESH_SECRET is not set or is using the insecure default. Set a strong secret in your environment variables.",
 		);
 	}
