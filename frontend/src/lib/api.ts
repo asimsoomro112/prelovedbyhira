@@ -6,8 +6,7 @@ const getBaseUrl = () => {
 		if (window.location.hostname !== 'localhost') return '/api';
 		return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api';
 	}
-	if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api`;
-	return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api';
+	return process.env.NEXT_PUBLIC_BACKEND_URL || "https://revaultx.vercel.app/api";
 };
 
 const api = axios.create({
