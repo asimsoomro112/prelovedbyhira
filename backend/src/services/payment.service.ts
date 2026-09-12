@@ -3,7 +3,7 @@ import Stripe from "stripe";
 import { config } from "../config";
 
 // ─── Stripe ─────────────────────────────────
-const stripe = new Stripe(config.stripe.secretKey);
+const stripe = new Stripe(config.stripe.secretKey || "dummy_sk_test_123456789");
 
 export const createStripePaymentIntent = async (
 	amount: number,

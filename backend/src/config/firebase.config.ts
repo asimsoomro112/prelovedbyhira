@@ -12,9 +12,16 @@ if (serviceAccount.private_key) {
 }
 
 if (!admin.apps.length) {
-	admin.initializeApp({
-		credential: admin.credential.cert(serviceAccount),
-	});
+	if (serviceAccount.project_id) {
+		admin.initializeApp({
+			credential: admin.credential.cert(serviceAccount),
+		});
+	} else {
+		console.warn("No FIREBASE_SERVICE_ACCOUNT provided, initializing with dummy project ID.");
+		admin.initializeApp({
+			projectId: "dummy-project-id",
+		});
+	}
 }
 
 export const db = admin.firestore();
