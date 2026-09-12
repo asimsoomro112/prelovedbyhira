@@ -4,7 +4,12 @@ import admin from "firebase-admin";
 dotenv.config();
 
 const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT || "{}";
-const serviceAccount = JSON.parse(serviceAccountRaw);
+let serviceAccount: any = {};
+try {
+	serviceAccount = JSON.parse(serviceAccountRaw);
+} catch (error) {
+	console.error("Failed to parse FIREBASE_SERVICE_ACCOUNT. Invalid JSON formatting.", error);
+}
 
 // Fix for private key newlines in Vercel environment variables
 if (serviceAccount.private_key) {
