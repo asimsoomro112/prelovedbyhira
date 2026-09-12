@@ -1,134 +1,177 @@
-import { Response, NextFunction } from 'express';
-import { z } from 'zod';
-import { auth, db } from '../config/firebase.config';
-import { AuthRequest } from '../middleware/auth';
-import { AppError } from '../middleware/errorHandler';
-import { uploadToCloudinary } from '../middleware/upload';
+import type { NextFunction, Response } from "express";
+import { z } from "zod";
+import { auth, db } from "../config/firebase.config";
+import type { AuthRequest } from "../middleware/auth";
+import { AppError } from "../middleware/errorHandler";
+import { uploadToCloudinary } from "../middleware/upload";
 
 const updateProfileSchema = z.object({
-  name: z.string().min(2).optional(),
-  phone: z.string().optional(),
-  bio: z.string().optional(),
-  city: z.string().optional(),
-  address: z.string().optional(),
-  interests: z.array(z.string()).optional(),
-  size: z.array(z.string()).optional(),
-  onboardingCompleted: z.boolean().optional(),
-  addresses: z.array(z.object({
-    id: z.string(),
-    label: z.string().optional(), // e.g., 'Home', 'Work'
-    name: z.string(),
-    phone: z.string(),
-    city: z.string(),
-    address: z.string(),
-    isDefault: z.boolean().optional(),
-  })).optional(),
+	name: z.string().min(2).optional(),
+	phone: z.string().optional(),
+	bio: z.string().optional(),
+	city: z.string().optional(),
+	address: z.string().optional(),
+	interests: z.array(z.string()).optional(),
+	size: z.array(z.string()).optional(),
+	onboardingCompleted: z.boolean().optional(),
+	addresses: z
+		.array(
+			z.object({
+				id: z.string(),
+				label: z.string().optional(), // e.g., 'Home', 'Work'
+				name: z.string(),
+				phone: z.string(),
+				city: z.string(),
+				address: z.string(),
+				isDefault: z.boolean().optional(),
+			}),
+		)
+		.optional(),
 });
 
-export const getProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) throw new AppError('Unauthorized', 401);
+export const getProfile = async (
+	req: AuthRequest,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		if (!req.user) throw new AppError("Unauthorized", 401);
 
-    const doc = await db.collection('users').doc(req.user.id).get();
-    if (!doc.exists) throw new AppError('User not found', 404);
+		const doc = await db.collection("users").doc(req.user.id).get();
+		if (!doc.exists) throw new AppError("User not found", 404);
 
-    res.json({ user: { id: doc.id, ...doc.data() } });
-  } catch (error) {
-    next(error);
-  }
+		res.json({ user: { id: doc.id, ...doc.data() } });
+	} catch (error) {
+		next(error);
+	}
 };
 
-export const updateProfile = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) throw new AppError('Unauthorized', 401);
+export const updateProfile = async (
+	req: AuthRequest,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		if (!req.user) throw new AppError("Unauthorized", 401);
 
-    const validatedData = updateProfileSchema.parse(req.body);
-    const avatarResult = req.file ? await uploadToCloudinary(req.file.buffer, 'avatars') : undefined;
-    const avatar = avatarResult?.url;
+		const validatedData = updateProfileSchema.parse(req.body);
+		const avatarResult = req.file
+			? await uploadToCloudinary(req.file.buffer, "avatars")
+			: undefined;
+		const avatar = avatarResult?.url;
 
-    const updateData = {
-      ...validatedData,
-      ...(avatar && { avatar }),
-      updatedAt: new Date().toISOString(),
-    };
+		const updateData = {
+			...validatedData,
+			...(avatar && { avatar }),
+			updatedAt: new Date().toISOString(),
+		};
 
-    await db.collection('users').doc(req.user.id).set(updateData, { merge: true });
+		await db
+			.collection("users")
+			.doc(req.user.id)
+			.set(updateData, { merge: true });
 
-    const updatedDoc = await db.collection('users').doc(req.user.id).get();
-    res.json({ 
-      message: 'Profile updated in vault successfully', 
-      user: { id: updatedDoc.id, ...updatedDoc.data() } 
-    });
-  } catch (error) {
-    next(error);
-  }
+		const updatedDoc = await db.collection("users").doc(req.user.id).get();
+		res.json({
+			message: "Profile updated in vault successfully",
+			user: { id: updatedDoc.id, ...updatedDoc.data() },
+		});
+	} catch (error) {
+		next(error);
+	}
 };
 
-export const getDashboardStats = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) throw new AppError('Unauthorized', 401);
-    const userId = req.user.id;
+export const getDashboardStats = async (
+	req: AuthRequest,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		if (!req.user) throw new AppError("Unauthorized", 401);
+		const userId = req.user.id;
 
-    const [activeOrdersSnap, wishlistSnap, ordersSnap, userDoc] = await Promise.all([
-      db.collection('orders').where('buyerId', '==', userId).where('status', 'in', ['PAID', 'SHIPPED', 'PROCESSING', 'PENDING']).get(),
-      db.collection('wishlists').where('userId', '==', userId).get(),
-      db.collection('orders').where('buyerId', '==', userId).get(),
-      db.collection('users').doc(userId).get()
-    ]);
+		const [activeOrdersSnap, wishlistSnap, ordersSnap, userDoc] =
+			await Promise.all([
+				db
+					.collection("orders")
+					.where("buyerId", "==", userId)
+					.where("status", "in", ["PAID", "SHIPPED", "PROCESSING", "PENDING"])
+					.get(),
+				db.collection("wishlists").where("userId", "==", userId).get(),
+				db.collection("orders").where("buyerId", "==", userId).get(),
+				db.collection("users").doc(userId).get(),
+			]);
 
-    // Fetch product details for active orders
-    const activeOrders = await Promise.all(activeOrdersSnap.docs.map(async (doc) => {
-      const orderData = doc.data();
-      const productDoc = await db.collection('products').doc(orderData.productId).get();
-      return { 
-        id: doc.id, 
-        ...orderData,
-        product: productDoc.exists ? productDoc.data() : { title: "Archived Luxury Item" }
-      };
-    }));
+		// Fetch product details for active orders
+		const activeOrders = await Promise.all(
+			activeOrdersSnap.docs.map(async (doc) => {
+				const orderData = doc.data();
+				const productDoc = await db
+					.collection("products")
+					.doc(orderData.productId)
+					.get();
+				return {
+					id: doc.id,
+					...orderData,
+					product: productDoc.exists
+						? productDoc.data()
+						: { title: "Archived Luxury Item" },
+				};
+			}),
+		);
 
-    const totalSpent = ordersSnap.docs.reduce((acc, doc) => acc + (doc.data().totalPrice || 0), 0);
-    const wishlistCount = wishlistSnap.size;
-    const userData = userDoc.data();
+		const totalSpent = ordersSnap.docs.reduce(
+			(acc, doc) => acc + (doc.data().totalPrice || 0),
+			0,
+		);
+		const wishlistCount = wishlistSnap.size;
+		const userData = userDoc.data();
 
-    res.json({
-      stats: {
-        activeOrdersCount: activeOrders.length,
-        totalSpent,
-        wishlistCount,
-        stylePoints: Math.floor(totalSpent / 500) + (wishlistCount * 10), // Real dynamic calculation
-        memberSince: userData?.createdAt || new Date().toISOString()
-      },
-      activeOrders
-    });
-  } catch (error) {
-    next(error);
-  }
+		res.json({
+			stats: {
+				activeOrdersCount: activeOrders.length,
+				totalSpent,
+				wishlistCount,
+				stylePoints: Math.floor(totalSpent / 500) + wishlistCount * 10, // Real dynamic calculation
+				memberSince: userData?.createdAt || new Date().toISOString(),
+			},
+			activeOrders,
+		});
+	} catch (error) {
+		next(error);
+	}
 };
 
-export const deleteAccount = async (req: AuthRequest, res: Response, next: NextFunction) => {
-  try {
-    if (!req.user) throw new AppError('Unauthorized', 401);
-    const userId = req.user.id;
-    
-    // 🛡️ SECURITY FIX H-05: Soft-delete in Firestore
-    await db.collection('users').doc(userId).update({
-      isActive: false,
-      deletedAt: new Date().toISOString(),
-    });
+export const deleteAccount = async (
+	req: AuthRequest,
+	res: Response,
+	next: NextFunction,
+) => {
+	try {
+		if (!req.user) throw new AppError("Unauthorized", 401);
+		const userId = req.user.id;
 
-    // 🛡️ Disable Firebase Auth account so no new tokens can be issued
-    try {
-      await auth.updateUser(userId, { disabled: true });
-      // Revoke all existing refresh tokens so current sessions are invalidated
-      await auth.revokeRefreshTokens(userId);
-    } catch (authError: any) {
-      console.warn(`[Vault Security] Failed to disable Firebase Auth for ${userId}:`, authError.message);
-      // Don't block the response — Firestore deactivation is already done
-    }
+		// 🛡️ SECURITY FIX H-05: Soft-delete in Firestore
+		await db.collection("users").doc(userId).update({
+			isActive: false,
+			deletedAt: new Date().toISOString(),
+		});
 
-    res.json({ message: 'Account deactivated in vault' });
-  } catch (error) {
-    next(error);
-  }
+		// 🛡️ Disable Firebase Auth account so no new tokens can be issued
+		try {
+			await auth.updateUser(userId, { disabled: true });
+			// Revoke all existing refresh tokens so current sessions are invalidated
+			await auth.revokeRefreshTokens(userId);
+		} catch (authError: any) {
+			console.warn(
+				`[Vault Security] Failed to disable Firebase Auth for ${userId}:`,
+				authError.message,
+			);
+			// Don't block the response — Firestore deactivation is already done
+		}
+
+		res.json({ message: "Account deactivated in vault" });
+	} catch (error) {
+		next(error);
+	}
 };

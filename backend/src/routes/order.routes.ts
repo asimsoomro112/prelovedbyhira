@@ -1,26 +1,39 @@
-import { Router } from 'express';
-import * as orderController from '../controllers/order.controller';
-import { authenticate, authorize } from '../middleware/auth';
+import { Router } from "express";
+import * as orderController from "../controllers/order.controller";
+import { authenticate, authorize } from "../middleware/auth";
 
-import { upload } from '../middleware/upload';
+import { upload } from "../middleware/upload";
 
 const router = Router();
 
 router.use(authenticate);
 
-router.post('/create', orderController.createOrder);
-router.post('/create-bulk', orderController.createBulkOrders); // 🛡️ C-05: Atomic multi-item checkout
-router.post('/payment/callback', orderController.handlePaymentCallback); // Mock callback
+router.post("/create", orderController.createOrder);
+router.post("/create-bulk", orderController.createBulkOrders); // 🛡️ C-05: Atomic multi-item checkout
+router.post("/payment/callback", orderController.handlePaymentCallback); // Mock callback
 
-router.get('/my-orders', orderController.getMyOrders);
-router.get('/seller-orders', orderController.getSellerOrders);
+router.get("/my-orders", orderController.getMyOrders);
+router.get("/seller-orders", orderController.getSellerOrders);
 
-router.put('/:id/ship', orderController.markAsShipped);
-router.put('/:id/confirm-delivery', orderController.confirmDelivery);
-router.post('/:id/submit-proof', upload.single('receiptImage'), orderController.submitPaymentProof);
-router.put('/:id/admin-confirm', authorize('ADMIN'), upload.single('receiptImage'), orderController.adminConfirmPayment);
-router.put('/:id/admin-reject', authorize('ADMIN'), orderController.adminRejectPayment);
-router.get('/:id', orderController.getOrderById);
-router.post('/:id/review', orderController.submitReview);
+router.put("/:id/ship", orderController.markAsShipped);
+router.put("/:id/confirm-delivery", orderController.confirmDelivery);
+router.post(
+	"/:id/submit-proof",
+	upload.single("receiptImage"),
+	orderController.submitPaymentProof,
+);
+router.put(
+	"/:id/admin-confirm",
+	authorize("ADMIN"),
+	upload.single("receiptImage"),
+	orderController.adminConfirmPayment,
+);
+router.put(
+	"/:id/admin-reject",
+	authorize("ADMIN"),
+	orderController.adminRejectPayment,
+);
+router.get("/:id", orderController.getOrderById);
+router.post("/:id/review", orderController.submitReview);
 
 export default router;

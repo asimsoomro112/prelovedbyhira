@@ -1,8 +1,8 @@
-import { transporter } from '../config/mail.config';
+import { transporter } from "../config/mail.config";
 
-const GOLD = '#D4AF37';
-const DARK = '#090909';
-const CREAM = '#FFFDF9';
+const GOLD = "#D4AF37";
+const DARK = "#090909";
+const CREAM = "#FFFDF9";
 
 const baseTemplate = (content: string) => `
 <!DOCTYPE html>
@@ -50,23 +50,23 @@ const baseTemplate = (content: string) => `
 `;
 
 export const sendOTPEmail = async (email: string, otp: string) => {
-  const content = `
+	const content = `
     <span class="h2">Identity Verification</span>
     <p class="text">Welcome to the vault. Use the highly secure 2026 encryption key below to authenticate your access.</p>
     <div class="otp">${otp}</div>
     <p class="text" style="font-size: 12px;">This key expires in 10 minutes. If you did not request this, please report to ReVault AI Concierge immediately.</p>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `🔑 ${otp} is your ReVault Access Key`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `🔑 ${otp} is your ReVault Access Key`,
+		html: baseTemplate(content),
+	});
 };
 
 export const sendWelcomeEmail = async (email: string, name: string) => {
-  const content = `
+	const content = `
     <span class="h2">Vault Access Granted</span>
     <h1 class="h1" style="font-size: 28px; margin: 20px 0;">Welcome, <span>${name}</span></h1>
     <p class="text">Your digital identity has been synchronized with the ReVault Luxury Vault. You now have exclusive access to Pakistan's most curated preloved marketplace.</p>
@@ -81,32 +81,32 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
     <a href="https://revault.pk/products" class="btn">Start Exploring</a>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `🥂 Welcome to the Inner Circle, ${name}`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `🥂 Welcome to the Inner Circle, ${name}`,
+		html: baseTemplate(content),
+	});
 };
 
 export const sendForgotPasswordCode = async (email: string, code: string) => {
-  const content = `
+	const content = `
     <span class="h2">Account Recovery</span>
     <p class="text">We received a request to unlock your vault access. Use the recovery code below to reset your password.</p>
     <div class="otp">${code}</div>
     <p class="text" style="font-size: 12px;">This code is valid for 15 minutes. If you did not initiate this request, your account is still secure, but we recommend monitoring your activity.</p>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `🛡️ ${code} is your Recovery Code`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `🛡️ ${code} is your Recovery Code`,
+		html: baseTemplate(content),
+	});
 };
 
 export const sendOrderConfirmation = async (email: string, orderData: any) => {
-  const content = `
+	const content = `
     <span class="h2">Order Confirmation</span>
     <h1 class="h1" style="font-size: 28px; margin: 20px 0;">Acquisition <span>Secured.</span></h1>
     <p class="text">Dear <b>${orderData.customerName}</b>, your request has been synchronized with the ReVault Neural Vault. Your funds are protected by our Escrow-Secured protocol.</p>
@@ -148,16 +148,16 @@ export const sendOrderConfirmation = async (email: string, orderData: any) => {
     <p style="margin-top: 30px; font-size: 12px; color: rgba(255,255,255,0.3);">Need assistance? Contact our 24/7 Concierge.</p>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `🥂 Confirmation: Your luxury acquisition #ORD-${orderData.id.slice(-8).toUpperCase()} is secured`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `🥂 Confirmation: Your luxury acquisition #ORD-${orderData.id.slice(-8).toUpperCase()} is secured`,
+		html: baseTemplate(content),
+	});
 };
 
 export const sendSellerNotification = async (email: string, orderData: any) => {
-  const content = `
+	const content = `
     <span class="h2">New Sale Alert</span>
     <h1 class="h1" style="font-size: 28px; margin: 20px 0;">Inventory <span>Secured.</span></h1>
     <p class="text">Congratulations! <b>${orderData.customerName}</b> has just purchased your listing. This trade is currently protected by our neural escrow system.</p>
@@ -173,16 +173,20 @@ export const sendSellerNotification = async (email: string, orderData: any) => {
     <a href="https://revault.pk/seller/dashboard" class="btn">Manage My Sales</a>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `💰 Sale Confirmed! You just sold: ${orderData.itemName}`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `💰 Sale Confirmed! You just sold: ${orderData.itemName}`,
+		html: baseTemplate(content),
+	});
 };
 
-export const sendSellerRejectionEmail = async (email: string, name: string, reason: string) => {
-  const content = `
+export const sendSellerRejectionEmail = async (
+	email: string,
+	name: string,
+	reason: string,
+) => {
+	const content = `
     <span class="h2">Verification Update</span>
     <p class="text">Dear <b>${name}</b>, unfortunately your seller verification has been declined.</p>
     <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
@@ -193,32 +197,40 @@ export const sendSellerRejectionEmail = async (email: string, name: string, reas
     <a href="https://revault.pk/seller/verification" class="btn">Re-Apply Now</a>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `Seller Verification Update — ${name}`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `Seller Verification Update — ${name}`,
+		html: baseTemplate(content),
+	});
 };
 
-export const sendVerificationEmail = async (email: string, name: string, token: string) => {
-  const content = `
+export const sendVerificationEmail = async (
+	email: string,
+	name: string,
+	token: string,
+) => {
+	const content = `
     <span class="h2">Verify Your Access</span>
     <p class="text">Welcome to the inner circle, <b>${name}</b>. Please verify your identity to unlock the full potential of our luxury marketplace.</p>
     <a href="https://revault.pk/verify-email/${token}" class="btn">Verify Securely</a>
     <p class="text" style="font-size: 10px; margin-top: 30px;">This link will expire in 24 hours.</p>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `🥂 Welcome to the Vault, ${name}`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `🥂 Welcome to the Vault, ${name}`,
+		html: baseTemplate(content),
+	});
 };
 
-export const sendPaymentRejectedEmail = async (email: string, orderId: string, reason: string) => {
-  const content = `
+export const sendPaymentRejectedEmail = async (
+	email: string,
+	orderId: string,
+	reason: string,
+) => {
+	const content = `
     <span class="h2">Payment Rejected</span>
     <p class="text">Our Neural Audit has identified an issue with your payment proof for order <b>#${orderId.slice(-8).toUpperCase()}</b>.</p>
     <div style="background: rgba(211, 47, 47, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(211, 47, 47, 0.1); margin: 30px 0; text-align: left;">
@@ -229,16 +241,19 @@ export const sendPaymentRejectedEmail = async (email: string, orderId: string, r
     <a href="https://revault.pk/customer/orders" class="btn">Re-upload Proof</a>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `❌ Action Required: Payment Proof Rejected (#${orderId.slice(-8).toUpperCase()})`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `❌ Action Required: Payment Proof Rejected (#${orderId.slice(-8).toUpperCase()})`,
+		html: baseTemplate(content),
+	});
 };
 
-export const sendSellerPaymentConfirmedEmail = async (email: string, orderData: any) => {
-  const content = `
+export const sendSellerPaymentConfirmedEmail = async (
+	email: string,
+	orderData: any,
+) => {
+	const content = `
     <span class="h2">Payment Confirmed — Ready to Ship</span>
     <p class="text">Great news! ReVault Vault has verified the customer's payment for your listing. You are now authorized to ship the item.</p>
     <div style="background: rgba(212, 175, 55, 0.05); padding: 30px; border-radius: 24px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 30px 0; text-align: left;">
@@ -251,33 +266,41 @@ export const sendSellerPaymentConfirmedEmail = async (email: string, orderData: 
     <a href="https://revault.pk/seller/dashboard" class="btn">View Shipping Address</a>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `📦 Payment Confirmed: Ship your item (#ORD-${orderData.id.slice(-8).toUpperCase()})`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `📦 Payment Confirmed: Ship your item (#ORD-${orderData.id.slice(-8).toUpperCase()})`,
+		html: baseTemplate(content),
+	});
 };
 
-export const sendOrderStatusUpdate = async (email: string, orderId: string, status: string, itemName: string) => {
-  const statusIcons: any = {
-    'PAID': '💰',
-    'SHIPPED': '🚚',
-    'DELIVERED': '🎁',
-    'CONFIRMED': '🤝'
-  };
+export const sendOrderStatusUpdate = async (
+	email: string,
+	orderId: string,
+	status: string,
+	itemName: string,
+) => {
+	const statusIcons: any = {
+		PAID: "💰",
+		SHIPPED: "🚚",
+		DELIVERED: "🎁",
+		CONFIRMED: "🤝",
+	};
 
-  const statusMessages: any = {
-    'PAID': 'Your payment has been successfully synchronized and verified. The merchant has been notified to prepare your shipment.',
-    'SHIPPED': 'Exciting news! Your luxury acquisition is now in transit. You can track its progress via your dashboard.',
-    'DELIVERED': 'Mission accomplished. Your item has arrived. Please inspect it carefully before confirming delivery in the vault.',
-    'CONFIRMED': 'Trade finalized. The escrow funds have been released. Thank you for choosing ReVault.'
-  };
+	const statusMessages: any = {
+		PAID: "Your payment has been successfully synchronized and verified. The merchant has been notified to prepare your shipment.",
+		SHIPPED:
+			"Exciting news! Your luxury acquisition is now in transit. You can track its progress via your dashboard.",
+		DELIVERED:
+			"Mission accomplished. Your item has arrived. Please inspect it carefully before confirming delivery in the vault.",
+		CONFIRMED:
+			"Trade finalized. The escrow funds have been released. Thank you for choosing ReVault.",
+	};
 
-  const content = `
+	const content = `
     <span class="h2">Trade Status Update</span>
-    <h1 class="h1" style="font-size: 32px; margin: 20px 0;">Order ${status} <span>${statusIcons[status] || ''}</span></h1>
-    <p class="text">${statusMessages[status] || 'Your order status has been updated in the neural vault.'}</p>
+    <h1 class="h1" style="font-size: 32px; margin: 20px 0;">Order ${status} <span>${statusIcons[status] || ""}</span></h1>
+    <p class="text">${statusMessages[status] || "Your order status has been updated in the neural vault."}</p>
     
     <div style="background: rgba(212, 175, 55, 0.05); padding: 40px; border-radius: 32px; border: 1px solid rgba(212, 175, 55, 0.1); margin: 40px 0; text-align: left;">
         <p style="color: ${GOLD}; font-weight: 700; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px;">Tracking Summary</p>
@@ -295,16 +318,20 @@ export const sendOrderStatusUpdate = async (email: string, orderId: string, stat
     <p style="margin-top: 30px; font-size: 12px; color: rgba(255,255,255,0.3);">This is an official communication from the ReVault Luxury Vault.</p>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `${statusIcons[status] || '✨'} Status Update: Order #${orderId.slice(-8).toUpperCase()} is ${status}`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Vault" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `${statusIcons[status] || "✨"} Status Update: Order #${orderId.slice(-8).toUpperCase()} is ${status}`,
+		html: baseTemplate(content),
+	});
 };
 
-export const sendSupportReplyEmail = async (email: string, name: string, message: string) => {
-  const content = `
+export const sendSupportReplyEmail = async (
+	email: string,
+	name: string,
+	message: string,
+) => {
+	const content = `
     <span class="h2">Neural Concierge Support</span>
     <h1 class="h1" style="font-size: 28px; margin: 20px 0;">New <span>Support Reply.</span></h1>
     <p class="text">Dear <b>${name}</b>, the ReVault Support Team has responded to your inquiry.</p>
@@ -318,10 +345,10 @@ export const sendSupportReplyEmail = async (email: string, name: string, message
     <a href="https://revault.pk/login" class="btn">View & Reply in Vault</a>
   `;
 
-  await transporter.sendMail({
-    from: `"ReVault Concierge" <${process.env.SMTP_USER}>`,
-    to: email,
-    subject: `💬 New Support Message from ReVault Concierge`,
-    html: baseTemplate(content),
-  });
+	await transporter.sendMail({
+		from: `"ReVault Concierge" <${process.env.SMTP_USER}>`,
+		to: email,
+		subject: `💬 New Support Message from ReVault Concierge`,
+		html: baseTemplate(content),
+	});
 };

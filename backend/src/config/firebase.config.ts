@@ -1,20 +1,20 @@
-import admin from 'firebase-admin';
-import dotenv from 'dotenv';
+import dotenv from "dotenv";
+import admin from "firebase-admin";
 
 dotenv.config();
 
-const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT || '{}';
+const serviceAccountRaw = process.env.FIREBASE_SERVICE_ACCOUNT || "{}";
 const serviceAccount = JSON.parse(serviceAccountRaw);
 
 // Fix for private key newlines in Vercel environment variables
 if (serviceAccount.private_key) {
-  serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+	serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, "\n");
 }
 
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount)
-  });
+	admin.initializeApp({
+		credential: admin.credential.cert(serviceAccount),
+	});
 }
 
 export const db = admin.firestore();

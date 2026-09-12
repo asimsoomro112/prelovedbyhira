@@ -1,15 +1,16 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Your Cart",
-  description: "Review items in your ReVault cart. Authenticated preloved fashion, escrow-protected checkout.",
-  robots: { index: false, follow: false },
+	title: "Your Cart",
+	description:
+		"Review items in your ReVault cart. Authenticated preloved fashion, escrow-protected checkout.",
+	robots: { index: false, follow: false },
 };
 
 export default function CartLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode;
+	children: React.ReactNode;
 }) {
-  return <>{children}</>;
+	return <>{children}</>;
 }

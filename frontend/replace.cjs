@@ -1,8 +1,11 @@
-const fs = require('fs');
-const path = require('path');
+const fs = require("node:fs");
+const path = require("node:path");
 
-const pagePath = path.join(__dirname, 'src/app/(customer)/product/[id]/page.tsx');
-let content = fs.readFileSync(pagePath, 'utf8');
+const pagePath = path.join(
+	__dirname,
+	"src/app/(customer)/product/[id]/page.tsx",
+);
+let content = fs.readFileSync(pagePath, "utf8");
 
 // Add imports
 const imports = `
@@ -11,7 +14,10 @@ import { ProductInfo } from "./components/ProductInfo";
 import { ProductActions } from "./components/ProductActions";
 import { SellerProfile } from "./components/SellerProfile";
 `;
-content = content.replace('import { toast } from "sonner";', 'import { toast } from "sonner";' + imports);
+content = content.replace(
+	'import { toast } from "sonner";',
+	`import { toast } from "sonner";${imports}`,
+);
 
 // We need to replace the gallery, info, actions, and seller profile with the new components
 // Instead of regex, let's use the unique start/end markers
@@ -38,7 +44,10 @@ const galleryReplacement = `
 const galleryStartIndex = content.indexOf(galleryStart);
 const galleryEndIndex = content.indexOf(galleryEnd);
 if (galleryStartIndex !== -1 && galleryEndIndex !== -1) {
-  content = content.slice(0, galleryStartIndex) + galleryReplacement + content.slice(galleryEndIndex);
+	content =
+		content.slice(0, galleryStartIndex) +
+		galleryReplacement +
+		content.slice(galleryEndIndex);
 }
 
 // 2. Info
@@ -59,7 +68,10 @@ const infoReplacement = `
 const infoStartIndex = content.indexOf(infoStart);
 const infoEndIndex = content.indexOf(infoEnd);
 if (infoStartIndex !== -1 && infoEndIndex !== -1) {
-  content = content.slice(0, infoStartIndex) + infoReplacement + content.slice(infoEndIndex);
+	content =
+		content.slice(0, infoStartIndex) +
+		infoReplacement +
+		content.slice(infoEndIndex);
 }
 
 // 3. Actions
@@ -80,7 +92,10 @@ const actionsReplacement = `
 const actionsStartIndex = content.indexOf(actionsStart);
 const actionsEndIndex = content.indexOf(actionsEnd);
 if (actionsStartIndex !== -1 && actionsEndIndex !== -1) {
-  content = content.slice(0, actionsStartIndex) + actionsReplacement + content.slice(actionsEndIndex);
+	content =
+		content.slice(0, actionsStartIndex) +
+		actionsReplacement +
+		content.slice(actionsEndIndex);
 }
 
 // 4. Seller Profile
@@ -92,7 +107,10 @@ const sellerReplacement = `
 const sellerStartIndex = content.indexOf(sellerStart);
 const sellerEndIndex = content.indexOf(sellerEnd);
 if (sellerStartIndex !== -1 && sellerEndIndex !== -1) {
-  content = content.slice(0, sellerStartIndex) + sellerReplacement + content.slice(sellerEndIndex + `            </article>`.length);
+	content =
+		content.slice(0, sellerStartIndex) +
+		sellerReplacement +
+		content.slice(sellerEndIndex + `            </article>`.length);
 }
 
 // Write back
