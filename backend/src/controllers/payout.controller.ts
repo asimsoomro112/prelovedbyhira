@@ -9,8 +9,8 @@ export const getBalance = async (
 	next: NextFunction,
 ) => {
 	try {
-		const sellerId = req.user?.id;
-		const sellerDoc = await db.collection("sellers").doc(sellerId).get();
+		const sellerId = req.user?.id as string;
+		const sellerDoc = await db.collection("sellers").doc(sellerId as string).get();
 
 		if (!sellerDoc.exists) throw new AppError("Seller not found", 404);
 		const seller = sellerDoc.data()!;
@@ -31,7 +31,7 @@ export const getPayoutHistory = async (
 	next: NextFunction,
 ) => {
 	try {
-		const sellerId = req.user?.id;
+		const sellerId = req.user?.id as string;
 
 		const [transSnapshot, payoutsSnapshot] = await Promise.all([
 			db.collection("transactions").where("userId", "==", sellerId).get(),
@@ -83,10 +83,10 @@ export const requestPayout = async (
 	next: NextFunction,
 ) => {
 	try {
-		const sellerId = req.user?.id;
+		const sellerId = req.user?.id as string;
 		const { amount, method, details } = req.body;
 
-		const sellerRef = db.collection("sellers").doc(sellerId);
+		const sellerRef = db.collection("sellers").doc(sellerId as string);
 
 		await db.runTransaction(async (transaction) => {
 			const sellerDoc = await transaction.get(sellerRef);
@@ -166,7 +166,7 @@ export const getSavedAccounts = async (
 	next: NextFunction,
 ) => {
 	try {
-		const userId = req.user?.id;
+		const userId = req.user?.id as string;
 		const snapshot = await db
 			.collection("payout_accounts")
 			.where("userId", "==", userId)
@@ -187,7 +187,7 @@ export const saveAccount = async (
 	next: NextFunction,
 ) => {
 	try {
-		const userId = req.user?.id;
+		const userId = req.user?.id as string;
 		const { type, details, title } = req.body;
 
 		if (!type || !details || !title) {
@@ -216,7 +216,7 @@ export const deleteSavedAccount = async (
 	next: NextFunction,
 ) => {
 	try {
-		const userId = req.user?.id;
+		const userId = req.user?.id as string;
 		const id = req.params.id as string;
 
 		const accountRef = db.collection("payout_accounts").doc(id);

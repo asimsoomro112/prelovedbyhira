@@ -51,8 +51,8 @@ export const uploadToCloudinary = async (
 			(error, result) => {
 				if (error) return reject(error);
 				resolve({
-					url: result?.secure_url,
-					publicId: result?.public_id,
+					url: result?.secure_url as string,
+					publicId: result?.public_id as string,
 				});
 			},
 		);

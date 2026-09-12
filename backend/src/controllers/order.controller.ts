@@ -20,7 +20,7 @@ export const createOrder = async (
 			quantity = 1,
 			paymentMethod = "Bank Transfer",
 		} = req.body;
-		const buyerId = req.user?.id;
+		const buyerId = req.user?.id as string;
 		const qty = Math.max(1, parseInt(quantity, 10));
 
 		const productRef = db.collection("products").doc(productId);
@@ -84,7 +84,7 @@ export const createOrder = async (
 		});
 
 		// 📧 Send Emails (Outside transaction for performance)
-		const buyerDoc = await db.collection("users").doc(buyerId).get();
+		const buyerDoc = await db.collection("users").doc(buyerId as string).get();
 		const productDoc = await productRef.get();
 		const sellerDoc = await db.collection("users").doc(result.sellerId).get();
 
@@ -136,7 +136,7 @@ export const createBulkOrders = async (
 			shippingAddress,
 			paymentMethod = "Bank Transfer",
 		} = req.body;
-		const buyerId = req.user?.id;
+		const buyerId = req.user?.id as string;
 
 		if (!items || !Array.isArray(items) || items.length === 0) {
 			throw new AppError("No items provided for checkout", 400);
@@ -240,7 +240,7 @@ export const createBulkOrders = async (
 		});
 
 		// Send emails outside the transaction (non-blocking)
-		const buyerDoc = await db.collection("users").doc(buyerId).get();
+		const buyerDoc = await db.collection("users").doc(buyerId as string).get();
 		for (const order of results) {
 			try {
 				const productDoc = await db
@@ -359,7 +359,7 @@ export const markAsShipped = async (
 		const orderRef = db.collection("orders").doc(id);
 		const orderDoc = await orderRef.get();
 
-		if (!orderDoc.exists || orderDoc.data()?.sellerId !== req.user?.id) {
+		if (!orderDoc.exists || orderDoc.data()?.sellerId !== req.user?.id as string) {
 			throw new AppError("Unauthorized", 403);
 		}
 
@@ -405,7 +405,7 @@ export const confirmDelivery = async (
 			if (!orderDoc.exists) throw new AppError("Order not found", 404);
 
 			const order = orderDoc.data()!;
-			if (order.buyerId !== req.user?.id) {
+			if (order.buyerId !== req.user?.id as string) {
 				throw new AppError("Unauthorized", 403);
 			}
 
@@ -477,7 +477,7 @@ export const getMyOrders = async (
 	try {
 		const snapshot = await db
 			.collection("orders")
-			.where("buyerId", "==", req.user?.id)
+			.where("buyerId", "==", req.user?.id as string)
 			.get();
 
 		const ordersData = snapshot.docs.map((doc) => ({
@@ -545,7 +545,7 @@ export const getSellerOrders = async (
 	try {
 		const snapshot = await db
 			.collection("orders")
-			.where("sellerId", "==", req.user?.id)
+			.where("sellerId", "==", req.user?.id as string)
 			.get();
 
 		const ordersData = snapshot.docs.map((doc) => ({
@@ -616,8 +616,8 @@ export const getOrderById = async (
 
 		// Authorization Check: Only buyer, seller, or admin can see the order
 		if (
-			order.buyerId !== req.user?.id &&
-			order.sellerId !== req.user?.id &&
+			order.buyerId !== req.user?.id as string &&
+			order.sellerId !== req.user?.id as string &&
 			req.user?.role !== "ADMIN"
 		) {
 			throw new AppError("Unauthorized access to this order", 403);
@@ -674,7 +674,7 @@ export const submitPaymentProof = async (
 		if (!orderDoc.exists) throw new AppError("Order not found", 404);
 		const order = orderDoc.data()!;
 
-		if (order.buyerId !== req.user?.id) throw new AppError("Unauthorized", 403);
+		if (order.buyerId !== req.user?.id as string) throw new AppError("Unauthorized", 403);
 
 		// 🤖 AI VERIFICATION SCAN
 		let aiResults: any = { isMatch: false, reason: "Neural link timeout" };
@@ -766,7 +766,7 @@ export const adminConfirmPayment = async (
 			});
 
 			// 📧 Send Payment Confirmed Email to Seller
-			const sUserDoc = await db.collection("users").doc(sellerId).get();
+			const sUserDoc = await db.collection("users").doc(sellerId as string).get();
 			if (sUserDoc.exists) {
 				await EmailService.sendSellerPaymentConfirmedEmail(
 					sUserDoc.data()?.email,
@@ -865,7 +865,7 @@ export const submitReview = async (
 		if (!orderDoc.exists) throw new AppError("Order not found", 404);
 		const order = orderDoc.data()!;
 
-		if (order.buyerId !== req.user?.id) throw new AppError("Unauthorized", 403);
+		if (order.buyerId !== req.user?.id as string) throw new AppError("Unauthorized", 403);
 		if (order.status !== "CONFIRMED")
 			throw new AppError(
 				"Reviews can only be submitted for confirmed deliveries",

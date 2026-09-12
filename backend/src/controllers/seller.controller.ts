@@ -65,7 +65,7 @@ export const submitIdentity = async (
 
 		await db
 			.collection("sellers")
-			.doc(req.user?.id)
+			.doc(req.user?.id as string)
 			.set(updateData, { merge: true });
 
 		res.json({
@@ -117,7 +117,7 @@ export const submitSelfie = async (
 		}
 
 		await db.runTransaction(async (transaction) => {
-			const sellerRef = db.collection("sellers").doc(req.user?.id);
+			const sellerRef = db.collection("sellers").doc(req.user?.id as string);
 			transaction.set(sellerRef, updateData, { merge: true });
 
 			// Automatically save the payout account so it shows up in the Payouts page
@@ -137,7 +137,7 @@ export const submitSelfie = async (
 
 				const accountRef = db.collection("payout_accounts").doc();
 				transaction.set(accountRef, {
-					userId: req.user?.id,
+					userId: req.user?.id as string,
 					type: payoutMethod, // JAZZCASH, EASYPAISA, BANK_TRANSFER
 					details:
 						detailsObj?.accountNumber ||
@@ -166,8 +166,8 @@ export const getVerificationStatus = async (
 	next: NextFunction,
 ) => {
 	try {
-		const sellerId = req.user?.id;
-		let sellerDoc = await db.collection("sellers").doc(sellerId).get();
+		const sellerId = req.user?.id as string;
+		let sellerDoc = await db.collection("sellers").doc(sellerId as string).get();
 
 		// Auto-create seller profile if it's missing (Allow CUSTOMERS to initiate verification)
 		if (!sellerDoc.exists) {
@@ -182,8 +182,8 @@ export const getVerificationStatus = async (
 				createdAt: new Date().toISOString(),
 			};
 
-			await db.collection("sellers").doc(sellerId).set(newSeller);
-			sellerDoc = await db.collection("sellers").doc(sellerId).get();
+			await db.collection("sellers").doc(sellerId as string).set(newSeller);
+			sellerDoc = await db.collection("sellers").doc(sellerId as string).get();
 		}
 
 		const data = sellerDoc.data();
@@ -209,8 +209,8 @@ export const getDashboardStats = async (
 	next: NextFunction,
 ) => {
 	try {
-		const sellerId = req.user?.id;
-		let sellerDoc = await db.collection("sellers").doc(sellerId).get();
+		const sellerId = req.user?.id as string;
+		let sellerDoc = await db.collection("sellers").doc(sellerId as string).get();
 
 		// Auto-create seller profile if it's missing but user is a SELLER/ADMIN
 		if (!sellerDoc.exists) {
@@ -229,8 +229,8 @@ export const getDashboardStats = async (
 				createdAt: new Date().toISOString(),
 			};
 
-			await db.collection("sellers").doc(sellerId).set(newSeller);
-			sellerDoc = await db.collection("sellers").doc(sellerId).get();
+			await db.collection("sellers").doc(sellerId as string).set(newSeller);
+			sellerDoc = await db.collection("sellers").doc(sellerId as string).get();
 		}
 		const seller = sellerDoc.data()!;
 
@@ -307,7 +307,7 @@ export const getSellerProducts = async (
 	next: NextFunction,
 ) => {
 	try {
-		const sellerId = req.user?.id;
+		const sellerId = req.user?.id as string;
 		const snapshot = await db
 			.collection("products")
 			.where("sellerId", "==", sellerId)
@@ -335,8 +335,8 @@ export const getSellerProfile = async (
 	next: NextFunction,
 ) => {
 	try {
-		const sellerId = req.user?.id;
-		let sellerDoc = await db.collection("sellers").doc(sellerId).get();
+		const sellerId = req.user?.id as string;
+		let sellerDoc = await db.collection("sellers").doc(sellerId as string).get();
 
 		// Auto-create seller profile if it's missing
 		if (!sellerDoc.exists) {
@@ -353,8 +353,8 @@ export const getSellerProfile = async (
 				createdAt: new Date().toISOString(),
 			};
 
-			await db.collection("sellers").doc(sellerId).set(newSeller);
-			sellerDoc = await db.collection("sellers").doc(sellerId).get();
+			await db.collection("sellers").doc(sellerId as string).set(newSeller);
+			sellerDoc = await db.collection("sellers").doc(sellerId as string).get();
 		}
 
 		const seller = sellerDoc.data()!;
@@ -383,7 +383,7 @@ export const updateSellerProfile = async (
 	next: NextFunction,
 ) => {
 	try {
-		const sellerId = req.user?.id;
+		const sellerId = req.user?.id as string;
 		const { boutiqueBio, phone, city, location } = req.body;
 		const files = req.files as { [fieldname: string]: Express.Multer.File[] };
 
@@ -429,8 +429,8 @@ export const updateSellerProfile = async (
 
 		// Set with merge: true to avoid "document not found" errors
 		await Promise.all([
-			db.collection("sellers").doc(sellerId).set(updateData, { merge: true }),
-			db.collection("users").doc(sellerId).set(userUpdateData, { merge: true }),
+			db.collection("sellers").doc(sellerId as string).set(updateData, { merge: true }),
+			db.collection("users").doc(sellerId as string).set(userUpdateData, { merge: true }),
 		]);
 
 		res.json({
