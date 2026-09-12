@@ -193,13 +193,12 @@ export default function MobileNavbar() {
 
 					{/* Logo */}
 					<Link href="/" className="flex items-center">
-						<Image
+						<img
 							src="/logo-navbar.png"
 							alt="ReVault"
 							width={400}
 							height={56}
 							className="w-[168px] h-auto object-contain brightness-110"
-							priority
 						/>
 					</Link>
 
