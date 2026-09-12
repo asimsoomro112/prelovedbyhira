@@ -165,7 +165,7 @@ export function Footer() {
 			</div>
 
 			{/* Decorative mesh background */}
-			<div className="absolute inset-0 bg-[url('/mesh-grid.png')] opacity-[0.03] pointer-events-none" />
+				{/* Background styling without missing mesh-grid */}
 		</footer>
 	);
 }

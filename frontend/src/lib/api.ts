@@ -1,8 +1,17 @@
 import axios from "axios";
 import { useAuthStore } from "@/store/useAuthStore";
 
+const getBaseUrl = () => {
+	if (typeof window !== 'undefined') {
+		if (window.location.hostname !== 'localhost') return '/api';
+		return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api';
+	}
+	if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/api`;
+	return process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api';
+};
+
 const api = axios.create({
-	baseURL: process.env.NEXT_PUBLIC_BACKEND_URL || (typeof window !== 'undefined' && window.location.hostname !== 'localhost' ? '/api' : 'http://localhost:5000/api'),
+	baseURL: getBaseUrl(),
 	withCredentials: true,
 });
 

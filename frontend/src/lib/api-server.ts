@@ -5,8 +5,9 @@
  */
 
 const BACKEND_URL =
-	process.env.NEXT_PUBLIC_BACKEND_URL ||
-	(process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}/api` : "http://localhost:5000/api");
+	process.env.VERCEL_URL
+		? `https://${process.env.VERCEL_URL}/api`
+		: process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5000/api";
 
 export async function getTrendingProducts(limit = 3) {
 	try {
