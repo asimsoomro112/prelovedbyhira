@@ -1,6 +1,6 @@
 "use client";
 import { AlertTriangle, Eye, ShieldCheck, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 
@@ -16,14 +16,14 @@ export default function AdminOrdersPage() {
 	const [rejectionReason, setRejectionReason] = useState("");
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const fetchOrders = () => {
+	const fetchOrders = useCallback(() => {
 		setIsLoading(true);
 		api
 			.get("/admin/orders", { params: { status: statusFilter || undefined } })
 			.then((r: any) => setOrders(r.data))
 			.catch(() => {})
 			.finally(() => setIsLoading(false));
-	};
+	}, [statusFilter]);
 
 	useEffect(() => {
 		fetchOrders();

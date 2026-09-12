@@ -373,7 +373,7 @@ export const listOrders = async (
 			.filter(Boolean) as admin.firestore.DocumentReference[];
 
 		const allRefs = [...productRefs, ...buyerRefs, ...sellerRefs];
-		const allDocs = await db.getAll(...allRefs);
+		const allDocs = allRefs.length > 0 ? await db.getAll(...allRefs) : [];
 
 		const productDocs = allDocs.slice(0, productRefs.length);
 		const buyerDocs = allDocs.slice(

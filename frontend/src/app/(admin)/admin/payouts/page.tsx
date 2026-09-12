@@ -10,7 +10,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 
@@ -24,14 +24,14 @@ export default function AdminPayoutsPage() {
 	const [proofFile, setProofFile] = useState<File | null>(null);
 	const [isSubmitting, setIsSubmitting] = useState(false);
 
-	const fetchPayouts = () => {
+	const fetchPayouts = useCallback(() => {
 		setIsLoading(true);
 		api
 			.get("/admin/payouts")
 			.then((r: any) => setPayouts(r.data))
 			.catch(() => {})
 			.finally(() => setIsLoading(false));
-	};
+	}, []);
 
 	useEffect(() => {
 		fetchPayouts();

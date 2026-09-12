@@ -1,6 +1,6 @@
 "use client";
 import { Search, Shield, UserCheck, UserX } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 import api from "@/lib/api";
 
@@ -10,7 +10,7 @@ export default function AdminUsersPage() {
 	const [search, setSearch] = useState("");
 	const [roleFilter, setRoleFilter] = useState("");
 
-	const fetchUsers = () => {
+	const fetchUsers = useCallback(() => {
 		setIsLoading(true);
 		api
 			.get("/admin/users", {
@@ -19,7 +19,7 @@ export default function AdminUsersPage() {
 			.then((r: any) => setUsers(r.data))
 			.catch(() => {})
 			.finally(() => setIsLoading(false));
-	};
+	}, [search, roleFilter]);
 
 	useEffect(() => {
 		fetchUsers();
